@@ -1,0 +1,285 @@
+/* ─── Principal ─── */
+:root {
+  --primary: #003366; 
+  --primary-light: #004080;
+  --accent: #27ae60;  
+  --bg-light: #f4f6f8;
+  --text-dark: #202124;
+  --text-muted: #5f6368;
+  --border-color: #dadce0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body { 
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+  background: #e9ecef; 
+  display: flex; 
+  flex-direction: column;
+  align-items: center; 
+  padding: 20px; 
+  color: var(--text-dark);
+  margin: 0;
+}
+
+/* --- NAVEGAÇÃO --- */
+.nav-dev {
+  margin-bottom: 10px;
+  background: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 680px;
+  text-align: center;
+}
+.nav-dev a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.nav-dev a:hover { text-decoration: underline; }
+
+/* --- WIDGET PRINCIPAL --- */
+.widget-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 680px; 
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  margin-top: 10px;
+}
+
+.widget-header {
+  background: var(--primary);
+  color: white;
+  padding: 20px 24px;
+}
+
+.widget-header h2 { 
+  margin: 0 0 16px 0; 
+  font-size: 1.4rem; 
+  font-weight: 800; 
+  letter-spacing: -0.3px;
+}
+
+/* --- FILTROS --- */
+.controles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 12px;
+}
+
+select {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(0, 0, 0, 0.2);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none; 
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px top 50%;
+  background-size: 10px auto;
+}
+
+select:hover { background-color: rgba(0, 0, 0, 0.3); }
+select option { color: #333; background: #fff; }
+
+/* --- STATUS GERAL --- */
+.status-geral {
+  padding: 24px 24px 16px;
+  background: white;
+}
+
+.info-topo { display: flex; justify-content: space-between; font-weight: 800; margin-bottom: 12px; font-size: 1.1rem; }
+.data-hora { font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 10px; }
+
+.barra-progresso-total {
+  background: #e8eaed;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.preenchimento-total {
+  background: var(--accent);
+  height: 100%;
+  width: 0%;
+  transition: width 1s ease-out;
+}
+
+/* --- RESUMO DE VOTOS (Otimizado) --- */
+.resumo-votos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--bg-light);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
+}
+
+.resumo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-right: 1px solid var(--border-color);
+  padding: 0 10px;
+}
+
+.resumo-item:last-child { border-right: none; }
+
+.resumo-item span:first-child {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.resumo-valor {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+/* --- LISTA DE CANDIDATOS --- */
+.lista-candidatos { padding: 24px; }
+
+.candidato-card { 
+  margin-bottom: 16px; 
+  padding: 20px; 
+  background: #ffffff; 
+  border: 1px solid var(--border-color); 
+  border-radius: 12px;
+  transition: box-shadow 0.2s;
+}
+
+.candidato-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.candidato-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Centraliza a foto com o percentual */
+  margin-bottom: 16px;
+}
+
+.candidato-flex {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1; /* Ocupa o espaço restante */
+  min-width: 0; /* Necessário para o text-overflow funcionar no Flexbox */
+}
+
+.foto-container {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #eaeaea;
+  flex-shrink: 0;
+  background: #f8f9fa;
+}
+
+.foto-cand { width: 100%; height: 100%; object-fit: cover; }
+
+.info-textos {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* Previne que os textos empurrem o layout */
+}
+
+.nome-cand { 
+  font-weight: 800; 
+  font-size: 1.15rem; 
+  color: var(--text-dark); 
+  line-height: 1.2;
+}
+
+.partido-tag { 
+  font-weight: 400; 
+  font-size: 0.8rem; 
+  color: var(--text-muted); 
+  margin-top: 4px;
+  margin-bottom: 8px;
+  /* TRUQUE MÁGICO: Corta o texto se for muito longo */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.percentual { 
+  font-size: 1.6rem; 
+  font-weight: 900; 
+  color: var(--primary); 
+  text-align: right;
+  padding-left: 15px;
+}
+
+.barra-cand-bg {
+  background: #f1f3f5;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.barra-cand-fill {
+  background: var(--primary);
+  height: 100%;
+  width: 0%;
+  transition: width 1s ease-out;
+}
+
+.votos-absolutos {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.eleito-badge {
+  display: inline-block; 
+  width: fit-content; 
+  font-size: 0.65rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-verde { background: var(--accent); color: white; }
+.badge-amarelo { background: #f39c12; color: white; }
+
+.loading-overlay { text-align: center; padding: 20px; color: var(--text-muted); font-style: italic; }
+
+/* Responsividade para celulares */
+@media (max-width: 550px) {
+  .controles { grid-template-columns: 1fr; } 
+  .resumo-votos { 
+      grid-template-columns: 1fr 1fr; 
+      gap: 12px 0; 
+  }
+  .resumo-item { border-right: none; }
+  .resumo-item:nth-child(odd) { border-right: 1px solid var(--border-color); }
+}
