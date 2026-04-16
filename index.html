@@ -413,7 +413,7 @@
         try {
             document.getElementById('ultima-atualizacao').innerText = "Buscando dados...";
             
-            const url = `http://localhost:3000/api/apuracao?turno=${turno}&cargo=${cargo}&uf=${uf}`;
+            const url = `https://eleicoes-backend.onrender.com/api/apuracao?turno=${turno}&cargo=${cargo}&uf=${uf}`;
             const response = await fetch(url);
             const data = await response.json();
 
