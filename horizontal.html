@@ -348,7 +348,8 @@
         }
 
         try {
-            const url = `https://eleicoes-backend.onrender.com/api/apuracao?turno=${turno}&cargo=${cargo}&uf=${uf}`;
+            // URL atualizada para o Cloudflare
+            const url = `https://backend-eleicoes.enzoddos7.workers.dev/api/apuracao?turno=${turno}&cargo=${cargo}&uf=${uf}`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -360,17 +361,20 @@
                 return;
             }
 
-            let percursoCss = data.percurso.replace(',', '.'); 
+            // Tratamento seguro para o percurso
+            const percursoBruto = data.percurso || "0,00";
+            let percursoCss = percursoBruto.replace(',', '.'); 
             document.getElementById('barra-percurso').style.width = `${percursoCss}%`;
 
-            let textoPercurso = data.percurso.endsWith(',00') 
-                ? data.percurso.replace(',00', '') 
-                : data.percurso;
+            let textoPercurso = percursoBruto.endsWith(',00') 
+                ? percursoBruto.replace(',00', '') 
+                : percursoBruto;
             
             document.getElementById('txt-percurso').innerText = `${textoPercurso}%`;
-            document.getElementById('ultima-atualizacao').innerText = `Atualizado: ${data.atualizacao}`;
+            document.getElementById('ultima-atualizacao').innerText = `Atualizado: ${data.atualizacao || '--:--'}`;
 
-            let candidatosParaRenderizar = [...data.candidatos];
+            // Fallback para array vazio caso falte o dado
+            let candidatosParaRenderizar = [...(data.candidatos || [])];
 
             if (turno === '1' && (cargo === '1' || cargo === '3')) {
                 const temAlguemEleito = candidatosParaRenderizar.some(c => c.eleito);
@@ -378,7 +382,7 @@
                 
                 if (!temAlguemEleito && !apiJaMarcouSegundoTurno && candidatosParaRenderizar.length >= 2) {
                     const top2 = candidatosParaRenderizar.slice(0, 2);
-                    top2.sort((a, b) => a.nome.localeCompare(b.nome));
+                    top2.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
                     top2[0].passouTurno = true;
                     top2[1].passouTurno = true;
                     candidatosParaRenderizar = [...top2, ...candidatosParaRenderizar.slice(2)];
@@ -392,7 +396,7 @@
 
             candidatosParaRenderizar.forEach(cand => {
                 let badgeHTML = '';
-                let percentualVotos = parseFloat(cand.votos);
+                let percentualVotos = parseFloat(cand.votos || 0);
 
                 if (turno === '1' && (cargo === '1' || cargo === '3')) {
                     if (cand.eleito && percentualVotos > 50) {
@@ -406,24 +410,23 @@
                     }
                 }
 
-                // Removemos o formatação matemática (toLocaleString) e usamos diretamente cand.total
                 lista.innerHTML += `
                     <div class="card-cand">
                         <div class="foto-container">
                             <img src="${cand.foto}" 
                                 class="foto-cand" 
                                 onerror="this.src='https://via.placeholder.com/40?text=👤'" 
-                                alt="${cand.nome}">
+                                alt="${cand.nome || 'Candidato'}">
                         </div>
                         <div class="info-cand">
                             <div class="card-topo">
-                                <span class="card-nome" title="${cand.nome}">${cand.nome}</span>
-                                <span class="card-pct">${cand.votos}%</span>
+                                <span class="card-nome" title="${cand.nome || ''}">${cand.nome || 'N/D'}</span>
+                                <span class="card-pct">${cand.votos || '0,00'}%</span>
                             </div>
                             <div class="card-barra-bg">
-                                <div class="card-barra-fill" style="width: ${cand.votos}%"></div>
+                                <div class="card-barra-fill" style="width: ${cand.votos || 0}%"></div>
                             </div>
-                            <div class="card-votos">${cand.total} votos</div>
+                            <div class="card-votos">${cand.total || 0} votos</div>
                         </div>
                         ${badgeHTML}
                     </div>
@@ -468,6 +471,6 @@
 
     sugerirLocalizacao();
     setInterval(atualizarApuracao, 30000); 
-  </script>
+</script>
 </body>
 </html>
