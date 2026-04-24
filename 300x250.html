@@ -437,7 +437,8 @@
         try {
             document.getElementById('ultima-atualizacao').innerText = "(Atualizando...)";
             
-            const url = `https://eleicoes-backend.onrender.com/api/apuracao?turno=${turno}&cargo=${cargo}&uf=${uf}`;
+            // Link atualizado para o ambiente de produção na Cloudflare
+            const url = `https://backend-eleicoes.enzoddos7.workers.dev/api/apuracao?turno=${turno}&cargo=${cargo}&uf=${uf}`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -449,26 +450,33 @@
                 return;
             }
 
-            let percursoCss = data.percurso.replace(',', '.'); 
+            // Tratamento seguro do percurso
+            const percursoBruto = data.percurso || "0,00";
+            let percursoCss = percursoBruto.replace(',', '.'); 
             document.getElementById('barra-percurso').style.width = `${percursoCss}%`;
 
-            let textoPercurso = data.percurso.endsWith(',00') 
-                ? data.percurso.replace(',00', '') 
-                : data.percurso;
+            let textoPercurso = percursoBruto.endsWith(',00') 
+                ? percursoBruto.replace(',00', '') 
+                : percursoBruto;
             
             document.getElementById('txt-percurso').innerText = `${textoPercurso}%`;
             
-            // Extrai apenas a hora para ficar bem curto no topo: ex "(12:07)"
-            let horaCurta = data.atualizacao.split('às')[1] ? data.atualizacao.split('às')[1].trim().substring(0, 5) : data.atualizacao;
+            // Extração segura da hora
+            const atualizacaoData = data.atualizacao || "";
+            let horaCurta = atualizacaoData.includes('às') 
+                ? atualizacaoData.split('às')[1].trim().substring(0, 5) 
+                : "--:--";
             document.getElementById('ultima-atualizacao').innerText = `(${horaCurta})`;
 
-            // Injeta os votos no resumo oculto
-            document.getElementById('votos-validos').innerText = `${data.resumo.pctValidos}%`;
-            document.getElementById('votos-brancos').innerText = `${data.resumo.pctBrancos}%`;
-            document.getElementById('votos-nulos').innerText = `${data.resumo.pctNulos}%`;
-            document.getElementById('votos-abstencoes').innerText = `${data.resumo.pctAbstencoes}%`;
+            // Injeção segura dos votos no resumo oculto
+            const resumo = data.resumo || {};
+            document.getElementById('votos-validos').innerText = `${resumo.pctValidos || '0,00'}%`;
+            document.getElementById('votos-brancos').innerText = `${resumo.pctBrancos || '0,00'}%`;
+            document.getElementById('votos-nulos').innerText = `${resumo.pctNulos || '0,00'}%`;
+            document.getElementById('votos-abstencoes').innerText = `${resumo.pctAbstencoes || '0,00'}%`;
 
-            let candidatosParaRenderizar = [...data.candidatos];
+            // Fallback para array vazio
+            let candidatosParaRenderizar = [...(data.candidatos || [])];
 
             if (turno === '1' && (cargo === '1' || cargo === '3')) {
                 const temAlguemEleito = candidatosParaRenderizar.some(c => c.eleito);
@@ -476,7 +484,7 @@
                 
                 if (!temAlguemEleito && !apiJaMarcouSegundoTurno && candidatosParaRenderizar.length >= 2) {
                     const top2 = candidatosParaRenderizar.slice(0, 2);
-                    top2.sort((a, b) => a.nome.localeCompare(b.nome));
+                    top2.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
                     top2[0].passouTurno = true;
                     top2[1].passouTurno = true;
                     candidatosParaRenderizar = [...top2, ...candidatosParaRenderizar.slice(2)];
@@ -488,7 +496,7 @@
 
             candidatosParaRenderizar.forEach(cand => {
                 let badgeHTML = '';
-                let percentualVotos = parseFloat(cand.votos);
+                let percentualVotos = parseFloat(cand.votos || 0);
 
                 if (turno === '1' && (cargo === '1' || cargo === '3')) {
                     if (cand.eleito && percentualVotos > 50) {
@@ -510,21 +518,21 @@
                                     <img src="${cand.foto}" 
                                         class="foto-cand" 
                                         onerror="this.src='https://via.placeholder.com/40?text=👤'" 
-                                        alt="${cand.nome}">
+                                        alt="${cand.nome || 'Candidato'}">
                                 </div>
                                 <div class="info-textos">
-                                    <span class="nome-cand">${cand.nome}</span>
-                                    <span class="partido-tag">${cand.partido}</span>
+                                    <span class="nome-cand">${cand.nome || 'N/D'}</span>
+                                    <span class="partido-tag">${cand.partido || 'N/A'}</span>
                                     ${badgeHTML}
                                 </div>
                             </div>
-                            <div class="percentual">${cand.votos}%</div>
+                            <div class="percentual">${cand.votos || '0,00'}%</div>
                         </div>
                         <div class="barra-cand-bg">
-                            <div class="barra-cand-fill" style="width: ${cand.votos}%"></div>
+                            <div class="barra-cand-fill" style="width: ${cand.votos || 0}%"></div>
                         </div>
                         <div class="votos-absolutos">
-                            <span>${cand.total} votos</span>
+                            <span>${cand.total || 0} votos</span>
                         </div>
                     </div>
                 `;
@@ -542,6 +550,6 @@
 
     sugerirLocalizacao();
     setInterval(atualizarApuracao, 30000);
-  </script>
+</script>
 </body>
 </html>
