@@ -413,7 +413,8 @@
         try {
             document.getElementById('ultima-atualizacao').innerText = "Buscando dados...";
             
-            const url = `https://eleicoes-backend.onrender.com/api/apuracao?turno=${turno}&cargo=${cargo}&uf=${uf}`;
+            // Link atualizado para o ambiente de produção na Cloudflare
+            const url = `https://backend-eleicoes.enzoddos7.workers.dev/api/apuracao?turno=${turno}&cargo=${cargo}&uf=${uf}`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -425,23 +426,26 @@
                 return;
             }
 
-            let percursoCss = data.percurso.replace(',', '.'); 
+            // Tratamento seguro do percurso para evitar erros no CSS
+            const percursoBruto = data.percurso || "0,00";
+            let percursoCss = percursoBruto.replace(',', '.'); 
             document.getElementById('barra-percurso').style.width = `${percursoCss}%`;
 
-            let textoPercurso = data.percurso.endsWith(',00') 
-                ? data.percurso.replace(',00', '') 
-                : data.percurso;
+            let textoPercurso = percursoBruto.endsWith(',00') 
+                ? percursoBruto.replace(',00', '') 
+                : percursoBruto;
             
             document.getElementById('txt-percurso').innerText = `${textoPercurso}%`;
-            document.getElementById('ultima-atualizacao').innerText = `Atualizado em: ${data.atualizacao}`;
+            document.getElementById('ultima-atualizacao').innerText = `Atualizado em: ${data.atualizacao || 'Sem informação de hora'}`;
 
-            // Injeta os votos
-            document.getElementById('votos-validos').innerText = `${data.resumo.validos}\n(${data.resumo.pctValidos}%)`;
-            document.getElementById('votos-brancos').innerText = `${data.resumo.brancos}\n(${data.resumo.pctBrancos}%)`;
-            document.getElementById('votos-nulos').innerText = `${data.resumo.nulos}\n(${data.resumo.pctNulos}%)`;
-            document.getElementById('votos-abstencoes').innerText = `${data.resumo.abstencoes}\n(${data.resumo.pctAbstencoes}%)`;
+            // Injeta os votos com proteções contra dados ausentes
+            const resumo = data.resumo || {};
+            document.getElementById('votos-validos').innerText = `${resumo.validos || '--'}\n(${resumo.pctValidos || '0,00'}%)`;
+            document.getElementById('votos-brancos').innerText = `${resumo.brancos || '--'}\n(${resumo.pctBrancos || '0,00'}%)`;
+            document.getElementById('votos-nulos').innerText = `${resumo.nulos || '--'}\n(${resumo.pctNulos || '0,00'}%)`;
+            document.getElementById('votos-abstencoes').innerText = `${resumo.abstencoes || '--'}\n(${resumo.pctAbstencoes || '0,00'}%)`;
 
-            let candidatosParaRenderizar = [...data.candidatos];
+            let candidatosParaRenderizar = [...(data.candidatos || [])];
 
             if (turno === '1' && (cargo === '1' || cargo === '3')) {
                 const temAlguemEleito = candidatosParaRenderizar.some(c => c.eleito);
@@ -463,7 +467,7 @@
 
             candidatosParaRenderizar.forEach(cand => {
                 let badgeHTML = '';
-                let percentualVotos = parseFloat(cand.votos);
+                let percentualVotos = parseFloat(cand.votos || 0);
 
                 if (turno === '1' && (cargo === '1' || cargo === '3')) {
                     if (cand.eleito && percentualVotos > 50) {
@@ -485,21 +489,21 @@
                                     <img src="${cand.foto}" 
                                         class="foto-cand" 
                                         onerror="this.src='https://via.placeholder.com/50?text=👤'" 
-                                        alt="${cand.nome}">
+                                        alt="${cand.nome || 'Candidato'}">
                                 </div>
                                 <div class="info-textos">
-                                    <span class="nome-cand">${cand.nome}</span>
-                                    <span class="partido-tag">${cand.partido}</span>
+                                    <span class="nome-cand">${cand.nome || 'Nome Indisponível'}</span>
+                                    <span class="partido-tag">${cand.partido || 'N/A'}</span>
                                     ${badgeHTML}
                                 </div>
                             </div>
-                            <div class="percentual">${cand.votos}%</div>
+                            <div class="percentual">${cand.votos || '0,00'}%</div>
                         </div>
                         <div class="barra-cand-bg">
-                            <div class="barra-cand-fill" style="width: ${cand.votos}%"></div>
+                            <div class="barra-cand-fill" style="width: ${cand.votos || 0}%"></div>
                         </div>
                         <div class="votos-absolutos">
-                            <span>${cand.total} votos</span>
+                            <span>${cand.total || 0} votos</span>
                         </div>
                     </div>
                 `;
