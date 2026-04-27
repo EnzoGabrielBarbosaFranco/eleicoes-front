@@ -11,6 +11,43 @@ function toggleResumo() {
     }
 }
 
+const selectTurno = document.getElementById('select-turno');
+const selectCargo = document.getElementById('select-cargo');
+const selectUf = document.getElementById('select-uf');
+
+function salvarFiltros() {
+    if (selectTurno) localStorage.setItem('filtroTurno', selectTurno.value);
+    if (selectCargo) localStorage.setItem('filtroCargo', selectCargo.value);
+    if (selectUf) localStorage.setItem('filtroUf', selectUf.value);
+}
+
+function carregarFiltros() {
+    const turnoSalvo = localStorage.getItem('filtroTurno');
+    const cargoSalvo = localStorage.getItem('filtroCargo');
+    const ufSalva = localStorage.getItem('filtroUf');
+
+    // Restaura os valores salvos
+    if (turnoSalvo && selectTurno) selectTurno.value = turnoSalvo;
+    if (cargoSalvo && selectCargo) selectCargo.value = cargoSalvo;
+    if (ufSalva && selectUf) selectUf.value = ufSalva;
+
+    // Reaplica a regra: Se for Presidente, trava a UF em "BR"
+    if (selectCargo && selectCargo.value === '1') {
+        if (selectUf) {
+            selectUf.value = 'br';
+            selectUf.disabled = true;
+        }
+    } else if (selectUf) {
+        selectUf.disabled = false;
+    }
+}
+
+if (selectTurno && selectCargo && selectUf) {
+    selectTurno.addEventListener('change', () => { salvarFiltros(); atualizarApuracao(); });
+    selectCargo.addEventListener('change', () => { salvarFiltros(); atualizarApuracao(); });
+    selectUf.addEventListener('change', () => { salvarFiltros(); atualizarApuracao(); });
+}
+
 async function atualizarApuracao() {
     const selectTurno = document.getElementById('select-turno');
     const selectCargo = document.getElementById('select-cargo');
@@ -144,5 +181,6 @@ function sugerirLocalizacao() {
     atualizarApuracao();
 }
 
+carregarFiltros();
 sugerirLocalizacao();
 setInterval(atualizarApuracao, 120000);
