@@ -11,14 +11,6 @@ async function atualizarApuracao() {
     const turno = selectTurno.value;
     const cargo = selectCargo.value;
     let uf = selectUf.value;
-    
-    // FUNCIONALIDADE: White-label (Cor via URL)
-    const parametrosUrl = new URLSearchParams(window.location.search);
-    const corCustomizada = parametrosUrl.get('cor');
-    if (corCustomizada) {
-        // Altera a variável CSS raiz para a cor escolhida pelo cliente
-        document.documentElement.style.setProperty('--cor-principal', `#${corCustomizada}`);
-    }
 
     if (cargo === '1') {
         selectUf.value = 'br'; 
@@ -134,7 +126,7 @@ async function atualizarApuracao() {
                         <div class="percentual">${cand.votos || '0,00'}%</div>
                     </div>
                     <div class="barra-cand-bg">
-                        <div class="barra-cand-fill" style="width: ${cand.votos || 0}%; background-color: var(--cor-principal, #2563eb);"></div>
+                        <div class="barra-cand-fill" style="width: ${cand.votos || 0}%"></div>
                     </div>
                     <div class="votos-absolutos">
                         <span>${cand.total || 0} votos</span>
