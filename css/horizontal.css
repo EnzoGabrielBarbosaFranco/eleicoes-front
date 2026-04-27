@@ -238,13 +238,105 @@ select {
 
 .loading-msg { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
 
-/* Responsividade para telas menores que o banner completo */
 @media (max-width: 768px) {
-    .widget-horizontal { flex-direction: column; height: auto; }
-    .bloco-header { align-items: center; padding: 10px; }
-    .controles { width: 100%; justify-content: center; }
-    .bloco-status { border-right: none; border-bottom: 1px solid var(--border-color); align-items: center; }
-    .status-topo { width: 100%; max-width: 300px; }
-    .barra-total-bg { width: 100%; max-width: 300px; }
-    .bloco-carrossel { padding: 15px; }
+    .widget-horizontal { 
+        flex-direction: column; 
+        height: auto; 
+        border-radius: 6px;
+    }
+
+    .bloco-header { 
+        padding: 6px 10px; 
+        min-width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .bloco-header h2 { 
+        margin: 0; 
+        font-size: 0.8rem; 
+        white-space: nowrap;
+    }
+
+    .controles { 
+        width: auto;
+        flex: 1;
+        justify-content: flex-end;
+    }
+
+    .controles select {
+        padding: 4px 6px;
+        padding-right: 18px;
+        font-size: 0.7rem;
+        background-size: 6px auto;
+    }
+
+    .bloco-status { 
+        padding: 6px 10px;
+        border-right: none; 
+        border-bottom: 1px solid var(--border-color); 
+        min-width: 100%;
+    }
+
+    .status-topo { 
+        margin-bottom: 4px;
+        font-size: 0.75rem;
+    }
+
+    .barra-total-bg { 
+        margin-bottom: 4px;
+        height: 4px;
+    }
+
+    .data-hora {
+        display: block;
+        text-align: center;
+        font-size: 0.6rem;
+    }
+
+    .bloco-carrossel { 
+        padding: 8px 10px; 
+        gap: 10px;
+    }
+
+    .card-cand {
+        min-width: 200px;
+        height: 50px;
+        padding: 6px 10px;
+    }
+
+    .foto-container {
+        width: 30px;
+        height: 30px;
+    }
+
+    .card-topo {
+        margin-bottom: 2px;
+    }
+
+    .card-nome { 
+        font-size: 0.75rem; 
+        max-width: 90px;
+    }
+
+    .card-pct { 
+        font-size: 0.85rem; 
+    }
+
+    .card-barra-bg {
+        height: 3px;
+        margin-bottom: 2px;
+    }
+
+    .card-votos { 
+        font-size: 0.6rem; 
+    }
+
+    .eleito-badge {
+        font-size: 0.45rem;
+        padding: 2px 4px;
+        bottom: -6px;
+        right: 8px;
+    }
 }

@@ -131,4 +131,4 @@ function sugerirLocalizacao() {
 }
 
 sugerirLocalizacao();
-setInterval(atualizarApuracao, 30000);
+setInterval(atualizarApuracao, 120000);
