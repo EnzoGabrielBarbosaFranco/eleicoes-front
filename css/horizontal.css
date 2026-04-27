@@ -6,6 +6,7 @@
     --text-dark: #202124;
     --text-muted: #70757a;
     --border-color: #dadce0;
+    --cor-principal: #2563eb;
 }
 
 * {
@@ -339,4 +340,15 @@ select {
         bottom: -6px;
         right: 8px;
     }
+}
+
+.badge-virada {
+    background-color: #ef4444 !important; /* Vermelho vivo */
+    color: white !important;
+    animation: piscarVirada 1s infinite alternate;
+}
+
+@keyframes piscarVirada {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0.8; transform: scale(1.05); }
 }

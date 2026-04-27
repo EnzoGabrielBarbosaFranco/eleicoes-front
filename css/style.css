@@ -6,6 +6,7 @@
     --text-dark: #202124;
     --text-muted: #5f6368;
     --border-color: #dadce0;
+    --cor-principal: #2563eb;
 }
 
 * {
@@ -281,4 +282,15 @@ select option { color: #333; background: #fff; }
     }
     .resumo-item { border-right: none; }
     .resumo-item:nth-child(odd) { border-right: 1px solid var(--border-color); }
+}
+
+.badge-virada {
+    background-color: #ef4444 !important; /* Vermelho vivo */
+    color: white !important;
+    animation: piscarVirada 1s infinite alternate;
+}
+
+@keyframes piscarVirada {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0.8; transform: scale(1.05); }
 }

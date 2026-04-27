@@ -1,3 +1,6 @@
+// Memória global para o alerta de virada
+let liderAnterior = null; 
+
 async function atualizarApuracao() {
     const selectTurno = document.getElementById('select-turno');
     const selectCargo = document.getElementById('select-cargo');
@@ -9,6 +12,14 @@ async function atualizarApuracao() {
     const cargo = selectCargo.value;
     let uf = selectUf.value;
     
+    // INÍCIO: White-label (Customização de Cor via URL)
+    const parametrosUrl = new URLSearchParams(window.location.search);
+    const corCustomizada = parametrosUrl.get('cor');
+    if (corCustomizada) {
+        document.documentElement.style.setProperty('--cor-principal', `#${corCustomizada}`);
+    }
+    // FIM: White-label
+
     if (cargo === '1') {
         selectUf.value = 'br'; 
         uf = 'br';
@@ -22,7 +33,6 @@ async function atualizarApuracao() {
     }
 
     try {
-        // URL atualizada para o Cloudflare
         const url = `https://backend-eleicoes.enzoddos7.workers.dev/api/apuracao?turno=${turno}&cargo=${cargo}&uf=${uf}`;
         const response = await fetch(url);
         const data = await response.json();
@@ -35,7 +45,6 @@ async function atualizarApuracao() {
             return;
         }
 
-        // Tratamento seguro para o percurso
         const percursoBruto = data.percurso || "0,00";
         let percursoCss = percursoBruto.replace(',', '.'); 
         document.getElementById('barra-percurso').style.width = `${percursoCss}%`;
@@ -47,8 +56,18 @@ async function atualizarApuracao() {
         document.getElementById('txt-percurso').innerText = `${textoPercurso}%`;
         document.getElementById('ultima-atualizacao').innerText = `Atualizado: ${data.atualizacao || '--:--'}`;
 
-        // Fallback para array vazio caso falte o dado
         let candidatosParaRenderizar = [...(data.candidatos || [])];
+        if (candidatosParaRenderizar.length === 0) return;
+
+        // INÍCIO: Lógica da Virada
+        const liderAtual = candidatosParaRenderizar[0].nome;
+        let houveVirada = false;
+
+        if (liderAnterior !== null && liderAnterior !== liderAtual) {
+            houveVirada = true;
+        }
+        liderAnterior = liderAtual;
+        // FIM: Lógica da Virada
 
         if (turno === '1' && (cargo === '1' || cargo === '3')) {
             const temAlguemEleito = candidatosParaRenderizar.some(c => c.eleito);
@@ -64,15 +83,17 @@ async function atualizarApuracao() {
         }
 
         const lista = document.getElementById('lista-candidatos');
-        
         let scrollPosition = lista.scrollLeft;
         lista.innerHTML = ''; 
 
-        candidatosParaRenderizar.forEach(cand => {
+        candidatosParaRenderizar.forEach((cand, index) => {
             let badgeHTML = '';
             let percentualVotos = parseFloat(cand.votos || 0);
 
-            if (turno === '1' && (cargo === '1' || cargo === '3')) {
+            // Verificação hierárquica das tags: Virada ganha prioridade no index 0
+            if (index === 0 && houveVirada) {
+                badgeHTML = '<div class="eleito-badge badge-virada">🔥 NOVA VIRADA!</div>';
+            } else if (turno === '1' && (cargo === '1' || cargo === '3')) {
                 if (cand.eleito && percentualVotos > 50) {
                     badgeHTML = '<div class="eleito-badge badge-verde">Eleito no 1º T</div>';
                 } else if (cand.segundoTurno || cand.passouTurno || (cand.eleito && percentualVotos <= 50)) {
@@ -98,7 +119,7 @@ async function atualizarApuracao() {
                             <span class="card-pct">${cand.votos || '0,00'}%</span>
                         </div>
                         <div class="card-barra-bg">
-                            <div class="card-barra-fill" style="width: ${cand.votos || 0}%"></div>
+                            <div class="card-barra-fill" style="width: ${cand.votos || 0}%; background-color: var(--cor-principal, #2563eb);"></div>
                         </div>
                         <div class="card-votos">${cand.total || 0} votos</div>
                     </div>
@@ -115,6 +136,7 @@ async function atualizarApuracao() {
     }
 }
 
+// Mecanismo de Auto-scroll mantido intacto
 const carrossel = document.getElementById('lista-candidatos');
 let isPaused = false;
 
