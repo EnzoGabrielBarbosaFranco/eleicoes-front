@@ -1,6 +1,3 @@
-// Variável global para armazenar quem estava ganhando na última checagem
-let liderAnterior = null; 
-
 async function atualizarApuracao() {
     const selectTurno = document.getElementById('select-turno');
     const selectCargo = document.getElementById('select-cargo');
@@ -11,7 +8,7 @@ async function atualizarApuracao() {
     const turno = selectTurno.value;
     const cargo = selectCargo.value;
     let uf = selectUf.value;
-
+    
     if (cargo === '1') {
         selectUf.value = 'br'; 
         uf = 'br';
@@ -27,6 +24,7 @@ async function atualizarApuracao() {
     try {
         document.getElementById('ultima-atualizacao').innerText = "Buscando dados...";
         
+        // Link atualizado para o ambiente de produção na Cloudflare
         const url = `https://backend-eleicoes.enzoddos7.workers.dev/api/apuracao?turno=${turno}&cargo=${cargo}&uf=${uf}`;
         const response = await fetch(url);
         const data = await response.json();
@@ -39,6 +37,7 @@ async function atualizarApuracao() {
             return;
         }
 
+        // Tratamento seguro do percurso para evitar erros no CSS
         const percursoBruto = data.percurso || "0,00";
         let percursoCss = percursoBruto.replace(',', '.'); 
         document.getElementById('barra-percurso').style.width = `${percursoCss}%`;
@@ -50,6 +49,7 @@ async function atualizarApuracao() {
         document.getElementById('txt-percurso').innerText = `${textoPercurso}%`;
         document.getElementById('ultima-atualizacao').innerText = `Atualizado em: ${data.atualizacao || 'Sem informação de hora'}`;
 
+        // Injeta os votos com proteções contra dados ausentes
         const resumo = data.resumo || {};
         document.getElementById('votos-validos').innerText = `${resumo.validos || '--'}\n(${resumo.pctValidos || '0,00'}%)`;
         document.getElementById('votos-brancos').innerText = `${resumo.brancos || '--'}\n(${resumo.pctBrancos || '0,00'}%)`;
@@ -57,19 +57,7 @@ async function atualizarApuracao() {
         document.getElementById('votos-abstencoes').innerText = `${resumo.abstencoes || '--'}\n(${resumo.pctAbstencoes || '0,00'}%)`;
 
         let candidatosParaRenderizar = [...(data.candidatos || [])];
-        if (candidatosParaRenderizar.length === 0) return;
 
-        // FUNCIONALIDADE: Alerta de Virada
-        const liderAtual = candidatosParaRenderizar[0].nome;
-        let houveVirada = false;
-
-        // Verifica se o líder mudou em relação à última vez
-        if (liderAnterior !== null && liderAnterior !== liderAtual) {
-            houveVirada = true;
-        }
-        liderAnterior = liderAtual; // Atualiza a memória
-
-        // Regra de top 2 (que você já tinha feito)
         if (turno === '1' && (cargo === '1' || cargo === '3')) {
             const temAlguemEleito = candidatosParaRenderizar.some(c => c.eleito);
             const apiJaMarcouSegundoTurno = candidatosParaRenderizar.some(c => c.segundoTurno);
@@ -88,14 +76,11 @@ async function atualizarApuracao() {
         const lista = document.getElementById('lista-candidatos');
         lista.innerHTML = ''; 
 
-        candidatosParaRenderizar.forEach((cand, index) => {
+        candidatosParaRenderizar.forEach(cand => {
             let badgeHTML = '';
             let percentualVotos = parseFloat(cand.votos || 0);
 
-            // Verifica as tags na ordem: Virada -> Eleito 1ºT -> 2ºT -> Eleito
-            if (index === 0 && houveVirada) {
-                badgeHTML = '<span class="eleito-badge badge-virada">🔥 NOVA VIRADA!</span>';
-            } else if (turno === '1' && (cargo === '1' || cargo === '3')) {
+            if (turno === '1' && (cargo === '1' || cargo === '3')) {
                 if (cand.eleito && percentualVotos > 50) {
                     badgeHTML = '<span class="eleito-badge badge-verde">Eleito no 1º Turno</span>';
                 } else if (cand.segundoTurno || cand.passouTurno || (cand.eleito && percentualVotos <= 50)) {
