@@ -2,9 +2,9 @@
 (function() {
     // 1. Lista Centralizada de Clientes (Adicione os novos domínios aqui)
     const clientesAutorizados = [
-        'angular-transportes.vercel.app', // Cliente Exemplo
-        'g1.globo.com',                   // Cliente Exemplo
-        'localhost'                       // Para você testar no seu PC
+        'angular-transportes.vercel.app', 
+        'localhost',
+        '127.0.0.1'
     ];
 
     // 2. Descobre quem está tentando carregar o Iframe
