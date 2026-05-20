@@ -1,6 +1,7 @@
 (function() {
     const clientesAutorizados = [
         'angular-transportes.vercel.app', 
+        'pagina-eleicao.vercel.app', // <-- Novo site adicionado aqui
         'localhost',
         '127.0.0.1'
     ];
