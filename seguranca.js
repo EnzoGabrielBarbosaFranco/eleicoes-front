@@ -3,6 +3,7 @@
     // 1. Lista Centralizada de Clientes (Adicione os novos domínios aqui)
     const clientesAutorizados = [
         'angular-transportes.vercel.app', 
+        'alpha4-agrominerais.vercel.app', // <- Novo cliente adicionado aqui
         'localhost',
         '127.0.0.1'
     ];
