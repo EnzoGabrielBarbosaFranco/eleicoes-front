@@ -3,7 +3,7 @@
     const ANO_DEMONSTRACAO = 2022;
     const CODIGO_AGUARDANDO_TSE = 'ELEICAO_AGUARDANDO_TSE';
     const MENSAGEM_AGUARDANDO = 'Os resultados de 2026 ainda não foram liberados pelo TSE.';
-    const API_PRODUCAO = 'https://backend-eleicoes.enzoddos7.workers.dev';
+    const API_PRODUCAO = 'https://backend-eleicoes.enzo-eleicoes-backend.workers.dev/';
 
     function obterApiBaseUrl() {
         if (window.location.hostname === '127.0.0.1') return 'http://127.0.0.1:8787';
