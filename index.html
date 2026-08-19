@@ -5,24 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Apuração 2026 - Padrão</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/widget.css">
 </head>
-<body>
+<body data-widget="padrao">
     <div class="widget-container">
         <div class="widget-header">
-            <h2>Apuração das Eleições de 2026</h2>
-            <div class="controles">
-                <select id="select-turno" onchange="atualizarApuracao()">
+            <div class="header-brand">
+                <div class="header-copy">
+                    <span class="header-kicker">Resultados eleitorais</span>
+                    <h2>Apuração das Eleições de 2026</h2>
+                </div>
+                <span id="ano-badge" class="ano-badge">2026</span>
+            </div>
+            <div class="controles" role="group" aria-label="Filtros da apuração">
+                <select id="select-turno" aria-label="Turno">
                     <option value="1">1º Turno</option>
                     <option value="2">2º Turno</option>
                 </select>
-                <select id="select-cargo" onchange="atualizarApuracao()">
+                <select id="select-cargo" aria-label="Cargo">
                     <option value="1">Presidente</option>
                     <option value="3">Governador</option>
                     <option value="5">Senador</option>
                     <option value="6">Deputado Federal</option>
                     <option value="7">Deputado Estadual</option>
                 </select>
-                <select id="select-uf" onchange="atualizarApuracao()">
+                <select id="select-uf" aria-label="Unidade federativa">
                     <option value="br">Brasil (Total)</option>
                     <option value="ac">Acre</option>
                     <option value="al">Alagoas</option>
@@ -57,13 +64,13 @@
 
         <div class="status-geral">
             <div class="info-topo">
-                <span>Urnas Apuradas</span>
+                <span class="status-label"><span class="status-dot" aria-hidden="true"></span>Urnas apuradas</span>
                 <span id="txt-percurso">0,00%</span>
             </div>
-            <div class="barra-progresso-total">
+            <div class="barra-progresso-total" role="progressbar" aria-label="Percentual de urnas apuradas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                 <div id="barra-percurso" class="preenchimento-total"></div>
             </div>
-            <span id="ultima-atualizacao" class="data-hora">Iniciando conexão...</span>
+            <span id="ultima-atualizacao" class="data-hora" aria-live="polite">Iniciando conexão...</span>
         </div>
 
         <div class="resumo-votos">
@@ -85,11 +92,12 @@
             </div>
         </div>
 
-        <div id="lista-candidatos" class="lista-candidatos">
-            <div class="loading-overlay">Buscando dados no TSE...</div>
+        <div id="lista-candidatos" class="lista-candidatos" aria-live="polite" aria-busy="true">
+            <div class="loading-overlay"><span class="loading-spinner" aria-hidden="true"></span>Buscando dados no TSE...</div>
         </div>
     </div>
   <script src="seguranca.js"></script>
+  <script src="/js/widget.js"></script>
   <script src="/js/script.js"></script>
 </body>
 </html>

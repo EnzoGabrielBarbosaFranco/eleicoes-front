@@ -5,24 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Apuração 2026 - Horizontal</title>
     <link rel="stylesheet" href="/css/horizontal.css">
+    <link rel="stylesheet" href="/css/widget.css">
 </head>
-<body>
+<body data-widget="horizontal">
     <div class="widget-horizontal">
         <div class="bloco-header">
-            <h2>Apuração 2026</h2>
-            <div class="controles">
-                <select id="select-turno" class="sel-turno" onchange="atualizarApuracao()">
+            <div class="header-brand">
+                <div class="header-copy">
+                    <span class="header-kicker">Resultados TSE</span>
+                    <h2>Apuração 2026</h2>
+                </div>
+                <span id="ano-badge" class="ano-badge">2026</span>
+            </div>
+            <div class="controles" role="group" aria-label="Filtros da apuração">
+                <select id="select-turno" class="sel-turno" aria-label="Turno">
                     <option value="1">1º</option>
                     <option value="2">2º</option>
                 </select>
-                <select id="select-cargo" class="sel-cargo" onchange="atualizarApuracao()">
+                <select id="select-cargo" class="sel-cargo" aria-label="Cargo">
                     <option value="1">Presidente</option>
                     <option value="3">Governador</option>
                     <option value="5">Senador</option>
                     <option value="6">Dep. Federal</option>
                     <option value="7">Dep. Estadual</option>
                 </select>
-                <select id="select-uf" class="sel-uf" onchange="atualizarApuracao()">
+                <select id="select-uf" class="sel-uf" aria-label="Unidade federativa">
                     <option value="br">BR</option>
                     <option value="ac">AC</option>
                     <option value="al">AL</option>
@@ -57,20 +64,21 @@
 
         <div class="bloco-status">
             <div class="status-topo">
-                <span>Urnas Apuradas</span>
+                <span class="status-label"><span class="status-dot" aria-hidden="true"></span>Urnas apuradas</span>
                 <span id="txt-percurso">0,00%</span>
             </div>
-            <div class="barra-total-bg">
+            <div class="barra-total-bg" role="progressbar" aria-label="Percentual de urnas apuradas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                 <div id="barra-percurso" class="barra-total-fill"></div>
             </div>
-            <span id="ultima-atualizacao" class="data-hora">Conectando...</span>
+            <span id="ultima-atualizacao" class="data-hora" aria-live="polite">Conectando...</span>
         </div>
 
-        <div id="lista-candidatos" class="bloco-carrossel">
-            <span class="loading-msg">Buscando dados no TSE...</span>
+        <div id="lista-candidatos" class="bloco-carrossel" aria-live="polite" aria-busy="true">
+            <span class="loading-msg"><span class="loading-spinner" aria-hidden="true"></span>Buscando dados no TSE...</span>
         </div>
     </div>
     <script src="seguranca.js"></script>
+    <script src="/js/widget.js"></script>
     <script src="/js/horizontal.js"></script>
 </body>
 </html>
