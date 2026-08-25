@@ -431,50 +431,47 @@
 
         if (layoutHorizontal) {
             let ultimoFrame = performance.now();
-            const velocidadePixelsPorSegundo = 72;
+            const velocidadeDesktop = 72;
+            const velocidadeMobile = 88;
             const permiteAutoScroll = window.matchMedia('(min-width: 761px)');
 
-            lista.addEventListener('mouseenter', () => { estado.pausado = true; });
+            lista.addEventListener('mouseenter', () => {
+                if (permiteAutoScroll.matches) estado.pausado = true;
+            });
             lista.addEventListener('mouseleave', () => {
+                if (!permiteAutoScroll.matches) return;
                 estado.pausado = false;
                 estado.iniciarAutoScrollEm = Date.now() + 500;
             });
-            lista.addEventListener('touchstart', () => { estado.pausado = true; }, { passive: true });
-            lista.addEventListener('touchend', () => {
-                window.setTimeout(() => {
-                    estado.pausado = false;
-                    estado.iniciarAutoScrollEm = Date.now() + 2600;
-                }, 900);
-            }, { passive: true });
-            lista.addEventListener('wheel', () => {
-                estado.iniciarAutoScrollEm = Date.now() + 2600;
+            lista.addEventListener('touchstart', () => {
+                estado.pausado = true;
             }, { passive: true });
 
-            function avancarCardMobile() {
-                const itens = Array.from(lista.querySelectorAll('.card-cand, .carregar-mais'));
-                if (itens.length < 2) return;
-
-                const limiteAtual = lista.scrollLeft + 20;
-                const proximoItem = itens.find((item) => item.offsetLeft > limiteAtual) || itens[0];
-                const destino = proximoItem === itens[0] ? 0 : Math.max(0, proximoItem.offsetLeft - 12);
-
-                lista.scrollTo({ left: destino, behavior: 'smooth' });
-                estado.iniciarAutoScrollEm = Date.now() + 3400;
+            function liberarAposToque() {
+                estado.pausado = false;
+                estado.iniciarAutoScrollEm = Date.now() + 700;
             }
+
+            lista.addEventListener('touchend', liberarAposToque, { passive: true });
+            lista.addEventListener('touchcancel', liberarAposToque, { passive: true });
+            lista.addEventListener('wheel', () => {
+                estado.iniciarAutoScrollEm = Date.now() + 700;
+            }, { passive: true });
 
             function animarAutoScroll(tempoAtual) {
                 const tempoDecorrido = Math.min(tempoAtual - ultimoFrame, 50);
                 ultimoFrame = tempoAtual;
+                const velocidadeAtual = permiteAutoScroll.matches
+                    ? velocidadeDesktop
+                    : velocidadeMobile;
 
-                if (permiteAutoScroll.matches && !estado.pausado && Date.now() >= estado.iniciarAutoScrollEm && lista.scrollWidth > lista.clientWidth) {
-                    lista.scrollLeft += (velocidadePixelsPorSegundo * tempoDecorrido) / 1000;
+                if (!estado.pausado && Date.now() >= estado.iniciarAutoScrollEm && lista.scrollWidth > lista.clientWidth) {
+                    lista.scrollLeft += (velocidadeAtual * tempoDecorrido) / 1000;
 
                     if (lista.scrollLeft >= lista.scrollWidth - lista.clientWidth - 1) {
                         lista.scrollLeft = 0;
                         estado.iniciarAutoScrollEm = Date.now() + 900;
                     }
-                } else if (!permiteAutoScroll.matches && !estado.pausado && Date.now() >= estado.iniciarAutoScrollEm && lista.scrollWidth > lista.clientWidth) {
-                    avancarCardMobile();
                 }
 
                 window.requestAnimationFrame(animarAutoScroll);

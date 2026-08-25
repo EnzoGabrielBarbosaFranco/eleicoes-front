@@ -13,7 +13,7 @@ body[data-widget="horizontal"] {
 
 body[data-widget="horizontal"] .widget-horizontal {
     width: min(100%, 1200px);
-    height: 96px;
+    height: 100px;
 }
 
 @media (max-width: 760px) {
