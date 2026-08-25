@@ -20,16 +20,6 @@
             .replaceAll("'", '&#039;');
     }
 
-    function rotuloFase(fase) {
-        const rotulos = {
-            simulado: 'Simulado',
-            oficial: 'Oficial',
-            historico: 'Histórico',
-            aguardando_tse: 'Aguardando TSE'
-        };
-        return rotulos[fase] || fase || 'Não informada';
-    }
-
     function percentualNumerico(valor) {
         const numero = Number.parseFloat(String(valor ?? '0').replace(',', '.'));
         if (!Number.isFinite(numero)) return 0;
@@ -38,6 +28,11 @@
 
     function formatarPercentual(valor) {
         return String(valor ?? '0,00').replace('.', ',');
+    }
+
+    function extrairHorario(atualizacao) {
+        const correspondencia = String(atualizacao || '').match(/\b(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\b/);
+        return correspondencia ? correspondencia[0] : '';
     }
 
     function obterIniciais(nome) {
@@ -86,7 +81,7 @@
         const ultimaAtualizacao = document.getElementById('ultima-atualizacao');
         const barraProgresso = barraPercurso.parentElement;
         const raizWidget = document.querySelector('.widget-container, .widget-horizontal');
-        const anoBadge = document.getElementById('ano-badge');
+        const layoutHorizontal = tipo === 'horizontal' || tipo === '970x250';
 
         if (!selectTurno || !selectCargo || !selectUf || !lista || !textoPercurso || !barraPercurso || !ultimaAtualizacao) {
             console.error('Não foi possível iniciar o widget: elementos obrigatórios não encontrados.');
@@ -96,7 +91,6 @@
         const estado = {
             resultadosDisponiveis: false,
             anoExibido: ANO_ELEICAO_ATUAL,
-            usandoDemonstracao: false,
             quantidadeVisivel: loteDeputados,
             ultimaApuracao: null,
             ultimaConsulta: 0,
@@ -106,18 +100,12 @@
 
         function definirAnoExibido(ano) {
             estado.anoExibido = Number(ano);
-            estado.usandoDemonstracao = estado.anoExibido === ANO_DEMONSTRACAO;
 
             if (raizWidget) raizWidget.dataset.ano = String(estado.anoExibido);
-            if (anoBadge) {
-                anoBadge.innerText = estado.usandoDemonstracao ? 'Demo 2022' : String(estado.anoExibido);
-                anoBadge.classList.toggle('is-demo', estado.usandoDemonstracao);
-            }
-
             const titulo = document.querySelector('.widget-header h2, .bloco-header h2');
             if (!titulo) return;
 
-            const tituloCompacto = tipo === '300x250' || tipo === 'horizontal';
+            const tituloCompacto = tipo === '300x250' || layoutHorizontal;
             titulo.innerText = tituloCompacto
                 ? `Apuração ${estado.anoExibido}`
                 : `Apuração das Eleições de ${estado.anoExibido}`;
@@ -182,7 +170,7 @@
             estado.ultimaApuracao = null;
             definirCarregando(false);
             limparProgresso();
-            ultimaAtualizacao.innerText = 'Fase: Aguardando TSE';
+            ultimaAtualizacao.innerText = 'Aguardando TSE';
             lista.innerHTML = `
                 <div class="estado-eleicao estado-aguardando" role="status">
                     <span class="estado-icone" aria-hidden="true">◷</span>
@@ -213,7 +201,10 @@
                 : data.andamento
                     ? String(data.andamento)
                     : 'Em andamento';
-            ultimaAtualizacao.innerText = `Fase: ${rotuloFase(data.fase)} · ${andamento} · Atualizado: ${data.atualizacao || 'sem horário'}`;
+            const horarioAtualizacao = extrairHorario(data.atualizacao);
+            ultimaAtualizacao.innerText = horarioAtualizacao
+                ? `${andamento} · ${horarioAtualizacao}`
+                : andamento;
             atualizarResumo(data.resumo || {});
         }
 
@@ -318,7 +309,6 @@
             if (cargo === '5' && anoDosDados === 2026) partes.push('2 vagas para o Senado em 2026');
             else if (vagas != null) partes.push(`${vagas} vaga${Number(vagas) === 1 ? '' : 's'}`);
 
-            partes.push(`Fase: ${rotuloFase(data.fase)}`);
             return `<div class="eleicao-meta">${partes.map(escaparHtml).join('<span aria-hidden="true">•</span>')}</div>`;
         }
 
@@ -330,7 +320,7 @@
                 ? candidatos.slice(0, estado.quantidadeVisivel)
                 : candidatos;
             const posicaoScroll = lista.scrollLeft;
-            const criarCard = tipo === 'horizontal' ? criarCardHorizontal : criarCardVertical;
+            const criarCard = layoutHorizontal ? criarCardHorizontal : criarCardVertical;
 
             let conteudo = criarMetadados(data, cargo);
             if (candidatosVisiveis.length === 0) {
@@ -347,7 +337,7 @@
             lista.innerHTML = conteudo;
             lista.scrollLeft = posicaoScroll;
             definirCarregando(false);
-            if (tipo === 'horizontal') estado.iniciarAutoScrollEm = Date.now() + 1600;
+            if (layoutHorizontal) estado.iniciarAutoScrollEm = Date.now() + 1600;
 
             const botaoCarregarMais = lista.querySelector('.carregar-mais');
             if (botaoCarregarMais) {
@@ -439,9 +429,10 @@
 
         [selectTurno, selectCargo, selectUf].forEach((select) => select.addEventListener('change', aoAlterarFiltro));
 
-        if (tipo === 'horizontal') {
+        if (layoutHorizontal) {
             let ultimoFrame = performance.now();
             const velocidadePixelsPorSegundo = 72;
+            const permiteAutoScroll = window.matchMedia('(min-width: 761px)');
 
             lista.addEventListener('mouseenter', () => { estado.pausado = true; });
             lista.addEventListener('mouseleave', () => {
@@ -452,24 +443,38 @@
             lista.addEventListener('touchend', () => {
                 window.setTimeout(() => {
                     estado.pausado = false;
-                    estado.iniciarAutoScrollEm = Date.now() + 500;
+                    estado.iniciarAutoScrollEm = Date.now() + 2600;
                 }, 900);
             }, { passive: true });
             lista.addEventListener('wheel', () => {
-                estado.iniciarAutoScrollEm = Date.now() + 700;
+                estado.iniciarAutoScrollEm = Date.now() + 2600;
             }, { passive: true });
+
+            function avancarCardMobile() {
+                const itens = Array.from(lista.querySelectorAll('.card-cand, .carregar-mais'));
+                if (itens.length < 2) return;
+
+                const limiteAtual = lista.scrollLeft + 20;
+                const proximoItem = itens.find((item) => item.offsetLeft > limiteAtual) || itens[0];
+                const destino = proximoItem === itens[0] ? 0 : Math.max(0, proximoItem.offsetLeft - 12);
+
+                lista.scrollTo({ left: destino, behavior: 'smooth' });
+                estado.iniciarAutoScrollEm = Date.now() + 3400;
+            }
 
             function animarAutoScroll(tempoAtual) {
                 const tempoDecorrido = Math.min(tempoAtual - ultimoFrame, 50);
                 ultimoFrame = tempoAtual;
 
-                if (!estado.pausado && Date.now() >= estado.iniciarAutoScrollEm && lista.scrollWidth > lista.clientWidth) {
+                if (permiteAutoScroll.matches && !estado.pausado && Date.now() >= estado.iniciarAutoScrollEm && lista.scrollWidth > lista.clientWidth) {
                     lista.scrollLeft += (velocidadePixelsPorSegundo * tempoDecorrido) / 1000;
 
                     if (lista.scrollLeft >= lista.scrollWidth - lista.clientWidth - 1) {
                         lista.scrollLeft = 0;
                         estado.iniciarAutoScrollEm = Date.now() + 900;
                     }
+                } else if (!permiteAutoScroll.matches && !estado.pausado && Date.now() >= estado.iniciarAutoScrollEm && lista.scrollWidth > lista.clientWidth) {
+                    avancarCardMobile();
                 }
 
                 window.requestAnimationFrame(animarAutoScroll);
