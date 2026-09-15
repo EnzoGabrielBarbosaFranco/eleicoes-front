@@ -1,6 +1,9 @@
 (function () {
-    const ANO_ELEICAO = 2022;
-    const API_PRODUCAO = 'https://backend-eleicoes.enzo-eleicoes-backend.workers.dev';
+    const ANO_ELEICAO = 2026;
+    const CODIGO_AGUARDANDO_TSE = 'ELEICAO_AGUARDANDO_TSE';
+    const MENSAGEM_AGUARDANDO = 'Os resultados das Eleições 2026 ainda não estão disponíveis.';
+    const MENSAGEM_INDISPONIVEL = 'Os resultados das Eleições 2026 estão temporariamente indisponíveis.';
+    const API_PRODUCAO = 'https://backend-eleicoes-2026.enzo-eleicoes-backend.workers.dev';
 
     function obterApiBaseUrl() {
         const ambienteLocal = window.location.hostname === '127.0.0.1'
@@ -8,7 +11,7 @@
 
         if (ambienteLocal) {
             const host = window.location.hostname === 'localhost' ? 'localhost' : '127.0.0.1';
-            return `http://${host}:8787`;
+            return `http://${host}:8788`;
         }
 
         return API_PRODUCAO;
@@ -91,13 +94,52 @@
             return;
         }
 
+        const avisoDados = document.createElement('div');
+        avisoDados.className = 'aviso-fonte-dados';
+        avisoDados.setAttribute('role', 'status');
+        avisoDados.setAttribute('aria-live', 'polite');
+        avisoDados.hidden = true;
+        raizWidget.insertBefore(avisoDados, lista);
+
         const estado = {
+            resultadosDisponiveis: false,
+            anoExibido: ANO_ELEICAO,
             quantidadeVisivel: loteDeputados,
             ultimaApuracao: null,
             ultimaConsultaApuracao: 0,
+            ultimaConsultaStatus: 0,
             pausado: false,
             iniciarAutoScrollEm: Date.now() + 1600
         };
+
+        function removerAvisoDados() {
+            avisoDados.hidden = true;
+            avisoDados.className = 'aviso-fonte-dados';
+            avisoDados.textContent = '';
+            raizWidget.classList.remove('tem-aviso-dados');
+        }
+
+        function atualizarAvisoDados(data) {
+            const fase = String(data.fase || '').toLowerCase();
+            let mensagem = '';
+            let modificador = '';
+
+            if (fase === 'simulado') {
+                mensagem = 'SIMULAÇÃO DO TSE — DADOS DE TESTE';
+                modificador = 'aviso-fonte-dados--simulacao';
+            } else if (fase === 'oficial') {
+                mensagem = 'RESULTADOS OFICIAIS — ELEIÇÕES 2026';
+                modificador = 'aviso-fonte-dados--oficial';
+            }
+
+            removerAvisoDados();
+            if (!mensagem) return;
+
+            avisoDados.classList.add(modificador);
+            avisoDados.textContent = mensagem;
+            avisoDados.hidden = false;
+            raizWidget.classList.add('tem-aviso-dados');
+        }
 
         function definirAnoExibido() {
             raizWidget.dataset.ano = String(ANO_ELEICAO);
@@ -116,9 +158,9 @@
         }
 
         function salvarFiltros() {
-            localStorage.setItem('filtro2022Turno', selectTurno.value);
-            localStorage.setItem('filtro2022Cargo', selectCargo.value);
-            localStorage.setItem('filtro2022Uf', selectUf.value);
+            localStorage.setItem('filtro2026Turno', selectTurno.value);
+            localStorage.setItem('filtro2026Cargo', selectCargo.value);
+            localStorage.setItem('filtro2026Uf', selectUf.value);
         }
 
         function ajustarUfAoCargo() {
@@ -133,9 +175,9 @@
         }
 
         function carregarFiltros() {
-            const turnoSalvo = localStorage.getItem('filtro2022Turno');
-            const cargoSalvo = localStorage.getItem('filtro2022Cargo');
-            const ufSalva = localStorage.getItem('filtro2022Uf');
+            const turnoSalvo = localStorage.getItem('filtro2026Turno');
+            const cargoSalvo = localStorage.getItem('filtro2026Cargo');
+            const ufSalva = localStorage.getItem('filtro2026Uf');
 
             if (turnoSalvo) selectTurno.value = turnoSalvo;
             if (cargoSalvo) selectCargo.value = cargoSalvo;
@@ -164,14 +206,37 @@
             atualizarResumo(null);
         }
 
-        function mostrarErro(mensagem) {
-            estado.ultimaApuracao = null;
+        function mostrarAguardando() {
+            estado.resultadosDisponiveis = false;
+            definirCarregando(false);
+            if (estado.ultimaApuracao) return;
+
+            limparProgresso();
+            removerAvisoDados();
+            ultimaAtualizacao.innerText = 'Aguardando resultados de 2026';
+            lista.innerHTML = `
+                <div class="estado-eleicao estado-aguardando" role="status">
+                    <span class="estado-icone" aria-hidden="true">◷</span>
+                    <strong>${MENSAGEM_AGUARDANDO}</strong>
+                </div>
+            `;
+        }
+
+        function preservarUltimaRespostaOuMostrarIndisponivel() {
+            if (estado.ultimaApuracao) {
+                estado.resultadosDisponiveis = true;
+                definirCarregando(false);
+                return;
+            }
+
+            estado.resultadosDisponiveis = false;
             definirCarregando(false);
             limparProgresso();
-            ultimaAtualizacao.innerText = 'Não foi possível atualizar a apuração.';
+            removerAvisoDados();
+            ultimaAtualizacao.innerText = 'Serviço temporariamente indisponível';
             lista.innerHTML = `
                 <div class="estado-eleicao estado-erro" role="alert">
-                    <strong>${escaparHtml(mensagem || 'Erro ao carregar os dados da eleição.')}</strong>
+                    <strong>${MENSAGEM_INDISPONIVEL}</strong>
                 </div>
             `;
         }
@@ -286,10 +351,14 @@
 
         function criarMetadados(data, cargo) {
             const totalCandidatos = data.totalCandidatos ?? (Array.isArray(data.candidatos) ? data.candidatos.length : 0);
-            const vagas = data.vagas ?? (cargo === '5' ? 1 : null);
+            const anoDosDados = Number(data.ano || estado.anoExibido);
+            const vagas = cargo === '5'
+                ? (anoDosDados === 2026 ? 2 : 1)
+                : data.vagas;
             const partes = [`${totalCandidatos} candidato${totalCandidatos === 1 ? '' : 's'}`];
 
-            if (vagas != null) partes.push(`${vagas} vaga${Number(vagas) === 1 ? '' : 's'}`);
+            if (cargo === '5' && anoDosDados === 2026) partes.push('2 vagas para o Senado em 2026');
+            else if (vagas != null) partes.push(`${vagas} vaga${Number(vagas) === 1 ? '' : 's'}`);
 
             return `<div class="eleicao-meta">${partes.map(escaparHtml).join('<span aria-hidden="true">•</span>')}</div>`;
         }
@@ -338,31 +407,70 @@
             const numeroConsulta = ++estado.ultimaConsultaApuracao;
 
             definirCarregando(true);
-            ultimaAtualizacao.innerText = 'Buscando dados...';
+            if (!estado.ultimaApuracao) ultimaAtualizacao.innerText = 'Buscando dados de 2026...';
 
             try {
                 const caminho = `/api/apuracao?ano=${ANO_ELEICAO}&turno=${turno}&cargo=${cargo}&uf=${uf}`;
                 const { response, data } = await requisitarJson(caminho);
                 if (numeroConsulta !== estado.ultimaConsultaApuracao) return;
 
+                if ((response.status === 503 && data.codigo === CODIGO_AGUARDANDO_TSE) || data.fase === 'aguardando_tse') {
+                    mostrarAguardando();
+                    return;
+                }
+
                 if (!response.ok || data.erro) {
-                    mostrarErro(data.mensagem || `A API respondeu com status ${response.status}.`);
+                    preservarUltimaRespostaOuMostrarIndisponivel();
                     return;
                 }
 
                 const anoResposta = Number(data.ano || ANO_ELEICAO);
                 if (anoResposta !== ANO_ELEICAO) {
-                    mostrarErro('A API retornou dados de um ano diferente do solicitado.');
+                    preservarUltimaRespostaOuMostrarIndisponivel();
                     return;
                 }
 
+                estado.resultadosDisponiveis = true;
                 estado.ultimaApuracao = data;
+                atualizarAvisoDados(data);
                 atualizarStatus(data);
                 renderizarCandidatos(data);
             } catch (error) {
                 if (numeroConsulta !== estado.ultimaConsultaApuracao) return;
-                console.error('Erro ao consultar a apuração de 2022:', error);
-                mostrarErro('Não foi possível conectar ao backend da eleição.');
+                console.warn('Não foi possível atualizar a apuração de 2026.', error);
+                preservarUltimaRespostaOuMostrarIndisponivel();
+            }
+        }
+
+        async function consultarStatusEleicao() {
+            const numeroConsulta = ++estado.ultimaConsultaStatus;
+            const aindaSemDados = !estado.ultimaApuracao;
+            if (aindaSemDados) {
+                definirCarregando(true);
+                ultimaAtualizacao.innerText = 'Consultando disponibilidade dos resultados...';
+            }
+
+            try {
+                const { response, data } = await requisitarJson(`/api/status-eleicao?ano=${ANO_ELEICAO}`);
+                if (numeroConsulta !== estado.ultimaConsultaStatus) return;
+
+                const anoResposta = Number(data.ano || ANO_ELEICAO);
+                if (!response.ok || anoResposta !== ANO_ELEICAO) {
+                    preservarUltimaRespostaOuMostrarIndisponivel();
+                    return;
+                }
+
+                if (!data.resultadosDisponiveis || data.fase === 'aguardando_tse') {
+                    mostrarAguardando();
+                    return;
+                }
+
+                estado.resultadosDisponiveis = true;
+                await atualizarApuracao();
+            } catch (error) {
+                if (numeroConsulta !== estado.ultimaConsultaStatus) return;
+                console.warn('Não foi possível consultar o status da eleição de 2026.', error);
+                preservarUltimaRespostaOuMostrarIndisponivel();
             }
         }
 
@@ -370,7 +478,8 @@
             ajustarUfAoCargo();
             salvarFiltros();
             estado.quantidadeVisivel = loteDeputados;
-            atualizarApuracao();
+            if (estado.resultadosDisponiveis) atualizarApuracao();
+            else consultarStatusEleicao();
         }
 
         [selectTurno, selectCargo, selectUf].forEach((select) => select.addEventListener('change', aoAlterarFiltro));
@@ -428,8 +537,8 @@
 
         carregarFiltros();
         definirAnoExibido();
-        atualizarApuracao();
-        window.setInterval(atualizarApuracao, 120000);
+        consultarStatusEleicao();
+        window.setInterval(consultarStatusEleicao, 120000);
     }
 
     window.toggleResumo = toggleResumo;

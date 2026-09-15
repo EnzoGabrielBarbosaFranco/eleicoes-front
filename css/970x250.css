@@ -105,10 +105,17 @@ body[data-widget="970x250"] .bloco-status .data-hora {
     white-space: nowrap;
 }
 
+body[data-widget="970x250"] .aviso-fonte-dados {
+    flex: 0 0 24px;
+    min-height: 24px;
+    padding: 4px 12px;
+    font-size: 0.54rem;
+}
+
 body[data-widget="970x250"] .bloco-carrossel {
     align-items: center;
     gap: 9px;
-    padding: 12px 15px;
+    padding: 4px 15px;
 }
 
 body[data-widget="970x250"] .bloco-carrossel .eleicao-meta {

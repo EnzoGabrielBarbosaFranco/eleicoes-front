@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Apuração 2022 - 300x250</title>
-    <link rel="stylesheet" href="/css/300x250.css">
+    <title>Portal de Apuração 2026 - Padrão</title>
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/widget.css">
 </head>
-<body data-widget="300x250">
-
+<body data-widget="padrao">
     <div class="widget-container">
         <div class="widget-header">
             <div class="header-brand">
                 <div class="header-copy">
-                    <h2>Apuração 2022</h2>
+                    <span class="header-kicker">Resultados eleitorais</span>
+                    <h2>Apuração das Eleições de 2026</h2>
                 </div>
                 <a class="produto-link" href="https://paineleleitoral2026.vercel.app/?utm_source=widget&amp;utm_medium=referral&amp;utm_campaign=apuracao_2026" target="_blank" rel="noopener noreferrer" aria-label="Tenha este widget no seu site">
                     <span class="produto-link-amplo">Tenha este widget</span>
@@ -33,7 +33,7 @@
                     <option value="6">Deputado Federal</option>
                     <option value="7">Deputado Estadual</option>
                 </select>
-                <select id="select-uf" class="select-full" aria-label="Unidade federativa">
+                <select id="select-uf" aria-label="Unidade federativa">
                     <option value="br">Brasil (Total)</option>
                     <option value="ac">Acre</option>
                     <option value="al">Alagoas</option>
@@ -68,19 +68,16 @@
 
         <div class="status-geral">
             <div class="info-topo">
-                <div class="status-label"><span class="status-dot" aria-hidden="true"></span>Apuradas <span id="ultima-atualizacao" class="data-hora" aria-live="polite"></span></div>
+                <span class="status-label"><span class="status-dot" aria-hidden="true"></span>Urnas apuradas</span>
                 <span id="txt-percurso">0,00%</span>
             </div>
             <div class="barra-progresso-total" role="progressbar" aria-label="Percentual de urnas apuradas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                 <div id="barra-percurso" class="preenchimento-total"></div>
             </div>
+            <span id="ultima-atualizacao" class="data-hora" aria-live="polite">Iniciando conexão...</span>
         </div>
 
-        <button type="button" class="resumo-toggle" onclick="toggleResumo()" aria-expanded="false" aria-controls="bloco-resumo">
-            <span id="txt-toggle">Ver resumo de votos</span>
-        </button>
-
-        <div id="bloco-resumo" class="resumo-votos oculto">
+        <div class="resumo-votos">
             <div class="resumo-item">
                 <span>Válidos</span>
                 <span class="resumo-valor" id="votos-validos">--</span>
@@ -100,11 +97,12 @@
         </div>
 
         <div id="lista-candidatos" class="lista-candidatos" aria-live="polite" aria-busy="true">
-            <div class="loading-overlay"><span class="loading-spinner" aria-hidden="true"></span>Buscando...</div>
+            <div class="loading-overlay"><span class="loading-spinner" aria-hidden="true"></span>Buscando dados no TSE...</div>
         </div>
     </div>
-  <script src="seguranca.js"></script>
-  <script src="/js/widget.js"></script>
-  <script src="/js/300x250.js"></script>
+  <script src="/seguranca.js"></script>
+  <script src="/js/widget-2026.js"></script>
+  <script src="/js/script.js"></script>
 </body>
 </html>
+
