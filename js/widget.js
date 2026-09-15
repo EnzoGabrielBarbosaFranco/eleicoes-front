@@ -178,15 +178,12 @@
 
         function atualizarStatus(data) {
             const percurso = String(data.percurso || '0,00');
+            const percentualApurado = percentualNumerico(percurso);
             textoPercurso.innerText = `${percurso.endsWith(',00') ? percurso.slice(0, -3) : percurso}%`;
-            barraPercurso.style.width = `${percentualNumerico(percurso)}%`;
-            if (barraProgresso) barraProgresso.setAttribute('aria-valuenow', String(percentualNumerico(percurso)));
+            barraPercurso.style.width = `${percentualApurado}%`;
+            if (barraProgresso) barraProgresso.setAttribute('aria-valuenow', String(percentualApurado));
 
-            const andamento = data.finalizado
-                ? 'Finalizado'
-                : data.andamento
-                    ? String(data.andamento)
-                    : 'Em andamento';
+            const andamento = percentualApurado >= 100 ? 'Finalizado' : 'Em andamento';
             const horarioAtualizacao = extrairHorario(data.atualizacao);
             ultimaAtualizacao.innerText = horarioAtualizacao
                 ? `${andamento} · ${horarioAtualizacao}`
@@ -202,17 +199,6 @@
             return `<span class="eleito-badge ${classe}">${escaparHtml(situacao)}</span>`;
         }
 
-        function textoViceSuplentes(candidato) {
-            if (!Array.isArray(candidato.viceSuplentes) || candidato.viceSuplentes.length === 0) return '';
-            return candidato.viceSuplentes
-                .map((pessoa) => {
-                    const tipoPessoa = pessoa.tipo || 'Vice/Suplente';
-                    const partido = pessoa.partido ? ` (${pessoa.partido})` : '';
-                    return `${tipoPessoa}: ${pessoa.nome || 'Nome não informado'}${partido}`;
-                })
-                .join(' · ');
-        }
-
         function criarCardVertical(candidato, indice) {
             const nome = escaparHtml(candidato.nome || 'Nome indisponível');
             const numero = candidato.numero != null ? `Nº ${escaparHtml(candidato.numero)}` : 'Número não informado';
@@ -220,7 +206,6 @@
             const foto = candidato.foto ? escaparHtml(candidato.foto) : '';
             const votos = escaparHtml(formatarPercentual(candidato.votos));
             const total = escaparHtml(candidato.total || 0);
-            const viceSuplentes = escaparHtml(textoViceSuplentes(candidato));
             const iniciais = escaparHtml(obterIniciais(candidato.nome));
 
             return `
@@ -245,7 +230,6 @@
                     </div>
                     <div class="votos-absolutos">
                         <span>${total} votos</span>
-                        ${viceSuplentes ? `<span class="vice-suplentes">${viceSuplentes}</span>` : ''}
                     </div>
                 </article>
             `;
@@ -258,11 +242,10 @@
             const foto = candidato.foto ? escaparHtml(candidato.foto) : '';
             const votos = escaparHtml(formatarPercentual(candidato.votos));
             const total = escaparHtml(candidato.total || 0);
-            const viceSuplentes = escaparHtml(textoViceSuplentes(candidato));
             const iniciais = escaparHtml(obterIniciais(candidato.nome));
 
             return `
-                <article class="card-cand" title="${viceSuplentes}" aria-label="${nome}, ${votos}% dos votos">
+                <article class="card-cand" aria-label="${nome}, ${votos}% dos votos">
                     <span class="ranking-cand" aria-label="${indice + 1}ª posição">${indice + 1}</span>
                     <div class="foto-container">
                         <span class="candidato-iniciais" aria-hidden="true">${iniciais}</span>
@@ -277,7 +260,6 @@
                             <div class="card-barra-fill" style="width: ${percentualNumerico(candidato.votos)}%"></div>
                         </div>
                         <div class="card-votos">${total} votos · ${partido}</div>
-                        ${viceSuplentes ? `<div class="card-complemento">${viceSuplentes}</div>` : ''}
                     </div>
                     ${criarBadgeSituacao(candidato)}
                 </article>
