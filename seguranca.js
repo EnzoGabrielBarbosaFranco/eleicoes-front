@@ -2,6 +2,7 @@
     const clientesAutorizados = [
         'angular-transportes.vercel.app', 
         'paineleleitoral2026.vercel.app', // <-- Novo site adicionado aqui
+        'www.paineleleitoralnews.com.br',
         'localhost',
         '127.0.0.1'
     ];
