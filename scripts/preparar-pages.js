@@ -34,7 +34,8 @@ function gerar() {
     const arquivos = new Map();
     const versionados = new Map();
     // Lista permitida: nunca copiar o repositorio inteiro, credenciais, backend ou entrega.
-    for (const pasta of ['css', 'js', '2026/assets']) {
+    // As paginas de 2026 nao distribuem amostras historicas nem JSON de candidatos.
+    for (const pasta of ['css', 'js']) {
         for (const arquivo of listar(pasta)) {
             if (!/\.(css|js|json)$/.test(arquivo)) throw new Error(`Recurso inesperado: ${arquivo}`);
             arquivos.set(arquivo, ler(arquivo));

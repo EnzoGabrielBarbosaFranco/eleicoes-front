@@ -57,7 +57,7 @@ async function verificarPages(endereco) {
         assert.equal(await resposta.text(), fs.readFileSync(path.join(destino, pagina), 'utf8'), `${pagina}: conteudo diferente`);
     }
     const marcador = JSON.parse(fs.readFileSync(path.join(destino, '.pages-build.json'), 'utf8'));
-    for (const recurso of ['embed.js', 'seguranca.js', '2026/assets/dados-2022.json',
+    for (const recurso of ['embed.js', 'seguranca.js',
         ...Object.keys(marcador.versionados).map((url) => url.slice(1)),
         ...Object.values(marcador.versionados).map((url) => url.slice(1))]) {
         const resposta = await buscar(new URL(recurso, base));
@@ -70,6 +70,9 @@ async function verificarPages(endereco) {
     const ausente = await buscar(new URL('2026/assets/arquivo-inexistente.json', base));
     assert.equal(ausente.status, 404, 'JSON inexistente nao pode retornar HTML com status 200.');
     await ausente.arrayBuffer();
+    const amostraAntiga = await buscar(new URL('2026/assets/dados-2022.json', base));
+    assert.equal(amostraAntiga.status, 404, 'Nao distribuir a amostra historica nas paginas de 2026.');
+    await amostraAntiga.arrayBuffer();
     console.log(`${base.origin}: 15 paginas e todos os recursos identicos, parametros, CSP e 404: OK.`);
     // Continuar o inventario em caso de TTL divergente, sem aceitar silenciosamente
     // o cache incorreto. Assim o diagnostico identifica todos os caminhos afetados.

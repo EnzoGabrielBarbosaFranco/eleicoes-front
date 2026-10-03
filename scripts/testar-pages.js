@@ -45,6 +45,9 @@ function validarBuild(build) {
     assert(headers.includes('max-age=31536000, immutable'));
     assert(!headers.includes('X-Frame-Options'));
     assert(fs.existsSync(path.join(build.destino, '404.html')));
+    assert(!fs.existsSync(path.join(build.destino, '2026/assets/dados-2022.json')));
+    const widget2026 = ler('js/widget-2026.js');
+    assert(!/2022|8787|backend-eleicoes\.enzo|dados-2022/.test(widget2026), 'Widget 2026 nao deve conter fontes historicas.');
 
     const scripts = new Map();
     for (const endereco of [dominio, 'https://eleicoes-front.vercel.app', 'https://teste.pages.dev']) {
@@ -181,6 +184,7 @@ async function testarNavegador(build) {
         let contador = 0;
         let fase = 'oficial';
         let disponivel = true;
+        let cenario2026 = 'normal';
         function enviar(method, params = {}, sessionId) {
             return new Promise((resolve, reject) => {
                 const id = ++contador;
@@ -217,7 +221,20 @@ async function testarNavegador(build) {
                         totalCandidatos: 8, candidatos: Array.from({ length: 8 }, (_, i) => ({ nome: `Candidato Teste ${i + 1}`,
                             numero: String(10 + i), partido: 'TESTE', votos: String(40 - i), votosNumero: 400 - i,
                             total: String(400 - i), situacao: 'Não eleito', eleito: false, foto: '' })) };
-                enviar('Fetch.fulfillRequest', { requestId, responseCode: 200,
+                if (ano === 2026) {
+                    if (cenario2026 === 'ano-2022') json.ano = 2022;
+                    if (cenario2026 === 'sem-ano') delete json.ano;
+                    if (cenario2026 === 'historico') json.fase = 'historico';
+                    if (cenario2026 === 'sem-votos' && Array.isArray(json.candidatos)) {
+                        json.percurso = '0,00';
+                        json.resumo.validos = '0';
+                        json.candidatos.forEach((c) => { c.votos = '0,00'; c.votosNumero = 0; c.total = '0'; });
+                    }
+                    if (cenario2026 === 'ano-2022' && Array.isArray(json.candidatos)) {
+                        json.candidatos.forEach((c) => { c.nome = 'Candidato Historico Indevido'; });
+                    }
+                }
+                enviar('Fetch.fulfillRequest', { requestId, responseCode: ano === 2026 && cenario2026 === 'erro-http' ? 503 : 200,
                     responseHeaders: [{ name: 'Content-Type', value: 'application/json' },
                         { name: 'Access-Control-Allow-Origin', value: '*' }, { name: 'Cache-Control', value: 'no-store' }],
                     body: Buffer.from(JSON.stringify(json)).toString('base64') }, mensagem.sessionId)
@@ -302,6 +319,48 @@ async function testarNavegador(build) {
         await aguardar("document.querySelector('.aviso-fonte-dados--simulacao')");
         fase = 'oficial';
         console.log('Estados de espera, simulacao e resultados oficiais: OK.');
+
+        // Todos os formatos 2026 precisam manter o ano mesmo antes do dia da eleicao.
+        const scriptDataAnterior = await enviar('Page.addScriptToEvaluateOnNewDocument', {
+            source: "window.__testeRelogio.agora = Date.parse('2026-10-02T18:00:00-03:00');",
+        }, sessionId);
+        for (const formato of formatos2026) {
+            const antes = chamadasApi.length;
+            await navegar(`2026/${formato}.html`, tamanho[formato][0]);
+            await aguardar("document.querySelectorAll('.candidato-card,.card-cand').length > 0");
+            assert(chamadasApi.length > antes, `${formato}: nenhuma consulta 2026`);
+            assert(chamadasApi.slice(antes).every((url) => {
+                const u = new URL(url); return u.port === '8788' && u.searchParams.get('ano') === '2026';
+            }), `${formato}: consultou outra eleicao antes do dia 4`);
+        }
+        disponivel = false;
+        await navegar('2026/320x100.html', 320);
+        await aguardar("document.querySelector('.estado-aguardando')");
+        assert.equal(await avaliar("document.querySelectorAll('.card-cand,.candidato-card').length"), 0);
+        disponivel = true;
+        await enviar('Page.removeScriptToEvaluateOnNewDocument', { identifier: scriptDataAnterior.identifier }, sessionId);
+
+        const inicioProtecao = chamadasApi.length;
+        for (const cenario of ['ano-2022', 'sem-ano', 'historico', 'erro-http', 'sem-votos']) {
+            cenario2026 = cenario;
+            await navegar('2026/320x100.html', 320);
+            await aguardar("document.getElementById('lista-candidatos').getAttribute('aria-busy') === 'false'");
+            assert.equal(await avaliar("document.querySelectorAll('.card-cand,.candidato-card').length"), 0, cenario);
+        }
+        // Exercitar tambem a validacao da apuracao, depois de um status valido.
+        cenario2026 = 'normal';
+        await navegar('2026/320x100.html', 320);
+        await aguardar("document.querySelectorAll('.card-cand').length > 0");
+        cenario2026 = 'ano-2022';
+        await mudar('select-cargo', '6');
+        await aguardar("document.getElementById('lista-candidatos').getAttribute('aria-busy') === 'false'");
+        assert.equal(await avaliar("document.getElementById('lista-candidatos').innerText.includes('Historico Indevido')"), false,
+            'Resposta 2022 da apuracao deve ser rejeitada, preservando somente os ultimos dados validos de 2026.');
+        cenario2026 = 'normal';
+        assert(chamadasApi.slice(inicioProtecao).every((url) => {
+            const u = new URL(url); return u.port === '8788' && u.searchParams.get('ano') === '2026';
+        }), 'Falha na API causou fallback para outro ano.');
+        console.log('2026 exclusivo: dez formatos antes do dia 4; ano errado/ausente, historico, erro e zero votos sem fallback: OK.');
 
         // Datas alteradas somente no contexto de teste; validar capa sem API e a transicao automatica.
         for (const modo of ['vespera', 'dia']) {

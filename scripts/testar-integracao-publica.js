@@ -1,7 +1,7 @@
 'use strict';
 
-// Somente leitura: usa dados historicos de 2022 do KV. Bloqueia consultas oficiais
-// de 2026 para nao atualizar snapshots/TSE durante a verificacao da migracao.
+// Somente leitura: carrega os arquivos publicos e intercepta a API com fixtures
+// exclusivas de 2026. Nao consulta resultados reais, KV ou TSE.
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
@@ -72,6 +72,12 @@ async function main() {
             await enviar('Runtime.enable', {}, sessionId);
             await enviar('Network.enable', {}, sessionId);
             await enviar('Page.enable', {}, sessionId);
+            await enviar('Page.addScriptToEvaluateOnNewDocument', { source: `
+                (() => { const Original = Date; const inicio = Original.now();
+                const agora = () => Original.parse('2026-10-04T18:00:00-03:00') + Original.now() - inicio;
+                window.Date = class extends Original { constructor(...args) { super(...(args.length ? args : [agora()])); }
+                static now() { return agora(); } }; })();
+            ` }, sessionId);
             await enviar('Fetch.enable', { patterns: [{ urlPattern: 'https://*.workers.dev/*' },
                 { urlPattern: 'https://*.vercel.app/*' }] }, sessionId);
             await enviar('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: true, flatten: true }, sessionId);
@@ -104,11 +110,31 @@ async function main() {
                 const { requestId, request } = m.params;
                 const url = new URL(request.url);
                 const permitido = request.method === 'GET'
-                    && url.hostname === 'backend-eleicoes.enzo-eleicoes-backend.workers.dev'
-                    && url.searchParams.get('ano') === '2022';
-                if (!permitido) bloqueadas.push(url.href);
-                enviar(permitido ? 'Fetch.continueRequest' : 'Fetch.failRequest',
-                    permitido ? { requestId } : { requestId, errorReason: 'BlockedByClient' }, m.sessionId)
+                    && url.hostname === 'backend-eleicoes-2026.enzo-eleicoes-backend.workers.dev'
+                    && url.searchParams.get('ano') === '2026'
+                    && ['/api/status-eleicao', '/api/apuracao'].includes(url.pathname);
+                if (!permitido) {
+                    bloqueadas.push(url.href);
+                    enviar('Fetch.failRequest', { requestId, errorReason: 'BlockedByClient' }, m.sessionId)
+                        .catch((e) => erros.push(e.message));
+                    return;
+                }
+                const json = url.pathname === '/api/status-eleicao'
+                    ? { ano: 2026, fase: 'oficial', resultadosDisponiveis: true }
+                    : { ano: 2026, fase: 'oficial', turno: Number(url.searchParams.get('turno')),
+                        cargo: Number(url.searchParams.get('cargo')), uf: url.searchParams.get('uf'),
+                        percurso: '63,50', atualizacao: '04/10/2026 as 18:30:00', finalizado: false, vagas: 1,
+                        totalCandidatos: 3, candidatos: Array.from({ length: 3 }, (_, i) => ({
+                            nome: `Fixture 2026 ${i + 1}`, numero: String(10 + i), partido: 'TESTE',
+                            votos: String(40 - i), votosNumero: 400 - i, total: String(400 - i),
+                            situacao: 'Nao eleito', eleito: false, foto: '',
+                        })) };
+                enviar('Fetch.fulfillRequest', { requestId, responseCode: 200,
+                    responseHeaders: [{ name: 'Content-Type', value: 'application/json' },
+                        { name: 'Access-Control-Allow-Origin', value: dominio },
+                        { name: 'Cache-Control', value: 'no-store' },
+                        { name: 'X-Data-Source', value: 'fixture-2026-teste' }],
+                    body: Buffer.from(JSON.stringify(json)).toString('base64') }, m.sessionId)
                     .catch((e) => erros.push(e.message));
             }
         };
@@ -131,7 +157,7 @@ async function main() {
         const medidas = "(() => {const r=document.querySelector('.widget-horizontal').getBoundingClientRect();return {w:r.width,h:r.height};})()";
         await enviar('Emulation.setDeviceMetricsOverride', { width: 1400, height: 800, deviceScaleFactor: 1, mobile: false }, sessionId);
         await enviar('Page.navigate', { url: `${dominio}/2026/1260x200.html` }, sessionId);
-        await aguardar(() => avaliar(candidatos), 'dados historicos carregados no dominio proprio');
+        await aguardar(() => avaliar(candidatos), 'fixture 2026 carregada no dominio proprio');
         assert.deepEqual(await avaliar(medidas), { w: 1260, h: 200 });
         await enviar('Emulation.setDeviceMetricsOverride', { width: 360, height: 400, deviceScaleFactor: 1, mobile: false }, sessionId);
         await aguardar(async () => (await avaliar(medidas)).h === 100, 'altura mobile');
@@ -140,7 +166,7 @@ async function main() {
         await avaliar("(() => {const e=document.getElementById('select-uf');e.value='mt';e.dispatchEvent(new Event('change'));})()");
         await aguardar(() => avaliar("document.getElementById('lista-candidatos').getAttribute('aria-busy')==='false' && document.querySelectorAll('.card-cand').length>0"), 'filtro UF MT');
         assert(resultados.some(r => r.url.includes('cargo=3&uf=mt') && r.status === 200));
-        console.log('Dominio publico: API historica real, 1260x200 desktop, 100px mobile e filtros cargo/UF: OK.');
+        console.log('Dominio publico com API interceptada de 2026: 1260x200 desktop, 100px mobile e filtros cargo/UF: OK.');
         await enviar('Page.navigate', { url: `${portal}/embed` }, sessionId);
         await aguardar(() => avaliar("!!document.querySelector('eleicoes-widget')?.shadowRoot?.querySelector('iframe')"), 'embed entre sites');
         assert.equal(await avaliar("document.querySelector('eleicoes-widget').shadowRoot.querySelector('iframe').src"), `${dominio}/2026/1260x200.html`);
@@ -168,13 +194,15 @@ async function main() {
             assert.equal(r.status, 200, r.url);
             const headers = Object.fromEntries(Object.entries(r.headers).map(([k, v]) => [k.toLowerCase(), v]));
             assert.equal(headers['access-control-allow-origin'], dominio);
-            assert.equal(headers['x-data-source'], 'kv-history');
+            assert.equal(headers['x-data-source'], 'fixture-2026-teste');
+            assert.equal(new URL(r.url).searchParams.get('ano'), '2026');
         }
         assert(!rede.some(url => new URL(url).hostname.endsWith('.vercel.app')));
         fs.writeFileSync(path.join(pasta, 'integracao-publica.json'), JSON.stringify({ dominio,
-            verificadoEm: new Date().toISOString(), respostasHistoricas: resultados.length,
-            erros: erros.length, consultas2026: bloqueadas.length, dependenciaVercel: false }, null, 2));
-        console.log('CORS real, fonte KV historica, sem erros JS ou dependencias Vercel: OK.');
+            verificadoEm: new Date().toISOString(), respostasSimuladas2026: resultados.length,
+            erros: erros.length, consultasProibidas: bloqueadas.length, dependenciaVercel: false,
+            resultadosOficiaisReaisValidados: false }, null, 2));
+        console.log('2026 exclusivo, APIs reais interceptadas, sem erros JS ou dependencias Vercel: OK.');
         await enviar('Browser.close');
     } finally {
         socket?.close();

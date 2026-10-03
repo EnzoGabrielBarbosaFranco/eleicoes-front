@@ -462,8 +462,8 @@
                     return;
                 }
 
-                const anoResposta = Number(data.ano || ANO_ELEICAO);
-                if (anoResposta !== ANO_ELEICAO) {
+                const anoResposta = Number(data.ano);
+                if (anoResposta !== ANO_ELEICAO || String(data.fase || '').toLowerCase() === 'historico') {
                     preservarUltimaRespostaOuMostrarIndisponivel();
                     return;
                 }
@@ -498,8 +498,8 @@
                 const { response, data } = await requisitarJson(`/api/status-eleicao?ano=${ANO_ELEICAO}`);
                 if (numeroConsulta !== estado.ultimaConsultaStatus) return;
 
-                const anoResposta = Number(data.ano || ANO_ELEICAO);
-                if (!response.ok || anoResposta !== ANO_ELEICAO) {
+                const anoResposta = Number(data.ano);
+                if (!response.ok || anoResposta !== ANO_ELEICAO || String(data.fase || '').toLowerCase() === 'historico') {
                     preservarUltimaRespostaOuMostrarIndisponivel();
                     return;
                 }

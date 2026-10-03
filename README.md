@@ -4,6 +4,8 @@ Frontend em HTML, CSS e JavaScript puro. Não é necessário executar `npm insta
 
 ## Cloudflare Pages
 
+**Correção local, ainda não publicada:** o Git atual já separa 2026 de 2022, mas o deployment Pages `a5667a72-7b47-4510-ab95-900c771948d4` ainda serve o widget anterior com demonstração histórica. O build local agora usa somente o backend de 2026 nas páginas `/2026/`, rejeita respostas históricas ou sem o ano correto e não distribui a amostra `2026/assets/dados-2022.json`. Os testes locais passaram; falta nova autorização para publicar esse build e verificar os arquivos públicos. Push no Git não faz essa publicação, pois o projeto usa Direct Upload.
+
 Em 2 de outubro de 2026, o frontend e o CORS dos dois Workers foram publicados com autorização. O domínio `https://apuracao.paineleleitoralnews.com.br` foi associado ao Pages com HTTPS ativo e CNAME exclusivo, preservando os seis registros DNS anteriores. Dados históricos da fase atual, filtros, embed e iframe foram verificados no navegador pelo domínio final. A regra de cache foi publicada pelo usuário: URLs sem hash recebem cinco minutos, e recursos com hash recebem um ano; o inventário público das 15 páginas e recursos passou sem divergências. A origem `pages.dev` não está liberada para consultas às APIs. Vercel e clientes antigos foram preservados. O teste real no SafeFrame do Ad Manager ainda está pendente. Consulte [CLOUDFLARE-PAGES.md](./CLOUDFLARE-PAGES.md) para versões, testes e retorno.
 
 ```powershell
@@ -61,6 +63,8 @@ As páginas da pasta `/2026/` usam exclusivamente esse backend e sempre enviam `
 - `http://127.0.0.1:5500/2026/320x100.html`
 
 Enquanto os resultados não estiverem disponíveis, as páginas de 2026 mostram o estado de espera e consultam novamente o status a cada 120 segundos. Não existe fallback, amostra local ou consulta ao backend de 2022 dentro dessas páginas.
+
+As respostas de status e apuração precisam informar explicitamente `ano=2026`; dados com fase `historico` também são rejeitados. Em uma falha, preservam-se apenas os últimos dados válidos de 2026, quando disponíveis. O Worker de produção está configurado para o ambiente oficial do TSE. Fixtures usadas nos testes ficam somente no navegador de teste, nunca no build entregue.
 
 Em produção, o frontend de 2022 usa `https://backend-eleicoes.enzo-eleicoes-backend.workers.dev` e o frontend de 2026 usa `https://backend-eleicoes-2026.enzo-eleicoes-backend.workers.dev`.
 

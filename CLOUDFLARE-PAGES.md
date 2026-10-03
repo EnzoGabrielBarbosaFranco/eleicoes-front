@@ -1,5 +1,19 @@
 # Apuração no Cloudflare Pages
 
+## Correção 2026 — local, aguardando publicação
+
+O código do Git atual já usa exclusivamente o backend de 2026 nas páginas `/2026/`. A consulta pública, porém, encontrou o script `/static/js-widget-2026.a43a50d1cc69e2ac.js`, que ainda contém o modo de demonstração de 2022. O Pages usa Direct Upload; push no Git não atualiza esse deployment. A descrição de testes históricos abaixo registra a migração anterior, não comprova a separação de anos desejada agora.
+
+O gerador foi ajustado para não copiar a antiga amostra `2026/assets/dados-2022.json`, cuja pasta já foi removida do código-fonte. O widget agora exige o ano explícito 2026 nas respostas e rejeita a fase histórica. A estrutura de páginas históricas da raiz permanece separada e funcional.
+
+O teste local passou com 15 páginas em desktop/mobile, dez formatos 2026 antes do dia 4 consultando somente a API de 2026, rejeição de ano errado/ausente e fase histórica, indisponibilidade e zero votos sem fallback. Capas, transição, filtros, embed e iframe 320×100 também passaram. O build contém 59 arquivos. As APIs foram interceptadas com fixtures: nenhum resultado real, TSE ou KV de produção foi acessado.
+
+O teste de integração pública foi atualizado para interceptar exclusivamente a API de 2026; não aceita mais 2022 dentro desses banners. Deve ser executado após publicar a correção. Essa verificação testa o layout com fixtures, não a disponibilidade real de resultados nem o CORS real dos Workers, validado separadamente pelas rotas GET `/` e OPTIONS.
+
+O Worker 2026 foi conferido somente por leitura: `TSE_ENVIRONMENT=oficial`, `TSE_RESULTS_ROOT=https://resultados.tse.jus.br/oficial` e cache de 120 segundos. Não é necessário mudar Workers, DNS ou regras de cache para esta correção. Uma nova publicação do frontend exige autorização específica.
+
+## Registro da migração anterior
+
 Estado em 2 de outubro de 2026: frontend publicado com autorização no projeto Pages `eleicoes-front`, CORS publicado nos dois Workers e domínio `apuracao.paineleleitoralnews.com.br` associado e ativo com HTTPS. Foi criado somente o CNAME desse subdomínio, após nova autorização. O usuário publicou a regra de cache limitada aos JS/CSS desse hostname, e os cabeçalhos públicos foram validados. **Nenhum push, desligamento da Vercel ou alteração dos demais registros DNS foi realizado. O teste real no Ad Manager permanece pendente.**
 
 ## Domínio final e validação
@@ -12,7 +26,7 @@ Estado em 2 de outubro de 2026: frontend publicado com autorização no projeto 
 - Esses testes não validam resultados oficiais de 2026: as consultas desse ano foram bloqueadas no teste para não atualizar snapshots. Não houve gravação de snapshots/KV, consulta da apuração oficial, novo deploy ou alteração dos Workers nesta etapa de DNS.
 - O teste real no SafeFrame do Ad Manager permanece pendente.
 
-Verificação da integração atual, limitada à base histórica:
+Verificação de integração com arquivos públicos e API de 2026 interceptada (executar após a nova publicação):
 
 ```powershell
 node scripts/testar-integracao-publica.js
@@ -58,7 +72,7 @@ A URL `pages.dev` serve para verificar arquivos; não está liberada no CORS das
 - Backend histórico: Worker `backend-eleicoes` existente.
 - Backend atual: Worker `backend-eleicoes-2026` existente.
 - KV: bindings e namespace existentes, sem importação, migração de dados ou alteração de chaves.
-- A atualização de 120 segundos, os filtros, os layouts, a demonstração histórica e as capas pré-eleição não foram alterados.
+- A atualização de 120 segundos, os filtros, os layouts e as capas pré-eleição são preservados. A demonstração histórica é exclusiva das páginas de 2022 na raiz; nunca deve ser usada nas páginas `/2026/`.
 - O código atual de 2026 oculta o seletor de turno e usa o primeiro turno inicialmente. A migração conserva esse comportamento.
 
 O backend continua consumindo requisições, CPU e operações KV. Servir o frontend pelo Pages não elimina esses consumos. O usuário informou a contratação do Workers Paid; não houve mudança de plano por estes scripts.
@@ -72,9 +86,9 @@ node scripts/preparar-pages.js
 node scripts/testar-pages.js
 ```
 
-O build publica somente os 15 HTMLs (cinco de 2022 e dez de 2026), CSS, JS, amostra JSON, `embed.js`, `seguranca.js`, `404.html` e `_headers`. Os documentos, snippets, testes, scripts de manutenção, backend, `.git` e credenciais não entram em `dist-pages/`.
+O build publica somente os 15 HTMLs (cinco de 2022 e dez de 2026), CSS, JS, `embed.js`, `seguranca.js`, `404.html` e `_headers`. Não publica amostras de candidatos. Os documentos, snippets, testes, scripts de manutenção, backend, `.git` e credenciais não entram em `dist-pages/`.
 
-Scripts e estilos têm hash no nome, mantendo conteúdo e ordem de execução. Esses recursos recebem cache de um ano e `immutable`. Os caminhos antigos de CSS/JS, o incorporador e a amostra JSON continuam disponíveis com cache de cinco minutos, sem `immutable`. O HTML conserva a revalidação padrão do Pages. A capa e a passagem para apuração são executadas no navegador, não dependem de publicar um HTML no momento da eleição.
+Scripts e estilos têm hash no nome, mantendo conteúdo e ordem de execução. Esses recursos recebem cache de um ano e `immutable`. Os caminhos antigos de CSS/JS e o incorporador continuam disponíveis com cache de cinco minutos, sem `immutable`. O HTML conserva a revalidação padrão do Pages. A capa e a passagem para apuração são executadas no navegador, não dependem de publicar um HTML no momento da eleição.
 
 O gerador verifica limites de 20.000 arquivos e 25 MiB por arquivo e só substitui sua própria pasta `dist-pages`, identificada por marcador. Não guarde arquivos pessoais nessa pasta. Perfis e resultados dos testes ficam em `.pages-tests/`, ignorada pelo Git.
 
