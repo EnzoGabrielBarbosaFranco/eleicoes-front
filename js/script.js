@@ -1,4 +1,6 @@
+const formatoIndex = document.body.dataset.widget === '300x250' ? '300x250' : 'padrao';
+
 window.EleicoesWidget.iniciar({
-    tipo: 'padrao',
-    loteDeputados: 20
+    tipo: formatoIndex,
+    loteDeputados: formatoIndex === '300x250' ? 6 : 20
 });

@@ -1,7 +1,9 @@
 (function () {
     const ANO_ELEICAO = 2026;
+    const INICIO_RESULTADOS_2026 = Date.parse('2026-10-04T08:00:00-03:00');
     const CODIGO_AGUARDANDO_TSE = 'ELEICAO_AGUARDANDO_TSE';
     const MENSAGEM_AGUARDANDO = 'Os resultados das Eleições 2026 ainda não estão disponíveis.';
+    const MENSAGEM_INICIO_APURACAO = 'A divulgação dos resultados das Eleições 2026 começa em breve.';
     const MENSAGEM_INDISPONIVEL = 'Os resultados das Eleições 2026 estão temporariamente indisponíveis.';
     const API_PRODUCAO = 'https://backend-eleicoes-2026.enzo-eleicoes-backend.workers.dev';
 
@@ -15,6 +17,11 @@
         }
 
         return API_PRODUCAO;
+    }
+
+    function horarioDaApuracaoIniciado() {
+        return Boolean(window.PreEleicao2026?.forcarDadosOficiais)
+            || Date.now() >= INICIO_RESULTADOS_2026;
     }
 
     function escaparHtml(valor) {
@@ -76,6 +83,8 @@
     }
 
     function iniciar(opcoes = {}) {
+        if (window.PreEleicao2026?.ativo) return;
+
         const tipo = opcoes.tipo || 'padrao';
         const loteDeputados = opcoes.loteDeputados || 20;
         const selectTurno = document.getElementById('select-turno');
@@ -88,6 +97,9 @@
         const barraProgresso = barraPercurso.parentElement;
         const raizWidget = document.querySelector('.widget-container, .widget-horizontal');
         const layoutHorizontal = tipo === 'horizontal' || tipo === '970x250';
+        const formato970x90 = document.body.classList.contains('formato-970x90');
+        const formatoCompacto100 = document.body.classList.contains('formato-compacto-100');
+        const formato320x100 = document.body.classList.contains('formato-320x100');
 
         if (!selectTurno || !selectCargo || !selectUf || !lista || !textoPercurso || !barraPercurso || !ultimaAtualizacao || !raizWidget) {
             console.error('Não foi possível iniciar o widget: elementos obrigatórios não encontrados.');
@@ -175,22 +187,27 @@
         }
 
         function carregarFiltros() {
-            const turnoSalvo = localStorage.getItem('filtro2026Turno');
             const cargoSalvo = localStorage.getItem('filtro2026Cargo');
             const ufSalva = localStorage.getItem('filtro2026Uf');
 
-            if (turnoSalvo) selectTurno.value = turnoSalvo;
+            selectTurno.value = '1';
+            localStorage.setItem('filtro2026Turno', '1');
             if (cargoSalvo) selectCargo.value = cargoSalvo;
             if (ufSalva) selectUf.value = ufSalva;
             ajustarUfAoCargo();
         }
 
         function atualizarResumo(resumo) {
+            const resumoCompactoMobile = formato320x100
+                || (window.matchMedia('(max-width: 760px)').matches && (formato970x90 || formatoCompacto100));
+            const valorResumo = (total, percentual) => resumoCompactoMobile
+                ? `${percentual || '0,00'}%`
+                : `${total || '--'}\n(${percentual || '0,00'}%)`;
             const campos = {
-                'votos-validos': resumo ? `${resumo.validos || '--'}\n(${resumo.pctValidos || '0,00'}%)` : '--',
-                'votos-brancos': resumo ? `${resumo.brancos || '--'}\n(${resumo.pctBrancos || '0,00'}%)` : '--',
-                'votos-nulos': resumo ? `${resumo.nulos || '--'}\n(${resumo.pctNulos || '0,00'}%)` : '--',
-                'votos-abstencoes': resumo ? `${resumo.abstencoes || '--'}\n(${resumo.pctAbstencoes || '0,00'}%)` : '--'
+                'votos-validos': resumo ? valorResumo(resumo.validos, resumo.pctValidos) : '--',
+                'votos-brancos': resumo ? valorResumo(resumo.brancos, resumo.pctBrancos) : '--',
+                'votos-nulos': resumo ? valorResumo(resumo.nulos, resumo.pctNulos) : '--',
+                'votos-abstencoes': resumo ? valorResumo(resumo.abstencoes, resumo.pctAbstencoes) : '--'
             };
 
             Object.entries(campos).forEach(([id, valor]) => {
@@ -218,6 +235,38 @@
                 <div class="estado-eleicao estado-aguardando" role="status">
                     <span class="estado-icone" aria-hidden="true">◷</span>
                     <strong>${MENSAGEM_AGUARDANDO}</strong>
+                </div>
+            `;
+        }
+
+        function numeroInteiro(valor) {
+            const numero = Number.parseInt(String(valor ?? '').replace(/\D/g, ''), 10);
+            return Number.isFinite(numero) ? numero : 0;
+        }
+
+        function possuiVotosComputados(data) {
+            if (percentualNumerico(data.percurso) > 0) return true;
+            if (numeroInteiro(data.resumo?.validos) > 0) return true;
+
+            const candidatos = Array.isArray(data.candidatos) ? data.candidatos : [];
+            return candidatos.some((candidato) => (
+                Number(candidato.votosNumero || 0) > 0
+                || numeroInteiro(candidato.total) > 0
+                || percentualNumerico(candidato.votos) > 0
+            ));
+        }
+
+        function mostrarInicioApuracao(data = null) {
+            estado.resultadosDisponiveis = Boolean(data);
+            if (data) estado.ultimaApuracao = data;
+            definirCarregando(false);
+            atualizarAvisoDados(data || {});
+            limparProgresso();
+            ultimaAtualizacao.innerText = 'Aguardando os primeiros resultados';
+            lista.innerHTML = `
+                <div class="estado-eleicao estado-aguardando" role="status">
+                    <span class="estado-icone" aria-hidden="true">◷</span>
+                    <strong>${MENSAGEM_INICIO_APURACAO}</strong>
                 </div>
             `;
         }
@@ -302,12 +351,14 @@
 
         function criarCardHorizontal(candidato, indice) {
             const nome = escaparHtml(candidato.nome || 'Nome indisponível');
-            const numero = candidato.numero != null ? `Nº ${escaparHtml(candidato.numero)}` : 'S/N';
+            const numeroPuro = candidato.numero != null ? escaparHtml(candidato.numero) : 'S/N';
+            const numero = candidato.numero != null ? `Nº ${numeroPuro}` : numeroPuro;
             const partido = escaparHtml(candidato.partido || 'N/A');
             const foto = candidato.foto ? escaparHtml(candidato.foto) : '';
             const votos = escaparHtml(formatarPercentual(candidato.votos));
             const total = escaparHtml(candidato.total || 0);
             const iniciais = escaparHtml(obterIniciais(candidato.nome));
+            const cargoCompacto = escaparHtml(selectCargo.options[selectCargo.selectedIndex]?.textContent || 'Candidato');
 
             return `
                 <article class="card-cand" aria-label="${nome}, ${votos}% dos votos">
@@ -318,14 +369,17 @@
                     </div>
                     <div class="info-cand">
                         <div class="card-topo">
-                            <span class="card-nome">${numero} · ${nome}</span>
+                            <span class="card-cargo-compacto">${cargoCompacto}</span>
+                            <span class="card-nome"><span class="card-identificacao">${numero} · </span><span class="card-nome-texto">${nome}</span></span>
                             <span class="card-pct">${votos}%</span>
                         </div>
                         <div class="card-barra-bg" role="progressbar" aria-label="Percentual de votos de ${nome}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percentualNumerico(candidato.votos)}">
                             <div class="card-barra-fill" style="width: ${percentualNumerico(candidato.votos)}%"></div>
                         </div>
                         <div class="card-votos">${total} votos · ${partido}</div>
+                        <span class="card-partido-compacto">${partido}</span>
                     </div>
+                    <span class="card-numero-compacto" aria-label="Número ${numeroPuro}">${numeroPuro}</span>
                     ${criarBadgeSituacao(candidato)}
                 </article>
             `;
@@ -389,7 +443,9 @@
             const numeroConsulta = ++estado.ultimaConsultaApuracao;
 
             definirCarregando(true);
-            if (!estado.ultimaApuracao) ultimaAtualizacao.innerText = 'Buscando dados de 2026...';
+            if (!estado.ultimaApuracao) {
+                ultimaAtualizacao.innerText = 'Buscando dados de 2026...';
+            }
 
             try {
                 const caminho = `/api/apuracao?ano=${ANO_ELEICAO}&turno=${turno}&cargo=${cargo}&uf=${uf}`;
@@ -412,6 +468,12 @@
                     return;
                 }
 
+                if (!data.finalizado && !possuiVotosComputados(data)) {
+                    if (horarioDaApuracaoIniciado()) mostrarInicioApuracao(data);
+                    else mostrarAguardando();
+                    return;
+                }
+
                 estado.resultadosDisponiveis = true;
                 estado.ultimaApuracao = data;
                 atualizarAvisoDados(data);
@@ -419,7 +481,7 @@
                 renderizarCandidatos(data);
             } catch (error) {
                 if (numeroConsulta !== estado.ultimaConsultaApuracao) return;
-                console.warn('Não foi possível atualizar a apuração de 2026.', error);
+                console.warn(`Não foi possível atualizar a base eleitoral de ${ANO_ELEICAO}.`, error);
                 preservarUltimaRespostaOuMostrarIndisponivel();
             }
         }
@@ -443,7 +505,9 @@
                 }
 
                 if (!data.resultadosDisponiveis || data.fase === 'aguardando_tse') {
-                    mostrarAguardando();
+                    if (estado.ultimaApuracao) preservarUltimaRespostaOuMostrarIndisponivel();
+                    else if (horarioDaApuracaoIniciado()) mostrarInicioApuracao();
+                    else mostrarAguardando();
                     return;
                 }
 
@@ -466,10 +530,16 @@
 
         [selectTurno, selectCargo, selectUf].forEach((select) => select.addEventListener('change', aoAlterarFiltro));
 
+        window.matchMedia('(max-width: 760px)').addEventListener('change', () => {
+            atualizarResumo(estado.ultimaApuracao?.resumo || null);
+        });
+
         if (layoutHorizontal) {
             let ultimoFrame = performance.now();
             const velocidadeDesktop = 72;
-            const velocidadeMobile = 88;
+            const velocidadeMobile = formato970x90
+                ? 32
+                : (formatoCompacto100 ? 34 : 88);
             const permiteAutoScroll = window.matchMedia('(min-width: 761px)');
 
             lista.addEventListener('mouseenter', () => {
@@ -498,7 +568,7 @@
             function animarAutoScroll(tempoAtual) {
                 const tempoDecorrido = Math.min(tempoAtual - ultimoFrame, 50);
                 ultimoFrame = tempoAtual;
-                const velocidadeAtual = permiteAutoScroll.matches
+                const velocidadeAtual = permiteAutoScroll.matches && !formato320x100
                     ? velocidadeDesktop
                     : velocidadeMobile;
 

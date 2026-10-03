@@ -1,0 +1,1 @@
+<iframe src="https://apuracao.paineleleitoralnews.com.br/2026/320x100.html" title="Painel eleitoral 2026 — 320 por 100" width="320" height="100" style="display:block;width:320px;height:100px;margin:0;border:0;overflow:hidden;background:transparent" loading="eager" scrolling="no" referrerpolicy="strict-origin-when-cross-origin"></iframe>

@@ -1,0 +1,65 @@
+@media (min-width: 761px) {
+    body.formato-1260x200 .widget-horizontal {
+        width: min(1260px, 100%);
+        height: 200px;
+    }
+
+    body.formato-1260x200 .bloco-header {
+        flex-basis: 66px;
+        grid-template-columns: minmax(250px, 340px) minmax(0, 1fr);
+        padding: 8px 18px;
+    }
+
+    body.formato-1260x200 .bloco-header .controles select {
+        height: 32px;
+    }
+
+    body.formato-1260x200 .bloco-status {
+        flex-basis: 42px;
+        padding: 0 18px;
+    }
+
+    body.formato-1260x200 .aviso-fonte-dados {
+        flex-basis: 22px;
+        min-height: 22px;
+        padding: 3px 12px;
+    }
+
+    body.formato-1260x200 .bloco-carrossel {
+        gap: 8px;
+        padding: 3px 14px;
+    }
+
+    body.formato-1260x200 .bloco-carrossel .eleicao-meta {
+        flex-basis: 112px;
+        width: 112px;
+        padding: 5px;
+    }
+
+    body.formato-1260x200 .card-cand,
+    body.formato-1260x200 .bloco-carrossel .carregar-mais {
+        height: 62px;
+    }
+
+    body.formato-1260x200 .bloco-carrossel .estado-eleicao {
+        width: 100%;
+        min-width: 100%;
+        height: 54px;
+        min-height: 0;
+        gap: 3px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.58rem;
+        line-height: 1.15;
+    }
+
+    body.formato-1260x200 .bloco-carrossel .estado-eleicao .estado-icone {
+        font-size: 1rem;
+    }
+
+    body.formato-1260x200.modo-pre-eleicao-2026 .pre26-painel {
+        width: min(1260px, 100%);
+        height: 200px;
+        min-height: 200px;
+    }
+}

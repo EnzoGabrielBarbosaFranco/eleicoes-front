@@ -1,0 +1,21 @@
+# Pages: preservar a lista de portais licenciados e permitir os frames internos do Google.
+/*
+  Content-Security-Policy: frame-ancestors 'self' https://apuracao.paineleleitoralnews.com.br https://eleicoes-front.vercel.app https://angular-transportes.vercel.app https://paineleleitoral2026.vercel.app https://www.paineleleitoralnews.com.br https://tpc.googlesyndication.com https://pagead2.googlesyndication.com https://securepubads.g.doubleclick.net https://googleads.g.doubleclick.net https://*.safeframe.googlesyndication.com http://localhost:* http://127.0.0.1:*;
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# HTML usa a revalidacao padrao do Pages. Nao sobrepor Cache-Control em /*.
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# URLs antigas continuam disponiveis, mas nunca sao immutable.
+/css/*
+  Cache-Control: public, max-age=300, must-revalidate
+/js/*
+  Cache-Control: public, max-age=300, must-revalidate
+/embed.js
+  Cache-Control: public, max-age=300, must-revalidate
+/seguranca.js
+  Cache-Control: public, max-age=300, must-revalidate
+/2026/assets/*
+  Cache-Control: public, max-age=300, must-revalidate

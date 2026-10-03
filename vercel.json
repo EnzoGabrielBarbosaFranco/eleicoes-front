@@ -5,7 +5,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://angular-transportes.vercel.app https://paineleleitoral2026.vercel.app https://www.paineleleitoralnews.com.br http://localhost:* http://127.0.0.1:*;"
+          "value": "frame-ancestors 'self' https://apuracao.paineleleitoralnews.com.br https://eleicoes-front.vercel.app https://angular-transportes.vercel.app https://paineleleitoral2026.vercel.app https://www.paineleleitoralnews.com.br https://tpc.googlesyndication.com https://pagead2.googlesyndication.com https://securepubads.g.doubleclick.net https://googleads.g.doubleclick.net https://*.safeframe.googlesyndication.com http://localhost:* http://127.0.0.1:*;"
         }
       ]
     }

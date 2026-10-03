@@ -1,0 +1,1519 @@
+body[data-widget] {
+    --mint: #9cf2cf;
+    --mint-strong: #23c98c;
+    --mint-dark: #087b58;
+    --ink: #07182d;
+    --brand-950: var(--ink);
+    --brand-900: var(--ink);
+    --brand-800: var(--ink);
+    --brand-700: var(--mint-dark);
+    --brand-100: var(--mint);
+    --brand-50: #effcf7;
+    --success-700: var(--mint-dark);
+    --success-600: var(--mint-strong);
+    --success-100: #dff9ef;
+}
+
+.brand-mark {
+    position: relative;
+    display: block;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    overflow: hidden;
+    border-radius: 11px;
+    background: var(--ink);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 28%, transparent), 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.brand-mark::before,
+.brand-mark::after {
+    content: "";
+    position: absolute;
+    left: 8px;
+    width: 22px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--mint);
+    transform: skewY(-15deg);
+}
+
+.brand-mark::before {
+    top: 10px;
+}
+
+.brand-mark::after {
+    top: 21px;
+    width: 15px;
+}
+
+body.identidade-2026 .widget-header,
+body.identidade-2026 .bloco-header {
+    background: var(--ink);
+}
+
+body.identidade-2026 .header-brand {
+    justify-content: flex-start;
+    gap: 12px;
+}
+
+body[data-widget="padrao"].identidade-2026 .header-brand {
+    align-items: center;
+}
+
+body.identidade-2026 .header-copy {
+    flex: 1 1 auto;
+}
+
+body.identidade-2026 .header-kicker {
+    color: var(--mint);
+}
+
+body.identidade-2026 .produto-link {
+    border-color: rgba(156, 242, 207, 0.28);
+    color: var(--mint);
+}
+
+body.identidade-2026 .status-dot,
+body.identidade-2026 .barra-total-fill {
+    background: var(--mint-strong);
+}
+
+/* O primeiro turno fica fixo internamente; a interface exibe somente Cargo e UF. */
+body.identidade-2026 #select-turno {
+    display: none;
+}
+
+body[data-widget="padrao"].identidade-2026 .controles {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+}
+
+body[data-widget="horizontal"].identidade-2026 .bloco-header .controles {
+    grid-template-columns: minmax(90px, 1fr) 49px;
+}
+
+body[data-widget="970x250"].identidade-2026 .bloco-header .controles {
+    grid-template-columns: minmax(0, 1.35fr) minmax(70px, 0.75fr);
+}
+
+body[data-widget="300x600"].identidade-2026 .controles,
+body[data-widget="300x250"].identidade-2026 .controles {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+body[data-widget="300x250"].identidade-2026 .controles .select-full {
+    grid-column: auto;
+}
+
+body.index-mobile-300x250 .estado-eleicao .estado-icone {
+    display: none;
+}
+
+body.index-mobile-300x250 .widget-container {
+    width: 100%;
+    height: 250px;
+    min-height: 250px;
+    max-height: 250px;
+}
+
+body[data-widget="horizontal"] .resumo-mobile-horizontal,
+body[data-widget="970x250"] .resumo-mobile-horizontal {
+    display: none;
+}
+
+body[data-widget="horizontal"].identidade-2026 .brand-mark,
+body[data-widget="300x250"].identidade-2026 .brand-mark {
+    margin: -5px -4px;
+    transform: scale(0.74);
+}
+
+body[data-widget="300x600"].identidade-2026 .brand-mark {
+    margin: -3px -2px;
+    transform: scale(0.84);
+}
+
+body[data-widget="970x250"].identidade-2026 .brand-mark {
+    margin: -2px;
+    transform: scale(0.9);
+}
+
+@media (max-width: 760px) {
+    body[data-widget="horizontal"].identidade-2026 .bloco-header .controles,
+    body[data-widget="970x250"].identidade-2026 .bloco-header .controles {
+        grid-template-columns: minmax(0, 1.55fr) minmax(52px, 0.65fr);
+    }
+}
+
+@media (max-width: 560px) {
+    body[data-widget="padrao"].identidade-2026 .controles {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+html.pre26-ativo,
+html.pre26-ativo body {
+    width: 100%;
+    height: 100%;
+}
+
+body.modo-pre-eleicao-2026 {
+    display: grid !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    place-items: center !important;
+    overflow: hidden !important;
+    color: #102033 !important;
+    background: transparent !important;
+    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+body.modo-pre-eleicao-2026 *,
+body.modo-pre-eleicao-2026 *::before,
+body.modo-pre-eleicao-2026 *::after {
+    box-sizing: border-box;
+}
+
+.pre26-painel {
+    --pre26-azul: var(--ink);
+    --pre26-azul-escuro: var(--ink);
+    --pre26-azul-claro: var(--mint-dark);
+    --pre26-verde: var(--mint-strong);
+    --pre26-verde-claro: var(--mint);
+    --pre26-borda: #d6e0eb;
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    width: min(720px, 100%);
+    min-height: min(640px, 100vh);
+    grid-template-columns: 182px minmax(0, 1fr);
+    overflow: hidden;
+    border: 1px solid var(--pre26-borda);
+    border-radius: 16px;
+    background:
+        radial-gradient(circle at 70% 35%, rgba(22, 163, 106, 0.1), transparent 30%),
+        linear-gradient(135deg, #ffffff 0%, #f4f8fc 100%);
+    box-shadow: 0 20px 54px rgba(8, 47, 91, 0.16);
+}
+
+.pre26-marca {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    padding: 30px 15px;
+    overflow: hidden;
+    color: #fff;
+    background: linear-gradient(160deg, var(--pre26-azul) 0%, var(--pre26-azul-escuro) 100%);
+    text-align: center;
+}
+
+.pre26-marca::after {
+    content: "";
+    position: absolute;
+    right: -55px;
+    bottom: 30px;
+    width: 160px;
+    height: 160px;
+    border: 24px solid rgba(255, 255, 255, 0.045);
+    border-radius: 50%;
+}
+
+.pre26-marca .brand-mark {
+    margin-bottom: 12px;
+}
+
+.pre26-nome {
+    font-size: 0.92rem;
+    font-weight: 850;
+    letter-spacing: 0.035em;
+    line-height: 1.05;
+    text-transform: uppercase;
+}
+
+.pre26-marca > strong {
+    margin-top: 3px;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.pre26-turno {
+    z-index: 1;
+    width: 100%;
+    margin-top: 15px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    color: var(--pre26-azul-escuro);
+    background: var(--pre26-verde-claro);
+    font-size: 0.58rem;
+    font-weight: 850;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.pre26-conteudo {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 26px;
+    padding: 42px;
+}
+
+.pre26-hero {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    align-self: center;
+    gap: 24px;
+}
+
+.pre26-destaque {
+    display: grid;
+    width: 108px;
+    height: 108px;
+    flex: 0 0 108px;
+    place-content: center;
+    border: 1px solid rgba(22, 163, 106, 0.28);
+    border-radius: 22px;
+    color: #fff;
+    background: linear-gradient(145deg, var(--mint-strong) 0%, var(--mint-dark) 56%, var(--ink) 100%);
+    box-shadow: 0 14px 26px rgba(8, 47, 91, 0.2);
+    text-align: center;
+}
+
+.pre26-destaque strong {
+    font-size: 2.65rem;
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -0.055em;
+}
+
+.pre26-destaque span {
+    margin-top: 8px;
+    font-size: 0.57rem;
+    font-weight: 850;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.pre26-texto {
+    min-width: 0;
+}
+
+.pre26-sobrelinha {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--pre26-verde);
+    font-size: 0.67rem;
+    font-weight: 900;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.pre26-texto h1 {
+    max-width: 420px;
+    margin: 0;
+    color: #071b35;
+    font-size: clamp(1.65rem, 4vw, 2.35rem);
+    font-weight: 900;
+    line-height: 1.02;
+    letter-spacing: -0.055em;
+}
+
+.pre26-texto p {
+    margin: 8px 0 0;
+    color: #526479;
+    font-size: 0.8rem;
+    line-height: 1.35;
+}
+
+.pre26-horario {
+    display: inline-flex;
+    margin-top: 12px;
+    padding: 6px 10px;
+    border: 1px solid rgba(22, 163, 106, 0.28);
+    border-radius: 999px;
+    color: #07583c;
+    background: #ddf8ed;
+    font-size: 0.66rem;
+    font-weight: 850;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.pre26-acoes {
+    display: flex;
+    min-width: 160px;
+    align-self: center;
+    flex-direction: column;
+    gap: 9px;
+    padding-left: 22px;
+    border-left: 1px solid var(--pre26-borda);
+}
+
+.pre26-acao {
+    display: flex;
+    min-height: 42px;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 12px;
+    border: 1px solid var(--pre26-borda);
+    border-radius: 11px;
+    color: #09213f;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 5px 14px rgba(8, 47, 91, 0.06);
+    font-size: 0.66rem;
+    font-weight: 750;
+    line-height: 1.15;
+    text-decoration: none;
+}
+
+.pre26-acao svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.pre26-acao--principal {
+    border-color: #0b8858;
+    color: #06472f;
+    background: var(--pre26-verde-claro);
+    box-shadow: 0 7px 18px rgba(22, 163, 106, 0.18);
+}
+
+.pre26-acao:focus-visible {
+    outline: 3px solid rgba(23, 105, 194, 0.35);
+    outline-offset: 2px;
+}
+
+@media (hover: hover) {
+    .pre26-acao {
+        transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    .pre26-acao:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(8, 47, 91, 0.12);
+    }
+}
+
+.pre26-faixa {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, 1fr);
+    overflow: hidden;
+    border: 1px solid var(--pre26-borda);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.pre26-faixa div {
+    display: flex;
+    min-height: 54px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 8px 12px;
+    text-align: center;
+}
+
+.pre26-faixa div + div {
+    border-left: 1px solid var(--pre26-borda);
+}
+
+.pre26-faixa strong {
+    color: #082f5b;
+    font-size: 0.78rem;
+    line-height: 1.05;
+}
+
+.pre26-faixa span {
+    margin-top: 3px;
+    color: #63758a;
+    font-size: 0.48rem;
+    font-weight: 750;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* O formato padrão usa a largura principal para a mensagem e organiza os links abaixo. */
+body[data-widget="padrao"].modo-pre-eleicao-2026 .pre26-conteudo {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    gap: 17px;
+    padding: 36px 42px;
+}
+
+body[data-widget="padrao"].modo-pre-eleicao-2026 .pre26-acoes {
+    min-width: 0;
+    flex-direction: row;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+}
+
+body[data-widget="padrao"].modo-pre-eleicao-2026 .pre26-acao {
+    min-width: 0;
+    flex: 1;
+    justify-content: center;
+    padding-right: 8px;
+    padding-left: 8px;
+    text-align: center;
+}
+
+/* Horizontal: 1200 x 100 no desktop. */
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-painel {
+    width: min(1200px, 100%);
+    height: 100px;
+    min-height: 100px;
+    grid-template-columns: 175px minmax(0, 1fr);
+    border-radius: 12px;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-marca {
+    justify-content: center;
+    align-items: flex-start;
+    padding: 10px 12px 10px 49px;
+    text-align: left;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-marca .brand-mark {
+    position: absolute;
+    left: 10px;
+    margin: 0;
+    transform: scale(0.78);
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-nome {
+    font-size: 0.62rem;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-marca > strong {
+    font-size: 0.64rem;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-turno,
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-marca::after,
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-faixa {
+    display: none;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-conteudo {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 1fr;
+    gap: 14px;
+    padding: 8px 12px;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-hero {
+    gap: 13px;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-destaque {
+    width: 62px;
+    height: 62px;
+    flex-basis: 62px;
+    border-radius: 13px;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-destaque strong {
+    font-size: 1.7rem;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-destaque span {
+    margin-top: 4px;
+    font-size: 0.4rem;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-sobrelinha {
+    margin-bottom: 3px;
+    font-size: 0.44rem;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-texto h1 {
+    font-size: 1.2rem;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-texto p {
+    margin-top: 3px;
+    font-size: 0.54rem;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-horario {
+    margin-top: 4px;
+    padding: 3px 6px;
+    font-size: 0.4rem;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-acoes {
+    min-width: 148px;
+    padding-left: 12px;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-acao {
+    display: none;
+}
+
+body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-acao--principal {
+    display: flex;
+    min-height: 38px;
+    padding: 7px 10px;
+    font-size: 0.58rem;
+}
+
+/* Formato 970 x 250. */
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-painel {
+    width: min(970px, 100%);
+    height: 250px;
+    min-height: 250px;
+    grid-template-columns: 210px minmax(0, 1fr);
+    border-radius: 14px;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-marca {
+    justify-content: center;
+    padding: 18px;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-marca .brand-mark {
+    margin-bottom: 8px;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-turno {
+    margin-top: 10px;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-conteudo {
+    grid-template-columns: minmax(0, 1fr) 158px;
+    gap: 15px;
+    padding: 20px 22px;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-hero {
+    gap: 17px;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-destaque {
+    width: 88px;
+    height: 88px;
+    flex-basis: 88px;
+    border-radius: 18px;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-destaque strong {
+    font-size: 2.1rem;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-texto h1 {
+    font-size: 1.55rem;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-acoes {
+    min-width: 0;
+    padding-left: 14px;
+    gap: 6px;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-acao {
+    min-height: 34px;
+    padding: 6px 8px;
+    font-size: 0.55rem;
+}
+
+body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-faixa div {
+    min-height: 42px;
+    padding: 5px 8px;
+}
+
+/* Formatos verticais. */
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-painel,
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-painel {
+    width: 300px;
+    max-width: 100%;
+    grid-template-columns: 1fr;
+    border-radius: 13px;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-painel {
+    height: 600px;
+    min-height: 600px;
+    grid-template-rows: 105px minmax(0, 1fr);
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-marca,
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-marca {
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    gap: 7px;
+    padding: 10px 12px;
+    text-align: left;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-marca .brand-mark,
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-marca .brand-mark {
+    margin: -3px 0 -3px -3px;
+    transform: scale(0.82);
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-nome,
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-nome {
+    font-size: 0.7rem;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-marca > strong,
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-marca > strong {
+    margin: 0;
+    font-size: 0.72rem;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-turno,
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-turno {
+    width: auto;
+    margin: 0 0 0 auto;
+    padding: 4px 7px;
+    font-size: 0.45rem;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-marca::after,
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-marca::after {
+    display: none;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-conteudo {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    flex-direction: column;
+    gap: 22px;
+    padding: 24px 20px;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-hero {
+    align-items: center;
+    flex-direction: column;
+    gap: 18px;
+    text-align: center;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-destaque {
+    width: 112px;
+    height: 112px;
+    flex-basis: 112px;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-texto h1 {
+    font-size: 1.65rem;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-acoes {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-acao {
+    justify-content: center;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-faixa {
+    flex: 0 0 auto;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-faixa div {
+    min-height: 46px;
+    padding: 5px 4px;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-painel {
+    height: 250px;
+    min-height: 250px;
+    grid-template-rows: 48px minmax(0, 1fr);
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-conteudo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-hero {
+    gap: 9px;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-destaque {
+    width: 54px;
+    height: 54px;
+    flex-basis: 54px;
+    border-radius: 12px;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-destaque strong {
+    font-size: 1.5rem;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-destaque span {
+    margin-top: 3px;
+    font-size: 0.36rem;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-sobrelinha {
+    margin-bottom: 3px;
+    font-size: 0.4rem;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-texto h1 {
+    font-size: 0.87rem;
+    line-height: 1.06;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-texto p {
+    margin-top: 4px;
+    font-size: 0.46rem;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-horario {
+    margin-top: 5px;
+    padding: 3px 5px;
+    font-size: 0.36rem;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-acoes {
+    min-width: 98px;
+    justify-content: center;
+    padding-left: 8px;
+    gap: 0;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-acao {
+    display: none;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-acao--principal {
+    display: flex;
+    min-height: 48px;
+    justify-content: center;
+    padding: 7px;
+    font-size: 0.5rem;
+    text-align: center;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-faixa {
+    display: none;
+}
+
+/* Horizontal e 970 x 250 assumem o layout compacto em telas estreitas. */
+@media (max-width: 760px) {
+    body[data-widget="horizontal"].identidade-2026,
+    body[data-widget="970x250"].identidade-2026 {
+        display: grid;
+        width: 100%;
+        height: 250px;
+        min-height: 250px;
+        place-items: center;
+    }
+
+    body[data-widget="horizontal"].identidade-2026 .widget-horizontal,
+    body[data-widget="970x250"].identidade-2026 .widget-horizontal {
+        width: 100%;
+        max-width: none;
+        overflow: hidden;
+        border: 1px solid rgba(16, 82, 155, 0.12);
+        border-radius: 12px;
+        box-shadow: 0 8px 28px rgba(15, 35, 62, 0.16);
+    }
+
+    body[data-widget="horizontal"].identidade-2026 .resumo-toggle.resumo-mobile-horizontal,
+    body[data-widget="970x250"].identidade-2026 .resumo-toggle.resumo-mobile-horizontal {
+        display: flex;
+        flex: 0 0 auto;
+        width: calc(100% - 16px);
+        min-height: 24px;
+        margin: 5px 8px;
+        padding: 3px 8px;
+        border: 1px solid var(--slate-200);
+        border-radius: 6px;
+        font-size: 0.58rem;
+    }
+
+    body[data-widget="horizontal"].identidade-2026 .resumo-votos.resumo-mobile-horizontal:not(.oculto),
+    body[data-widget="970x250"].identidade-2026 .resumo-votos.resumo-mobile-horizontal:not(.oculto) {
+        display: grid;
+        flex: 0 0 auto;
+        width: calc(100% - 16px);
+        margin: 0 8px 5px;
+        overflow: hidden;
+        border: 1px solid var(--slate-200);
+        border-radius: 7px;
+    }
+
+    body[data-widget="horizontal"].identidade-2026 .resumo-mobile-horizontal .resumo-item,
+    body[data-widget="970x250"].identidade-2026 .resumo-mobile-horizontal .resumo-item {
+        padding: 6px 3px;
+    }
+
+    body[data-widget="horizontal"].identidade-2026 .resumo-mobile-horizontal .resumo-item > span:first-child,
+    body[data-widget="970x250"].identidade-2026 .resumo-mobile-horizontal .resumo-item > span:first-child {
+        margin-bottom: 2px;
+        font-size: 0.45rem;
+    }
+
+    body[data-widget="horizontal"].identidade-2026 .resumo-mobile-horizontal .resumo-valor,
+    body[data-widget="970x250"].identidade-2026 .resumo-mobile-horizontal .resumo-valor {
+        font-size: 0.56rem;
+    }
+
+    body[data-widget="horizontal"].identidade-2026 .card-cand,
+    body[data-widget="970x250"].identidade-2026 .card-cand,
+    body[data-widget="horizontal"].identidade-2026 .bloco-carrossel .carregar-mais,
+    body[data-widget="970x250"].identidade-2026 .bloco-carrossel .carregar-mais {
+        flex-basis: calc(100vw - 20px);
+        width: calc(100vw - 20px);
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-painel,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-painel {
+        width: 100%;
+        max-width: none;
+        height: 250px;
+        min-height: 250px;
+        grid-template-columns: 1fr;
+        grid-template-rows: 48px minmax(0, 1fr);
+        border-radius: 10px;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-marca,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-marca {
+        justify-content: center;
+        align-items: center;
+        flex-direction: row;
+        gap: 7px;
+        padding: 8px 10px;
+        text-align: left;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-marca .brand-mark,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-marca .brand-mark {
+        position: static;
+        margin: -3px;
+        transform: scale(0.82);
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-nome,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-nome {
+        font-size: 0.65rem;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-marca > strong,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-marca > strong {
+        margin: 0;
+        font-size: 0.66rem;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-turno,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-turno {
+        display: block;
+        width: auto;
+        margin: 0 0 0 auto;
+        padding: 4px 6px;
+        font-size: 0.42rem;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-conteudo,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-conteudo {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 104px;
+        grid-template-rows: minmax(0, 1fr);
+        gap: 8px;
+        padding: 10px;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-hero,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-hero {
+        gap: 10px;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-destaque,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-destaque {
+        width: 56px;
+        height: 56px;
+        flex-basis: 56px;
+        border-radius: 12px;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-destaque strong,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-destaque strong {
+        font-size: 1.55rem;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-destaque span,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-destaque span {
+        margin-top: 3px;
+        font-size: 0.36rem;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-sobrelinha,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-sobrelinha {
+        margin-bottom: 3px;
+        font-size: 0.4rem;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-texto h1,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-texto h1 {
+        font-size: 0.92rem;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-texto p,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-texto p {
+        margin-top: 4px;
+        font-size: 0.46rem;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-horario,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-horario {
+        margin-top: 5px;
+        padding: 3px 5px;
+        font-size: 0.36rem;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-acoes,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-acoes {
+        min-width: 0;
+        justify-content: center;
+        padding-left: 8px;
+        gap: 0;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-acao,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-acao {
+        display: none;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-acao--principal,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-acao--principal {
+        display: flex;
+        min-height: 48px;
+        justify-content: center;
+        padding: 7px;
+        font-size: 0.5rem;
+        text-align: center;
+    }
+
+    body[data-widget="horizontal"].modo-pre-eleicao-2026 .pre26-faixa,
+    body[data-widget="970x250"].modo-pre-eleicao-2026 .pre26-faixa {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pre26-acao {
+        transition: none;
+    }
+}
+
+@media (max-width: 760px) {
+    body.index-mobile-300x250.modo-pre-eleicao-2026 .pre26-painel {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+/* Dimensões finais da capa por formato. A página oficial continua existindo no
+   mesmo endereço e volta a ser renderizada automaticamente às 8h de Brasília. */
+@media (min-width: 761px) {
+    body[data-widget="padrao"].modo-pre-eleicao-2026 .pre26-painel {
+        width: min(1180px, 100%);
+        height: min(680px, 100vh);
+        min-height: min(680px, 100vh);
+        grid-template-columns: 220px minmax(0, 1fr);
+    }
+
+    body[data-widget="padrao"].modo-pre-eleicao-2026 .pre26-conteudo {
+        padding: 48px 64px;
+    }
+
+    body[data-widget="padrao"].modo-pre-eleicao-2026 .pre26-hero {
+        justify-content: center;
+    }
+
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-painel {
+        width: min(1260px, 100%);
+        height: 100px;
+        min-height: 100px;
+    }
+
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-painel {
+        width: min(970px, 100%);
+        height: 250px;
+        min-height: 250px;
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-painel {
+        width: min(1260px, 100%);
+        height: 200px;
+        min-height: 200px;
+        grid-template-columns: 190px minmax(0, 1fr);
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-marca {
+        padding: 12px 16px;
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-marca .brand-mark {
+        margin-bottom: 5px;
+        transform: scale(0.82);
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-turno {
+        margin-top: 7px;
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-conteudo {
+        grid-template-columns: minmax(0, 1fr) 158px;
+        gap: 12px;
+        padding: 13px 20px;
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-hero {
+        gap: 14px;
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-destaque {
+        width: 72px;
+        height: 72px;
+        flex-basis: 72px;
+        border-radius: 15px;
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-destaque strong {
+        font-size: 1.85rem;
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-texto h1 {
+        font-size: 1.35rem;
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-acoes {
+        gap: 4px;
+        padding-left: 12px;
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-acao {
+        min-height: 29px;
+        padding: 4px 7px;
+        font-size: 0.5rem;
+    }
+
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-faixa div {
+        min-height: 32px;
+        padding: 3px 7px;
+    }
+}
+
+/* Capas mobile de 90 e 100 px: marca, mensagem e ação ficam na mesma área
+   útil, sem herdar a composição vertical dos banners de 250 px. */
+@media (max-width: 760px) {
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-painel,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-painel,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-painel,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-painel,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-painel {
+        width: 100%;
+        max-width: none;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: 23px minmax(0, 1fr);
+        border-radius: 8px;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-painel {
+        height: 90px;
+        min-height: 90px;
+    }
+
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-painel,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-painel,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-painel,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-painel {
+        height: 100px;
+        min-height: 100px;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-marca,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-marca,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-marca,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-marca,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-marca {
+        justify-content: flex-start;
+        align-items: center;
+        flex-direction: row;
+        gap: 4px;
+        padding: 2px 6px 2px 27px;
+        text-align: left;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-marca .brand-mark,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-marca .brand-mark,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-marca .brand-mark,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-marca .brand-mark,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-marca .brand-mark {
+        position: absolute;
+        top: 50%;
+        left: -6px;
+        width: 38px;
+        height: 38px;
+        margin: 0;
+        border-radius: 11px;
+        transform: translateY(-50%) scale(0.52);
+        transform-origin: center;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-nome,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-nome,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-nome,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-nome,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-nome {
+        font-size: 0.48rem;
+        white-space: nowrap;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-marca > strong,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-marca > strong,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-marca > strong,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-marca > strong,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-marca > strong {
+        margin: 0;
+        font-size: 0.48rem;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-turno,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-turno,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-turno,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-turno,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-turno {
+        display: block;
+        width: auto;
+        margin: 0 0 0 auto;
+        padding: 2px 5px;
+        font-size: 0.32rem;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-marca::after,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-marca::after,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-marca::after,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-marca::after,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-marca::after,
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-faixa,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-faixa,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-faixa,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-faixa,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-faixa {
+        display: none;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-conteudo,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-conteudo,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-conteudo,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-conteudo,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-conteudo {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 88px;
+        grid-template-rows: minmax(0, 1fr);
+        gap: 5px;
+        padding: 4px 6px;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-hero,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-hero,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-hero,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-hero,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-hero {
+        align-self: center;
+        gap: 6px;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-destaque,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-destaque,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-destaque,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-destaque,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-destaque {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+        border-radius: 9px;
+        box-shadow: 0 6px 12px rgba(8, 47, 91, 0.16);
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-destaque strong,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-destaque strong,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-destaque strong,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-destaque strong,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-destaque strong {
+        font-size: 1.08rem;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-destaque span,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-destaque span,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-destaque span,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-destaque span,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-destaque span {
+        margin-top: 2px;
+        font-size: 0.28rem;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-sobrelinha,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-sobrelinha,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-sobrelinha,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-sobrelinha,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-sobrelinha {
+        margin-bottom: 1px;
+        font-size: 0.28rem;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-texto h1,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-texto h1,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-texto h1,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-texto h1,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-texto h1 {
+        overflow: hidden;
+        font-size: 0.66rem;
+        line-height: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-texto p,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-texto p,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-texto p,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-texto p,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-texto p {
+        margin-top: 2px;
+        overflow: hidden;
+        font-size: 0.34rem;
+        line-height: 1.05;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-horario,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-horario,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-horario,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-horario,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-horario {
+        margin-top: 2px;
+        padding: 2px 4px;
+        font-size: 0.27rem;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-acoes,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-acoes,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-acoes,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-acoes,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-acoes {
+        min-width: 0;
+        align-self: center;
+        padding: 0;
+        border: 0;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-acao,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-acao,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-acao,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-acao,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-acao {
+        display: none;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-acao--principal,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-acao--principal,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-acao--principal,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-acao--principal,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-acao--principal {
+        display: flex;
+        min-height: 27px;
+        justify-content: center;
+        gap: 4px;
+        padding: 4px 5px;
+        border-radius: 7px;
+        font-size: 0.38rem;
+        text-align: center;
+    }
+
+    body.formato-970x90.modo-pre-eleicao-2026 .pre26-acao--principal svg,
+    body.formato-320x100.modo-pre-eleicao-2026 .pre26-acao--principal svg,
+    body[data-formato="970x250x100"].modo-pre-eleicao-2026 .pre26-acao--principal svg,
+    body[data-formato="1260x100"].modo-pre-eleicao-2026 .pre26-acao--principal svg,
+    body[data-formato="1260x200"].modo-pre-eleicao-2026 .pre26-acao--principal svg {
+        width: 10px;
+        height: 10px;
+        flex-basis: 10px;
+    }
+}
+
+/* Refinamento das capas verticais. */
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-painel {
+    grid-template-rows: 72px minmax(0, 1fr);
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-marca {
+    padding: 12px 13px;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-conteudo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    gap: 14px;
+    padding: 18px;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-hero {
+    align-self: center;
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 12px;
+    border: 1px solid var(--pre26-borda);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 8px 22px rgba(8, 47, 91, 0.06);
+    text-align: left;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-destaque {
+    width: 76px;
+    height: 76px;
+    flex-basis: 76px;
+    border-radius: 16px;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-destaque strong {
+    font-size: 2rem;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-destaque span {
+    margin-top: 5px;
+    font-size: 0.43rem;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-sobrelinha {
+    margin-bottom: 4px;
+    font-size: 0.44rem;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-texto h1 {
+    font-size: 1.14rem;
+    line-height: 1.03;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-texto p {
+    margin-top: 5px;
+    font-size: 0.56rem;
+    line-height: 1.25;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-horario {
+    margin-top: 7px;
+    padding: 4px 7px;
+    font-size: 0.42rem;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-acoes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    padding: 0;
+    border: 0;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-acao {
+    min-height: 39px;
+    justify-content: center;
+    padding: 7px 10px;
+    border-radius: 10px;
+    font-size: 0.58rem;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-faixa {
+    border-radius: 10px;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-faixa div {
+    min-height: 44px;
+    padding: 5px 3px;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-faixa strong {
+    font-size: 0.64rem;
+}
+
+body[data-widget="300x600"].modo-pre-eleicao-2026 .pre26-faixa span {
+    font-size: 0.38rem;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-conteudo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    gap: 9px;
+    padding: 10px 12px 11px;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-hero {
+    width: 100%;
+    gap: 10px;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-destaque {
+    width: 56px;
+    height: 56px;
+    flex-basis: 56px;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-texto h1 {
+    font-size: 0.92rem;
+    line-height: 1.02;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-texto p {
+    margin-top: 3px;
+    overflow: hidden;
+    font-size: 0.43rem;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-horario {
+    max-width: 100%;
+    margin-top: 4px;
+    overflow: hidden;
+    padding: 3px 5px;
+    font-size: 0.31rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-acoes {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+}
+
+body[data-widget="300x250"].modo-pre-eleicao-2026 .pre26-acao--principal {
+    width: 100%;
+    min-height: 32px;
+    padding: 6px 9px;
+    border-radius: 9px;
+    font-size: 0.52rem;
+}

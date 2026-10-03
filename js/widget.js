@@ -2,6 +2,19 @@
     const ANO_ELEICAO = 2022;
     const API_PRODUCAO = 'https://backend-eleicoes.enzo-eleicoes-backend.workers.dev';
 
+    aplicarIdentidade2022();
+
+    function aplicarIdentidade2022() {
+        const cabecalho = document.querySelector('.header-brand');
+        if (!cabecalho || cabecalho.querySelector('.brand-mark')) return;
+
+        const marca = document.createElement('span');
+        marca.className = 'brand-mark';
+        marca.setAttribute('aria-hidden', 'true');
+        cabecalho.prepend(marca);
+        document.body.classList.add('identidade-2022');
+    }
+
     function obterApiBaseUrl() {
         const ambienteLocal = window.location.hostname === '127.0.0.1'
             || window.location.hostname === 'localhost';

@@ -1,0 +1,8 @@
+/dist-pages/
+/.pages-tests/
+/.wrangler/
+/node_modules/
+/.env
+/.env.*
+/.dev.vars
+/.dev.vars.*

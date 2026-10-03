@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="ad.size" content="width=1200,height=100">
     <title>Portal de Apuração 2026 - Horizontal</title>
     <link rel="stylesheet" href="/css/horizontal.css">
     <link rel="stylesheet" href="/css/widget.css">
+    <link rel="stylesheet" href="/css/pre-eleicao-2026.css">
 </head>
 <body data-widget="horizontal">
     <div class="widget-horizontal">
         <div class="bloco-header">
             <div class="header-brand">
                 <div class="header-copy">
-                    <span class="header-kicker">Resultados TSE</span>
                     <h2>Apuração 2026</h2>
                 </div>
-                <a class="produto-link" href="https://paineleleitoral2026.vercel.app/?utm_source=widget&amp;utm_medium=referral&amp;utm_campaign=apuracao_2026" target="_blank" rel="noopener noreferrer" aria-label="Tenha este widget no seu site">
+                <a class="produto-link" href="https://www.paineleleitoralnews.com.br/" target="_blank" rel="noopener noreferrer" aria-label="Tenha este widget no seu site">
                     <span class="produto-link-amplo">Tenha este widget</span>
                     <span class="produto-link-curto">Obter widget</span>
                     <span aria-hidden="true">↗</span>
@@ -77,13 +78,24 @@
             <span id="ultima-atualizacao" class="data-hora" aria-live="polite">Conectando...</span>
         </div>
 
+        <button type="button" class="resumo-toggle resumo-mobile-horizontal" onclick="toggleResumo()" aria-expanded="false" aria-controls="bloco-resumo">
+            <span id="txt-toggle">Ver resumo de votos</span>
+        </button>
+
+        <div id="bloco-resumo" class="resumo-votos resumo-mobile-horizontal oculto">
+            <div class="resumo-item"><span>Válidos</span><span class="resumo-valor" id="votos-validos">--</span></div>
+            <div class="resumo-item"><span>Brancos</span><span class="resumo-valor" id="votos-brancos">--</span></div>
+            <div class="resumo-item"><span>Nulos</span><span class="resumo-valor" id="votos-nulos">--</span></div>
+            <div class="resumo-item"><span>Abstenções</span><span class="resumo-valor" id="votos-abstencoes">--</span></div>
+        </div>
+
         <div id="lista-candidatos" class="bloco-carrossel" aria-live="polite" aria-busy="true">
             <span class="loading-msg"><span class="loading-spinner" aria-hidden="true"></span>Buscando dados no TSE...</span>
         </div>
     </div>
     <script src="/seguranca.js"></script>
+    <script src="/js/pre-eleicao-2026.js"></script>
     <script src="/js/widget-2026.js"></script>
     <script src="/js/horizontal.js"></script>
 </body>
 </html>
-
