@@ -198,6 +198,36 @@ async function main() {
             if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails));
             return r.result.value;
         }
+        async function avaliarIframeCliente(expressao, formato) {
+            const prefixo = `${dominio}/2026/${formato}`;
+            const separado = [...sessoes].find(([, a]) => a.type === 'iframe' && a.url.startsWith(prefixo));
+            if (separado) return avaliar(expressao, separado[0]);
+            // Site principal e banners compartilham o mesmo site registravel.
+            // O Chrome pode manter o iframe no processo da pagina, sem target OOPIF.
+            const { frameTree } = await enviar('Page.getFrameTree', {}, sessionId);
+            const encontrar = arvore => {
+                if (arvore.frame.parentId && arvore.frame.url.startsWith(prefixo)) return arvore.frame;
+                for (const filho of arvore.childFrames || []) {
+                    const encontrado = encontrar(filho);
+                    if (encontrado) return encontrado;
+                }
+            };
+            const frame = encontrar(frameTree);
+            if (!frame) return false;
+            try {
+                const { executionContextId } = await enviar('Page.createIsolatedWorld', {
+                    frameId: frame.id, worldName: 'teste-licenca',
+                }, sessionId);
+                const r = await enviar('Runtime.evaluate', {
+                    expression: expressao, contextId: executionContextId, returnByValue: true,
+                }, sessionId);
+                if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails));
+                return r.result.value;
+            } catch (erro) {
+                if (/Cannot find context|Execution context was destroyed|No frame for given id/.test(erro.message)) return false;
+                throw erro;
+            }
+        }
         async function aguardar(fn, detalhe) {
             for (let i = 0; i < 400; i++) {
                 if (await fn()) return;
@@ -316,10 +346,9 @@ async function main() {
                 await enviar('Page.navigate', { url: urlPai }, sessionId);
                 await aguardar(() => avaliar(`location.href===${JSON.stringify(urlPai)}`), 'origem de teste do cliente');
                 const formato = modo === 'embed' ? '1260x200' : '320x100';
-                await aguardar(async () => {
-                    const sessaoFilho = [...sessoes].find(([, a]) => a.type === 'iframe' && a.url.startsWith(`${dominio}/2026/${formato}`));
-                    return sessaoFilho && await avaliar(`document.referrer===${JSON.stringify(`${origemCliente}/`)} && (${candidatos})`, sessaoFilho[0]);
-                }, `${origemCliente}: ${modo} autorizado pela CSP e pela licenca`);
+                await aguardar(() => avaliarIframeCliente(
+                    `document.referrer===${JSON.stringify(`${origemCliente}/`)} && (${candidatos})`, formato,
+                ), `${origemCliente}: ${modo} autorizado pela CSP e pela licenca`);
             }
         }
         console.log('Site principal e cinco portais com/sem www: embed e iframe autorizados pela CSP/licenca. Origens simuladas; nenhum portal real consultado ou alterado: OK.');
