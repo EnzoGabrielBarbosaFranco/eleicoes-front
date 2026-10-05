@@ -2,10 +2,13 @@
     const ANO_ELEICAO = 2026;
     const INICIO_RESULTADOS_2026 = Date.parse('2026-10-04T08:00:00-03:00');
     const CODIGO_AGUARDANDO_TSE = 'ELEICAO_AGUARDANDO_TSE';
-    const MENSAGEM_AGUARDANDO = 'Os resultados das Eleições 2026 ainda não estão disponíveis.';
-    const MENSAGEM_INICIO_APURACAO = 'A divulgação dos resultados das Eleições 2026 começa em breve.';
+    const MENSAGEM_AGUARDANDO = 'Aguardando os resultados de 2026';
+    const MENSAGEM_INICIO_APURACAO = 'Aguardando os primeiros resultados';
     const MENSAGEM_INDISPONIVEL = 'Os resultados das Eleições 2026 estão temporariamente indisponíveis.';
     const API_PRODUCAO = 'https://backend-eleicoes-2026.enzo-eleicoes-backend.workers.dev';
+    const breakpoint = window.PreEleicao2026?.breakpoint || 760;
+    const consultaMobile = window.PreEleicao2026?.consultaMobile || `(max-width: ${breakpoint}px)`;
+    const consultaDesktop = window.PreEleicao2026?.consultaDesktop || `(min-width: ${breakpoint + 1}px)`;
 
     function obterApiBaseUrl() {
         const ambienteLocal = window.location.hostname === '127.0.0.1'
@@ -199,7 +202,7 @@
 
         function atualizarResumo(resumo) {
             const resumoCompactoMobile = formato320x100
-                || (window.matchMedia('(max-width: 760px)').matches && (formato970x90 || formatoCompacto100));
+                || (window.matchMedia(consultaMobile).matches && (formato970x90 || formatoCompacto100));
             const valorResumo = (total, percentual) => resumoCompactoMobile
                 ? `${percentual || '0,00'}%`
                 : `${total || '--'}\n(${percentual || '0,00'}%)`;
@@ -231,10 +234,22 @@
             limparProgresso();
             removerAvisoDados();
             ultimaAtualizacao.innerText = 'Aguardando resultados de 2026';
-            lista.innerHTML = `
+            lista.innerHTML = criarEstadoAguardando(MENSAGEM_AGUARDANDO);
+        }
+
+        function criarEstadoAguardando(titulo) {
+            return `
                 <div class="estado-eleicao estado-aguardando" role="status">
-                    <span class="estado-icone" aria-hidden="true">◷</span>
-                    <strong>${MENSAGEM_AGUARDANDO}</strong>
+                    <span class="estado-icone" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="8.5" />
+                            <path d="M12 7.5V12l3 2" />
+                        </svg>
+                    </span>
+                    <div class="estado-copy">
+                        <strong>${escaparHtml(titulo)}</strong>
+                        <span class="estado-descricao">Atualização automática pelo TSE</span>
+                    </div>
                 </div>
             `;
         }
@@ -263,12 +278,7 @@
             atualizarAvisoDados(data || {});
             limparProgresso();
             ultimaAtualizacao.innerText = 'Aguardando os primeiros resultados';
-            lista.innerHTML = `
-                <div class="estado-eleicao estado-aguardando" role="status">
-                    <span class="estado-icone" aria-hidden="true">◷</span>
-                    <strong>${MENSAGEM_INICIO_APURACAO}</strong>
-                </div>
-            `;
+            lista.innerHTML = criarEstadoAguardando(MENSAGEM_INICIO_APURACAO);
         }
 
         function preservarUltimaRespostaOuMostrarIndisponivel() {
@@ -530,7 +540,7 @@
 
         [selectTurno, selectCargo, selectUf].forEach((select) => select.addEventListener('change', aoAlterarFiltro));
 
-        window.matchMedia('(max-width: 760px)').addEventListener('change', () => {
+        window.matchMedia(consultaMobile).addEventListener('change', () => {
             atualizarResumo(estado.ultimaApuracao?.resumo || null);
         });
 
@@ -540,7 +550,7 @@
             const velocidadeMobile = formato970x90
                 ? 32
                 : (formatoCompacto100 ? 34 : 88);
-            const permiteAutoScroll = window.matchMedia('(min-width: 761px)');
+            const permiteAutoScroll = window.matchMedia(consultaDesktop);
 
             lista.addEventListener('mouseenter', () => {
                 if (permiteAutoScroll.matches) estado.pausado = true;

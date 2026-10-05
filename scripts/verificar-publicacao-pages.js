@@ -7,7 +7,7 @@ const path = require('node:path');
 const { paginas } = require('./preparar-pages');
 const raiz = path.resolve(__dirname, '..');
 const destino = path.join(raiz, 'dist-pages');
-const dominio = 'https://apuracao.paineleleitoralnews.com.br';
+const dominio = 'https://apuracao.placardasurnas.com.br';
 
 async function buscar(url, opcoes = {}) {
     return fetch(url, { ...opcoes, signal: AbortSignal.timeout(20000) });

@@ -420,7 +420,7 @@
         min-width: 100%;
         height: 34px;
         min-height: 0;
-        gap: 0;
+        gap: 8px;
         padding: 3px 7px;
         border-radius: 6px;
         font-size: 0.42rem;
@@ -428,6 +428,6 @@
     }
 
     body.formato-970x90[data-widget="horizontal"] .bloco-carrossel .estado-eleicao .estado-icone {
-        display: none;
+        display: grid;
     }
 }

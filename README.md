@@ -1,10 +1,18 @@
-# Eleições Frontend
+# Placar das Urnas — Apuração
+
+**Nova marca publicada com autorização em 5 de outubro de 2026:** banners em `https://apuracao.placardasurnas.com.br` e domínio comercial `https://placardasurnas.com.br/`. Deployment Pages `73947072-91bd-4ec8-a39e-7cc8e61e7ba2`; CORS publicado nos dois Workers. Site principal com/sem `www` e portais existentes liberados na CSP e na licença. Cores, símbolo, filtros, medidas e tags foram preservados. A configuração da zona ainda aumenta o cache dos scripts sem hash de cinco minutos para quatro horas; essa divergência não foi ocultada no teste nem alterada nesta publicação. Consulte [CLOUDFLARE-PAGES.md](./CLOUDFLARE-PAGES.md). Os registros abaixo são históricos. Calendário do segundo turno exige ajuste e testes separados.
 
 Frontend em HTML, CSS e JavaScript puro. Não é necessário executar `npm install`.
 
 ## Cloudflare Pages
 
-**Correção local, ainda não publicada:** o Git atual já separa 2026 de 2022, mas o deployment Pages `a5667a72-7b47-4510-ab95-900c771948d4` ainda serve o widget anterior com demonstração histórica. O build local agora usa somente o backend de 2026 nas páginas `/2026/`, rejeita respostas históricas ou sem o ano correto e não distribui a amostra `2026/assets/dados-2022.json`. Os testes locais passaram; falta nova autorização para publicar esse build e verificar os arquivos públicos. Push no Git não faz essa publicação, pois o projeto usa Direct Upload.
+**Correção do embed publicada com autorização:** deployment `281e0a3b-335d-4a03-a237-e3381ea84dc1`, em `2026-10-03T03:41:01Z` (2 de outubro em Cuiabá). Todos os dez formatos de 2026 passaram nas matrizes local e pública: 150 cenários de desktop/mobile, capas e apuração por matriz, com APIs/datas simuladas somente nos testes. O breakpoint explícito considera a largura da página; contêineres de até 760 px também recebem layout mobile. A largura é limitada à área visível da viewport e dos ancestrais, inclusive quando o pai tem 1260 px no celular. O modo é sincronizado com o iframe, sem transformar banners de 970 px em mobile no desktop somente por terem breakpoint 1050. Formatos fixos e snippets Ad Manager foram preservados. Use a página local `testar-embed.html` descrita abaixo para revisar. Registro e validação pública em [CLOUDFLARE-PAGES.md](./CLOUDFLARE-PAGES.md).
+
+**Cinco portais liberados e publicados:** deployment `4067576a-3af7-412d-ae44-ac60c49f350c`, em `2026-10-03T02:52:27Z`, autorizado separadamente. `portaldeprefeitura.com.br`, `portalmais360.com.br`, `diariodajaragua.com.br`, `douradosnews.com.br` e `folhape.com.br`, com e sem `www`, estão autorizados na licença JS e na CSP. Testes locais e públicos de embed/iframe nas dez origens simuladas passaram; inserções reais em portal/SafeFrame continuam pendentes. Os códigos de integração permanecem iguais; Workers, DNS e cache não foram alterados. Sem commit/push pelo agente. Consulte [CLOUDFLARE-PAGES.md](./CLOUDFLARE-PAGES.md).
+
+**Visual de espera publicado:** deployment `f36b0a5d-74e5-481f-b39e-ecc80f7d9dcd`, em `2026-10-03T02:35:50Z` (2 de outubro em Cuiabá), autorizado separadamente. Painel de espera claro e legível, relógio também no 970×90 mobile e dimensões preservadas. Testes locais e de integração pública com APIs interceptadas passaram, incluindo filtros, embed e iframe. Os arquivos públicos correspondem ao build e os TTLs JS/CSS foram conferidos. Backend, DNS e códigos dos clientes não mudaram. Permanece apenas o resíduo de cache da antiga amostra descrito abaixo; não é usado pelos widgets atuais e não foi limpo. O código continua localmente, sem commit/push pelo agente. Registro detalhado em [CLOUDFLARE-PAGES.md](./CLOUDFLARE-PAGES.md).
+
+**Correção 2026 publicada com nova autorização:** deployment `674ed057-a2ae-4b57-a7a2-d79929123522`, em `2026-10-03T01:49:44Z` (2 de outubro em Cuiabá). As páginas `/2026/` agora usam somente o backend de 2026, rejeitam respostas históricas ou sem o ano correto e não incluem a amostra `2026/assets/dados-2022.json` no build. O domínio já referencia o novo script `/static/js-widget-2026.026006f4e38ecd68.js`, sem fallback histórico. Testes locais, integração pública com API interceptada e CORS real passaram. O inventário estático comparou as 15 páginas e recursos, mas não concluiu integralmente: a URL antiga da amostra ainda retorna um JSON retido no cache; com query inédita retorna 404. O widget novo não consulta essa URL. Limpeza desse resíduo de cache permanece pendente de autorização específica. Workers, DNS e regras de cache não foram alterados. Push no Git não publica o Pages, pois o projeto usa Direct Upload.
 
 Em 2 de outubro de 2026, o frontend e o CORS dos dois Workers foram publicados com autorização. O domínio `https://apuracao.paineleleitoralnews.com.br` foi associado ao Pages com HTTPS ativo e CNAME exclusivo, preservando os seis registros DNS anteriores. Dados históricos da fase atual, filtros, embed e iframe foram verificados no navegador pelo domínio final. A regra de cache foi publicada pelo usuário: URLs sem hash recebem cinco minutos, e recursos com hash recebem um ano; o inventário público das 15 páginas e recursos passou sem divergências. A origem `pages.dev` não está liberada para consultas às APIs. Vercel e clientes antigos foram preservados. O teste real no SafeFrame do Ad Manager ainda está pendente. Consulte [CLOUDFLARE-PAGES.md](./CLOUDFLARE-PAGES.md) para versões, testes e retorno.
 
@@ -73,7 +81,7 @@ Em produção, o frontend de 2022 usa `https://backend-eleicoes.enzo-eleicoes-ba
 Use o incorporador oficial. Ele cria um `iframe` dentro de Shadow DOM, portanto o CSS do site cliente não altera fontes, espaçamentos, cards ou dimensões internas do widget.
 
 ```html
-<script src="https://apuracao.paineleleitoralnews.com.br/embed.js" defer></script>
+<script src="https://apuracao.placardasurnas.com.br/embed.js" defer></script>
 
 <eleicoes-widget ano="2026" formato="300x250"></eleicoes-widget>
 ```
@@ -119,7 +127,7 @@ Para incorporar um banner, carregue o mesmo `embed.js` e use o Web Component esp
 
 ```html
 <script
-  src="https://apuracao.paineleleitoralnews.com.br/embed.js"
+  src="https://apuracao.placardasurnas.com.br/embed.js"
   defer>
 </script>
 
@@ -129,7 +137,7 @@ Para incorporar um banner, carregue o mesmo `embed.js` e use o Web Component esp
 </previa-eleitoral-2026>
 ```
 
-O atributo `breakpoint` continua aceito para compatibilidade. O breakpoint estrutural dos HTMLs é `760px`; por isso a altura externa acompanha a largura útil realmente entregue ao iframe. Entre 761 e 1050 px o desenho desktop é preservado quando há espaço, sem cortar o conteúdo. Uma coluna estreita em uma janela larga recebe automaticamente o desenho e a altura compactos. O banner observa mudanças do contêiner, desconta seu padding e não depende do CSS do portal.
+`breakpoint="940"` determina o layout mobile quando a viewport da página é de até 940 px. Um contêiner de até 760 px também ativa o modo mobile, mesmo numa página desktop. O breakpoint e o modo escolhido são enviados ao iframe por query `breakpoint` e `embed-modo`, sincronizando CSS, JS, capa pré-eleição e altura do embed. Uma página larga com banner de 970 px continua desktop mesmo com breakpoint 1050. Sem o atributo, o padrão permanece 760 px. Formatos fixos e páginas de 2022 conservam o comportamento anterior. O embed considera o espaço visível da viewport e de todos os ancestrais, desconta padding e acompanha mudanças de tamanho; não modifica o CSS do portal. O iframe recarrega somente quando muda de modo ou de atributos, não a cada ajuste de largura; os filtros persistidos são preservados.
 
 Os atributos opcionais `visao`, `marca`, `cor-primaria`, `cor-destaque` e `cor-clara` personalizam a integração. Os aliases `view`, `nome`, `cor1`, `cor2` e `cor3` continuam aceitos. O endereço dos HTMLs é resolvido relativamente ao próprio `embed.js`, por isso o mesmo código funciona em ambiente local, Vercel ou outro domínio de publicação.
 
@@ -156,3 +164,14 @@ http://127.0.0.1:5500/2026/?pre-eleicao=dia
 ```
 
 Os parâmetros de pré-visualização são aceitos somente em `localhost` e `127.0.0.1`.
+
+## Revisar o embed localmente
+
+A página `testar-embed.html` não faz parte do build de produção. Com o servidor local na porta 5500:
+
+```text
+http://127.0.0.1:5500/testar-embed.html?pre-eleicao=vespera&breakpoint=940&cenario=pai-largo
+http://127.0.0.1:5500/testar-embed.html?pre-eleicao=dia&breakpoint=940&cenario=pai-largo
+```
+
+Abra o modo responsivo do navegador e confira 320, 360, 390 e 400 px, além de 940 e 941 px. A página permite simular pai com 1260 px, ancestral estreito, flex, grid, display contents e contêiner inicialmente oculto. Os parâmetros de prévia só são encaminhados pelo embed quando tanto a página de teste quanto o iframe são locais; o embed de produção não permite forçar a capa.

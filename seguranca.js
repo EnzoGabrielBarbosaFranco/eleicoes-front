@@ -1,10 +1,15 @@
 (function() {
     const dominiosAutorizados = [
-		'apuracao.paineleleitoralnews.com.br',
+		'apuracao.placardasurnas.com.br',
 		'eleicoes-front.vercel.app',
         'angular-transportes.vercel.app',
         'paineleleitoral2026.vercel.app',
-        'www.paineleleitoralnews.com.br',
+        'placardasurnas.com.br',
+        'portaldeprefeitura.com.br',
+        'portalmais360.com.br',
+        'diariodajaragua.com.br',
+        'douradosnews.com.br',
+        'folhape.com.br',
         'tpc.googlesyndication.com',
         'pagead2.googlesyndication.com',
         'securepubads.g.doubleclick.net',

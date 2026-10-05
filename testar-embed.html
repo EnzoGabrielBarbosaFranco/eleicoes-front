@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Teste local do embed — Apuração 2026</title>
+  <link rel="icon" href="data:,">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px system-ui, sans-serif; color: #07182d; }
+    .instrucoes { padding: 16px; }
+    form { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    label { display: grid; gap: 4px; }
+    input, select, button { padding: 7px; font: inherit; }
+    .area-teste { width: 100%; max-width: 100%; }
+    body[data-cenario="pai-largo"] .propaganda,
+    body[data-cenario="ancestral-estreito"] .propaganda,
+    body[data-cenario="grid"] .propaganda { width: 1260px; }
+    body[data-cenario="ancestral-estreito"] .area-teste { width: min(340px, 100%); }
+    body[data-cenario="flex"] .area-teste { display: flex; }
+    body[data-cenario="flex"] .propaganda { display: flex; min-width: 1260px; }
+    body[data-cenario="grid"] .area-teste { display: grid; grid-template-columns: minmax(0, 1fr); }
+    body[data-cenario="contents"] .propaganda { display: contents; }
+    body[data-cenario="oculto"] .area-teste { display: none; }
+  </style>
+  <script src="/embed.js" defer></script>
+</head>
+<body>
+  <div class="instrucoes">
+    <h1>Teste local do embed</h1>
+    <p>Use o modo responsivo do navegador. Esta página não entra no build publicado.</p>
+    <form method="get">
+      <label>Capa
+        <select name="pre-eleicao"><option value="vespera">Véspera</option><option value="dia">Dia: início às 8h</option><option value="teste">Transição em 2 segundos</option></select>
+      </label>
+      <label>Breakpoint <input name="breakpoint" type="number" value="940" min="1" max="10000"></label>
+      <label>Contêiner
+        <select name="cenario">
+          <option value="normal">Normal</option><option value="pai-largo">Pai com 1260 px</option>
+          <option value="ancestral-estreito">Ancestral com 340 px</option><option value="flex">Flex com pai largo</option>
+          <option value="grid">Grid com pai largo</option><option value="contents">Display contents</option><option value="oculto">Inicialmente oculto</option>
+        </select>
+      </label>
+      <input type="hidden" name="duracao" value="2">
+      <input type="hidden" name="reiniciar" value="1">
+      <button type="submit">Testar</button>
+    </form>
+    <button type="button" onclick="document.querySelector('.area-teste').style.display='block'">Mostrar contêiner oculto</button>
+  </div>
+  <main class="area-teste"><div class="propaganda"></div></main>
+  <script>
+    const consultaTeste = new URLSearchParams(location.search);
+    for (const campoTeste of document.querySelectorAll('form [name]')) {
+      if (consultaTeste.has(campoTeste.name)) campoTeste.value = consultaTeste.get(campoTeste.name);
+    }
+    document.body.dataset.cenario = consultaTeste.get('cenario') || 'normal';
+    const widgetTeste = document.createElement('eleicoes-widget');
+    widgetTeste.setAttribute('ano', '2026');
+    widgetTeste.setAttribute('formato', consultaTeste.get('formato') || '1260x200');
+    if (consultaTeste.get('breakpoint') !== 'padrao') {
+      widgetTeste.setAttribute('breakpoint', consultaTeste.get('breakpoint') || '940');
+    }
+    document.querySelector('.propaganda').append(widgetTeste);
+  </script>
+</body>
+</html>

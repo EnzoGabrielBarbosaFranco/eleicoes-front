@@ -10,7 +10,9 @@ const { spawn } = require('node:child_process');
 const { setTimeout: esperar } = require('node:timers/promises');
 const { gerar, paginas, formatos2022, formatos2026 } = require('./preparar-pages');
 const raiz = path.resolve(__dirname, '..');
-const dominio = 'https://apuracao.paineleleitoralnews.com.br';
+const dominio = 'https://apuracao.placardasurnas.com.br';
+const portaisClientes = ['portaldeprefeitura.com.br', 'portalmais360.com.br',
+    'diariodajaragua.com.br', 'douradosnews.com.br', 'folhape.com.br'];
 const tamanho = { index: [1180, 680], horizontal: [1200, 100], '970x250': [970, 250],
     '970x90': [970, 90], '970x250x100': [970, 250], '1260x100': [1260, 100],
     '1260x200': [1260, 200], '320x100': [320, 100], '300x250': [300, 250], '300x600': [300, 600] };
@@ -19,6 +21,8 @@ function validarBuild(build) {
     const ler = (arquivo) => fs.readFileSync(path.join(build.destino, arquivo), 'utf8');
     for (const pagina of paginas) {
         const html = ler(pagina);
+        assert(html.includes('<title>Placar das Urnas'), `${pagina}: titulo sem a nova marca`);
+        assert(!html.includes('paineleleitoralnews.com.br'), `${pagina}: dominio antigo em link publicado`);
         assert(!html.includes('vercel.app'), `${pagina}: dependencia da Vercel`);
         for (const [, url] of html.matchAll(/(?:src|href)="(\/static\/[^\"]+)"/g)) {
             assert(fs.existsSync(path.join(build.destino, url.slice(1))), `${pagina}: recurso ausente ${url}`);
@@ -40,13 +44,22 @@ function validarBuild(build) {
         assert(!fs.existsSync(path.join(build.destino, nome)), `Nao publicar ${nome}`);
     }
     const headers = ler('_headers');
+    assert(headers.split(/\r?\n/).every(linha => linha.length <= 2000), 'Linha de _headers excede o limite do Pages.');
     const csp = headers.match(/Content-Security-Policy: (.+)/)[1];
+    assert(csp.includes('https://placardasurnas.com.br '));
+    assert(csp.includes('https://www.placardasurnas.com.br '));
+    assert(!csp.includes('paineleleitoralnews.com.br'));
     assert.equal(csp, JSON.parse(fs.readFileSync(path.join(raiz, 'vercel.json'), 'utf8')).headers[0].headers[0].value);
     assert(headers.includes('max-age=31536000, immutable'));
     assert(!headers.includes('X-Frame-Options'));
     assert(fs.existsSync(path.join(build.destino, '404.html')));
     assert(!fs.existsSync(path.join(build.destino, '2026/assets/dados-2022.json')));
     const widget2026 = ler('js/widget-2026.js');
+    const preEleicao = ler('js/pre-eleicao-2026.js');
+    assert(preEleicao.includes("configuracaoVisual.marca || 'Placar das Urnas'"));
+    assert(preEleicao.includes("const LINK_ADQUIRIR = 'https://placardasurnas.com.br/';"));
+    assert(!preEleicao.includes('Painel Eleitoral') && !preEleicao.includes('paineleleitoralnews.com.br'));
+    assert(!ler('embed.js').includes('Painel eleitoral'));
     assert(!/2022|8787|backend-eleicoes\.enzo|dados-2022/.test(widget2026), 'Widget 2026 nao deve conter fontes historicas.');
 
     const scripts = new Map();
@@ -70,6 +83,14 @@ function validarBuild(build) {
             }
         }
         scripts.set(endereco, classes);
+        for (const [valor, esperado] of [['940', '940'], ['1050', '1050'], ['760', null],
+            ['-1', null], ['940abc', null], ['10001', null], ['', null]]) {
+            const elemento = Object.create(classes.get('eleicoes-widget').prototype);
+            elemento.getAttribute = nome => ({ ano: '2026', formato: '1260x200', breakpoint: valor })[nome] || null;
+            assert.equal(elemento.criarEndereco().searchParams.get('breakpoint'), esperado);
+            elemento.getAttribute = nome => ({ ano: '2026', formato: '320x100', breakpoint: valor })[nome] || null;
+            assert.equal(elemento.criarEndereco().searchParams.get('breakpoint'), null, 'Formato fixo nao deve herdar breakpoint.');
+        }
     }
     const entrega = path.join(raiz, 'entrega', 'ad-manager');
     const snippets = fs.readdirSync(entrega).filter((nome) => nome.endsWith('.txt'));
@@ -84,8 +105,18 @@ function validarBuild(build) {
         assert.equal(Number(snippet.match(/\bwidth="(\d+)"/)[1]), tamanho[formato][0]);
         assert.equal(Number(snippet.match(/\bheight="(\d+)"/)[1]), tamanho[formato][1]);
     }
-    for (const [pai, autorizado] of [[`${dominio}/teste`, true], ['https://www.paineleleitoralnews.com.br/', true],
-        ['https://abc.safeframe.googlesyndication.com/safeframe/', true], ['https://nao-licenciado.example/', false]]) {
+    const ancestrais = csp.match(/^frame-ancestors (.+);$/)[1].split(/\s+/);
+    for (const host of portaisClientes) {
+        assert(ancestrais.includes(`https://${host}`), `${host}: CSP ausente`);
+        assert(ancestrais.includes(`https://www.${host}`), `${host}: www ausente na CSP`);
+        assert(!ancestrais.includes(`https://*.${host}`), `${host}: nao liberar subdominios indiscriminadamente na CSP`);
+    }
+    for (const [pai, autorizado] of [[`${dominio}/teste`, true], ['https://placardasurnas.com.br/', true],
+        ['https://www.placardasurnas.com.br/', true], ['https://www.paineleleitoralnews.com.br/', false],
+        ['https://apuracao.paineleleitoralnews.com.br/', false],
+        ['https://abc.safeframe.googlesyndication.com/safeframe/', true], ['https://nao-licenciado.example/', false],
+        ...portaisClientes.flatMap(host => [[`https://${host}/`, true], [`https://www.${host}/`, true],
+            [`https://${host}.nao-licenciado.example/`, false], [`https://falso-${host}/`, false]])]) {
         const documento = { referrer: pai, documentElement: { innerHTML: '<html></html>' } };
         let bloqueado = false;
         try {
@@ -115,6 +146,11 @@ async function testarNavegador(build) {
     let origem;
     const servir = (req, res) => {
         const url = new URL(req.url, 'http://local');
+        if (url.pathname === '/testar-embed.html') {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            res.end(fs.readFileSync(path.join(raiz, 'testar-embed.html'), 'utf8'));
+            return;
+        }
         if (url.pathname === '/teste-embed' || url.pathname === '/teste-iframe') {
             const conteudo = url.pathname === '/teste-embed'
                 ? `<script src="${origem}/embed.js"></script><eleicoes-widget ano="2026" formato="1260x200" breakpoint="1050"></eleicoes-widget>`
@@ -227,7 +263,7 @@ async function testarNavegador(build) {
                     if (cenario2026 === 'historico') json.fase = 'historico';
                     if (cenario2026 === 'sem-votos' && Array.isArray(json.candidatos)) {
                         json.percurso = '0,00';
-                        json.resumo.validos = '0';
+                        Object.keys(json.resumo).forEach((campo) => { json.resumo[campo] = campo.startsWith('pct') ? '0,00' : '0'; });
                         json.candidatos.forEach((c) => { c.votos = '0,00'; c.votosNumero = 0; c.total = '0'; });
                     }
                     if (cenario2026 === 'ano-2022' && Array.isArray(json.candidatos)) {
@@ -320,6 +356,61 @@ async function testarNavegador(build) {
         fase = 'oficial';
         console.log('Estados de espera, simulacao e resultados oficiais: OK.');
 
+        // Revisao visual da espera: nunca preencher o banner com candidatos ficticios.
+        for (const modoEspera of ['sem-catalogo', 'sem-votos']) {
+            disponivel = modoEspera === 'sem-votos';
+            cenario2026 = modoEspera === 'sem-votos' ? 'sem-votos' : 'normal';
+            const relogioEspera = await enviar('Page.addScriptToEvaluateOnNewDocument', {
+                source: `window.__testeRelogio.agora = Date.parse('${modoEspera === 'sem-votos' ? '2026-10-04' : '2026-10-02'}T18:00:00-03:00');`,
+            }, sessionId);
+            for (const formato of formatos2026) {
+                for (const viewport of [...new Set([tamanho[formato][0], 320])]) {
+                    await navegar(`2026/${formato}.html`, viewport);
+                    await aguardar("document.querySelector('.estado-aguardando .estado-descricao')");
+                    const visual = await avaliar(`(() => {
+                        const painel = document.querySelector('.widget-container,.widget-horizontal');
+                        const lista = document.getElementById('lista-candidatos');
+                        const estado = document.querySelector('.estado-aguardando');
+                        const icone = estado.querySelector('.estado-icone');
+                        const p = painel.getBoundingClientRect(), l = lista.getBoundingClientRect(), r = estado.getBoundingClientRect();
+                        const i = icone.getBoundingClientRect();
+                        return { painel: {x:p.x,y:p.y,w:p.width,h:p.height}, estado: {x:r.x,y:r.y,w:r.width,h:r.height},
+                            lista: {x:l.x,y:l.y,w:l.width,h:l.height}, borda: getComputedStyle(estado).borderTopStyle,
+                            icone: {x:i.x,y:i.y,w:i.width,h:i.height,display:getComputedStyle(icone).display},
+                            textos: [...estado.querySelectorAll('strong,.estado-descricao')].map(e => {
+                                const t = e.getBoundingClientRect(); return {texto:e.innerText,x:t.x,y:t.y,w:t.width,h:t.height,font:parseFloat(getComputedStyle(e).fontSize)};
+                            }), candidatos: document.querySelectorAll('.card-cand,.candidato-card').length };
+                    })()`);
+                    assert.equal(visual.borda, 'solid', `${formato}: espera nao deve parecer um alerta tracejado`);
+                    assert.equal(visual.candidatos, 0);
+                    assert(visual.estado.y >= visual.lista.y - 1 && visual.estado.y + visual.estado.h <= visual.lista.y + visual.lista.h + 1,
+                        `${formato}/${viewport}: espera cortada ${JSON.stringify(visual)}`);
+                    assert(visual.textos.every(t => t.w > 0 && t.h > 0 && t.font >= 9 &&
+                        t.x >= visual.estado.x && t.x + t.w <= visual.estado.x + visual.estado.w + 1 &&
+                        t.y >= visual.estado.y && t.y + t.h <= visual.estado.y + visual.estado.h + 1),
+                        `${formato}/${viewport}: texto da espera cortado ${JSON.stringify(visual)}`);
+                    if (formato === '970x90') {
+                        const i = visual.icone, r = visual.estado;
+                        assert(i.display !== 'none' && i.w > 0 && i.h > 0 &&
+                            i.x >= r.x && i.x + i.w <= r.x + r.w + 1 &&
+                            i.y >= r.y && i.y + i.h <= r.y + r.h + 1,
+                        `970x90/${viewport}: relogio oculto ou cortado ${JSON.stringify(visual)}`);
+                        assert.equal(visual.painel.h, 90, 'O relogio nao deve mudar a altura do 970x90.');
+                    }
+                    if ((formato === '1260x200' && [1260, 320].includes(viewport)) || ['320x100', '970x90'].includes(formato)) {
+                        const p = visual.painel;
+                        const captura = await enviar('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true,
+                            clip: { x: p.x, y: p.y, width: p.w, height: p.h, scale: 1 } }, sessionId);
+                        fs.writeFileSync(path.join(diretorioTestes, `espera-${modoEspera}-${formato}-${viewport}.png`), Buffer.from(captura.data, 'base64'));
+                    }
+                }
+            }
+            await enviar('Page.removeScriptToEvaluateOnNewDocument', { identifier: relogioEspera.identifier }, sessionId);
+        }
+        disponivel = true;
+        cenario2026 = 'normal';
+        console.log('Visual de espera: dez formatos desktop/320px, antes da eleicao e com votos zerados, sem cortes: OK.');
+
         // Todos os formatos 2026 precisam manter o ano mesmo antes do dia da eleicao.
         const scriptDataAnterior = await enviar('Page.addScriptToEvaluateOnNewDocument', {
             source: "window.__testeRelogio.agora = Date.parse('2026-10-02T18:00:00-03:00');",
@@ -374,9 +465,120 @@ async function testarNavegador(build) {
         await aguardar("document.querySelectorAll('.card-cand').length > 0");
         console.log('Capa vespera/dia sem consultas e transicao para apuracao: OK.');
 
+        // Reproduzir o pai de 1260px no mobile e verificar que CSS interno,
+        // iframe e altura externa obedecem ao mesmo breakpoint real.
+        for (const modo of ['vespera', 'dia']) {
+            for (const [largura, cenario, limite, esperado] of [
+                [320, 'pai-largo', 940, 320], [360, 'pai-largo', 940, 360],
+                [390, 'pai-largo', 940, 390], [400, 'pai-largo', 940, 400],
+                [1400, 'ancestral-estreito', 940, 340], [360, 'flex', 940, 360],
+                [360, 'grid', 940, 360], [360, 'contents', 940, 360],
+                [939, 'normal', 940, 939], [940, 'normal', 940, 940],
+                [941, 'normal', 940, 941], [1040, 'normal', 1050, 1040],
+                [1051, 'normal', 1050, 1051], [1400, 'normal', 940, 1260],
+                [800, 'normal', 'padrao', 800], [760, 'normal', 'padrao', 760],
+            ]) {
+                const antes = chamadasApi.length;
+                await enviar('Emulation.setDeviceMetricsOverride', { width: largura, height: 800, deviceScaleFactor: 1, mobile: false }, sessionId);
+                await enviar('Page.navigate', { url: `${origem}/testar-embed.html?pre-eleicao=${modo}&breakpoint=${limite}&cenario=${cenario}` }, sessionId);
+                await aguardar("document.querySelector('eleicoes-widget')?.shadowRoot?.querySelector('iframe')?.contentDocument?.querySelector('.pre26-painel')");
+                const efetivo = limite === 'padrao' ? 760 : limite;
+                const mobile = largura <= efetivo || esperado <= 760;
+                const altura = mobile ? 100 : 200;
+                await aguardar(`document.querySelector('eleicoes-widget').getBoundingClientRect().height===${altura}`);
+                const dimensoes = await avaliar(`(() => {
+                    const w=document.querySelector('eleicoes-widget'), f=w.shadowRoot.querySelector('iframe');
+                    const r=w.getBoundingClientRect(), p=f.contentDocument.querySelector('.pre26-painel').getBoundingClientRect();
+                    return {x:r.x,w:r.width,h:r.height,pw:p.width,ph:p.height,iw:f.contentWindow.innerWidth,
+                        breakpoint:f.contentWindow.PreEleicao2026.breakpoint,mobile:w.dataset.embedModo,
+                        titulo:f.contentDocument.getElementById('pre26-titulo').textContent};
+                })()`);
+                assert.equal(dimensoes.w, esperado, `${modo}/${cenario}/${largura}: largura errada`);
+                assert.equal(dimensoes.pw, esperado, `${modo}/${cenario}: painel interno largo`);
+                assert.equal(dimensoes.iw, esperado);
+                assert.equal(dimensoes.ph, altura, `${modo}/${cenario}: altura interna incorreta`);
+                assert.equal(dimensoes.breakpoint, efetivo);
+                assert.equal(dimensoes.mobile, mobile ? 'mobile' : 'desktop');
+                assert(dimensoes.x>=0 && dimensoes.x+dimensoes.w<=largura+1, `${modo}/${cenario}/${largura}: banner fora da area visivel: ${JSON.stringify(dimensoes)}`);
+                assert(dimensoes.titulo.includes(modo==='dia' ? 'Hoje' : '1 dia'));
+                assert.equal(chamadasApi.length, antes, 'Capa no embed consultou a API.');
+                if (largura===360 && cenario==='pai-largo') {
+                    const r=await avaliar("(()=>{const r=document.querySelector('eleicoes-widget').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()");
+                    const captura=await enviar('Page.captureScreenshot',{format:'png',clip:r},sessionId);
+                    fs.writeFileSync(path.join(diretorioTestes,`embed-capa-${modo}-360.png`),Buffer.from(captura.data,'base64'));
+                }
+            }
+        }
+        const fixos = ['300x250', '300x600', '320x100'];
+        const alturasMobile = { index:250, horizontal:250, '970x250':250,
+            '970x90':90, '970x250x100':100, '1260x100':100, '1260x200':100 };
+        for (const formato of formatos2026) {
+            for (const modo of ['vespera', 'dia', 'apuracao']) {
+                for (const viewport of [1400,320,360,390,400]) {
+                    const largura = fixos.includes(formato) ? tamanho[formato][0] : Math.min(tamanho[formato][0],viewport);
+                    const altura = fixos.includes(formato) || viewport===1400 ? tamanho[formato][1] : alturasMobile[formato];
+                    const consulta = modo==='apuracao' ? '' : `&pre-eleicao=${modo}`;
+                    const antes=chamadasApi.length;
+                    await enviar('Emulation.setDeviceMetricsOverride',{width:viewport,height:900,deviceScaleFactor:1,mobile:false},sessionId);
+                    await enviar('Page.navigate',{url:`${origem}/testar-embed.html?formato=${formato}&breakpoint=1050&cenario=${viewport===1400?'normal':'pai-largo'}${consulta}`},sessionId);
+                    const pronto = modo==='apuracao' ? "d.querySelectorAll('.card-cand,.candidato-card').length>0" : "!!d.querySelector('.pre26-painel')";
+                    await aguardar(`(()=>{const f=document.querySelector('eleicoes-widget')?.shadowRoot?.querySelector('iframe'),d=f?.contentDocument;return !!d && (${pronto}) && document.querySelector('eleicoes-widget').getBoundingClientRect().height===${altura};})()`);
+                    const box=await avaliar(`(()=>{const w=document.querySelector('eleicoes-widget'),f=w.shadowRoot.querySelector('iframe'),d=f.contentDocument;
+                        const r=w.getBoundingClientRect(),p=d.querySelector(${JSON.stringify(modo==='apuracao'?'.widget-horizontal,.widget-container':'.pre26-painel')}).getBoundingClientRect();
+                        const filtros=[...d.querySelectorAll('#select-cargo,#select-uf')].map(e=>{const r=e.getBoundingClientRect();return {w:r.width,h:r.height};});
+                        const marca=d.querySelector('.pre26-nome,.header-copy h1,.header-copy h2')?.textContent;
+                        return {x:r.x,w:r.width,h:r.height,pw:p.width,ph:p.height,mobile:w.dataset.embedModo,filtros,marca};})()`);
+                    const detalhe=`${formato}/${modo}/${viewport}: ${JSON.stringify(box)}`;
+                    assert.equal(box.marca,'Placar das Urnas',detalhe);
+                    assert.equal(box.w,largura,detalhe);
+                    assert.equal(box.pw,largura,detalhe);
+                    assert.equal(box.ph,altura,detalhe);
+                    assert.equal(box.mobile,!fixos.includes(formato)&&viewport<=1050?'mobile':'desktop',detalhe);
+                    if(!fixos.includes(formato)) assert(box.x>=0 && box.x+box.w<=viewport+1,detalhe);
+                    if(modo==='apuracao') assert(box.filtros.length===2 && box.filtros.every(f=>f.w>0 && f.h>0),detalhe);
+                    else assert.equal(chamadasApi.length,antes,`${detalhe}: capa consultou API`);
+                    if(modo!=='apuracao' && [1400,360].includes(viewport)) {
+                        const clip=await avaliar("(()=>{const r=document.querySelector('eleicoes-widget').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()");
+                        const img=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip},sessionId);
+                        fs.writeFileSync(path.join(diretorioTestes,`embed-todos-${formato}-${modo}-${viewport}.png`),Buffer.from(img.data,'base64'));
+                    }
+                }
+            }
+        }
+        console.log('Todos os dez banners no embed: desktop 1400px e mobile 320/360/390/400px, capas vespera/dia, apuracao e filtros; formatos fixos preservados: OK.');
+        await enviar('Page.navigate', { url: `${origem}/testar-embed.html?pre-eleicao=vespera&breakpoint=940&cenario=oculto` }, sessionId);
+        await aguardar("document.querySelector('eleicoes-widget')?.dataset.embedEstado==='aguardando-largura'");
+        await avaliar("document.querySelector('.area-teste').style.display='block'");
+        await aguardar("document.querySelector('eleicoes-widget')?.dataset.embedEstado==='visivel'");
+        await avaliar("document.querySelector('eleicoes-widget').setAttribute('breakpoint','1500')");
+        await aguardar("document.querySelector('eleicoes-widget').shadowRoot.querySelector('iframe').contentWindow.PreEleicao2026?.breakpoint===1500 && document.querySelector('eleicoes-widget').getBoundingClientRect().height===100");
+        console.log('Embed/capas: pai largo, ancestral estreito, flex/grid/contents, oculto e breakpoint 940/1050 reais, sem recorte nem consultas: OK.');
+
+        await enviar('Emulation.setDeviceMetricsOverride', { width: 1040, height: 800, deviceScaleFactor: 1, mobile: false }, sessionId);
+        await enviar('Page.navigate', { url: `${origem}/testar-embed.html?breakpoint=1050&cenario=normal` }, sessionId);
+        const documentoEmbed = "document.querySelector('eleicoes-widget').shadowRoot.querySelector('iframe').contentDocument";
+        await aguardar("document.querySelector('eleicoes-widget')?.shadowRoot?.querySelector('iframe')?.contentDocument?.querySelectorAll('.card-cand').length>0");
+        const estadoEmbed = `(() => {const d=${documentoEmbed},r=d.querySelector('.widget-horizontal').getBoundingClientRect();return {w:r.width,h:r.height,resumo:d.getElementById('votos-validos').innerText,cargo:d.getElementById('select-cargo').value,uf:d.getElementById('select-uf').value};})()`;
+        const compacto = await avaliar(estadoEmbed);
+        assert.equal(compacto.w, 1040);
+        assert.equal(compacto.h, 100);
+        assert(!compacto.resumo.includes('\n'), 'Resumo deve seguir o breakpoint mobile personalizado.');
+        await avaliar(`(() => {const d=${documentoEmbed},e=d.getElementById('select-cargo');e.value='3';e.dispatchEvent(new Event('change'));})()`);
+        await aguardar(`!${documentoEmbed}.getElementById('select-uf').disabled`);
+        await avaliar(`(() => {const d=${documentoEmbed},e=d.getElementById('select-uf');e.value='mt';e.dispatchEvent(new Event('change'));})()`);
+        await aguardar(`${documentoEmbed}.getElementById('lista-candidatos').getAttribute('aria-busy')==='false'`);
+        await enviar('Emulation.setDeviceMetricsOverride', { width: 1051, height: 800, deviceScaleFactor: 1, mobile: false }, sessionId);
+        await aguardar(`(${estadoEmbed}).h===200 && (${estadoEmbed}).resumo.includes('\\n')`);
+        const desktop = await avaliar(estadoEmbed);
+        assert.equal(desktop.w, 1051);
+        assert(desktop.resumo.includes('\n'), 'Resumo deve voltar ao formato desktop.');
+        assert.equal(desktop.cargo, '3');
+        assert.equal(desktop.uf, 'mt');
+        console.log('Apuracao no embed: breakpoint 1050 sincroniza CSS/resumo/altura, filtros cargo/UF preservados ao redimensionar: OK.');
+
         await enviar('Page.navigate', { url: `${origemPortal}/teste-embed` }, sessionId);
         await aguardar("document.querySelector('eleicoes-widget')?.shadowRoot?.querySelector('iframe')");
-        assert.equal(await avaliar("document.querySelector('eleicoes-widget').shadowRoot.querySelector('iframe').src"), `${origem}/2026/1260x200.html`);
+        assert.equal(await avaliar("document.querySelector('eleicoes-widget').shadowRoot.querySelector('iframe').src"), `${origem}/2026/1260x200.html?breakpoint=1050&embed-modo=desktop`);
         for (const [largura, altura] of [[1400, 200], [360, 100]]) {
             await enviar('Emulation.setDeviceMetricsOverride', { width: largura, height: 400, deviceScaleFactor: 1, mobile: false }, sessionId);
             await aguardar(`document.querySelector('eleicoes-widget').getBoundingClientRect().height === ${altura}`);

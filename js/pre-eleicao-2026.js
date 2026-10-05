@@ -8,9 +8,16 @@
     const INTERVALO_ATUALIZACAO = 30000;
     const DURACAO_TESTE_TRANSICAO = 10 * 1000;
     const PREFIXO_TESTE_TRANSICAO = 'pre26-teste-transicao:';
+    const BREAKPOINT_PADRAO = 760;
+    const modoEmbed = new URLSearchParams(window.location.search).get('embed-modo');
+    const breakpoint = configurarBreakpoint();
+    const consultaMobile = modoEmbed === 'mobile' ? 'all'
+        : modoEmbed === 'desktop' ? 'not all' : `(max-width: ${breakpoint}px)`;
+    const consultaDesktop = modoEmbed === 'desktop' ? 'all'
+        : modoEmbed === 'mobile' ? 'not all' : `(min-width: ${breakpoint + 1}px)`;
     const LINK_TSE = 'https://resultados.tse.jus.br/';
     const LINK_LOCAL_VOTACAO = 'https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/onde-votar';
-    const LINK_ADQUIRIR = 'https://www.paineleleitoralnews.com.br/';
+    const LINK_ADQUIRIR = 'https://placardasurnas.com.br/';
 
     const configuracaoVisual = obterConfiguracaoVisual();
     aplicarCoresPersonalizadas(configuracaoVisual);
@@ -22,6 +29,9 @@
     let modoAtual = testeTransicao.ativo ? 'dia' : (testeTransicao.concluido ? '' : obterModo());
 
     window.PreEleicao2026 = {
+        breakpoint,
+        consultaMobile,
+        consultaDesktop,
         ativo: Boolean(modoAtual),
         modo: modoAtual,
         testeTransicao: testeTransicao.ativo,
@@ -47,9 +57,37 @@
 
     window.addEventListener('resize', () => {
         if (formatoOriginal !== 'padrao') return;
-        const deveUsarFormatoCompacto = window.matchMedia('(max-width: 760px)').matches;
+        const deveUsarFormatoCompacto = window.matchMedia(consultaMobile).matches;
         if (deveUsarFormatoCompacto !== indexCompacto) window.location.reload();
     });
+
+    function configurarBreakpoint() {
+        // Alinhar CSS e JS internos com o breakpoint do embed, sem tocar no
+        // portal cliente nem nas media queries menores de cada formato.
+        const informado = Number(new URLSearchParams(window.location.search).get('breakpoint'));
+        const efetivo = Number.isInteger(informado) && informado > 0 && informado <= 10000
+            ? informado : BREAKPOINT_PADRAO;
+        document.documentElement.dataset.embedBreakpoint = String(efetivo);
+        const incorporado = modoEmbed === 'mobile' || modoEmbed === 'desktop';
+        if (efetivo === BREAKPOINT_PADRAO && !incorporado) return efetivo;
+        const limiteMobile = incorporado ? (modoEmbed === 'mobile' ? 10000 : 0) : efetivo;
+        const inicioDesktop = incorporado ? (modoEmbed === 'desktop' ? 0 : 10001) : efetivo + 1;
+        const adaptar = regras => {
+            for (const regra of regras) {
+                if (regra.type === CSSRule.MEDIA_RULE) {
+                    regra.media.mediaText = regra.media.mediaText
+                        .replace(/\(max-width:\s*760px\)/g, `(max-width: ${limiteMobile}px)`)
+                        .replace(/\(min-width:\s*761px\)/g, `(min-width: ${inicioDesktop}px)`);
+                }
+                if (regra.cssRules) adaptar(regra.cssRules);
+            }
+        };
+        for (const folha of document.styleSheets) {
+            if (folha.href && new URL(folha.href).origin !== window.location.origin) continue;
+            adaptar(folha.cssRules);
+        }
+        return efetivo;
+    }
 
     function obterPrimeiroParametro(parametros, nomes) {
         for (const nome of nomes) {
@@ -108,7 +146,7 @@
 
     function prepararIndexResponsivo() {
         const deveUsarFormatoCompacto = formatoOriginal === 'padrao'
-            && window.matchMedia('(max-width: 760px)').matches;
+            && window.matchMedia(consultaMobile).matches;
         if (!deveUsarFormatoCompacto) return false;
 
         document.body.dataset.widget = '300x250';
@@ -293,8 +331,9 @@
         if (!cabecalho) return;
 
         const tituloMarca = cabecalho.querySelector('.header-copy h1, .header-copy h2');
-        if (configuracaoVisual.marca && tituloMarca) {
-            tituloMarca.textContent = `${configuracaoVisual.marca} · 2026`;
+        if (tituloMarca) {
+            tituloMarca.textContent = configuracaoVisual.marca
+                ? `${configuracaoVisual.marca} · 2026` : 'Placar das Urnas';
         }
 
         if (!cabecalho.querySelector('.brand-mark')) {
@@ -334,11 +373,11 @@
             : 'Domingo, 4 de outubro de 2026';
         const destaque = diaEleicao ? '8h' : '1';
         const rotuloDestaque = diaEleicao ? 'início' : 'dia';
-        const nomeMarca = escaparHtml(configuracaoVisual.marca || 'Painel Eleitoral');
+        const nomeMarca = escaparHtml(configuracaoVisual.marca || 'Placar das Urnas');
 
         document.documentElement.classList.add('pre26-ativo');
         document.body.classList.add('modo-pre-eleicao-2026');
-        document.title = `${titulo} — Painel Eleitoral`;
+        document.title = `${titulo} — Placar das Urnas`;
         document.body.innerHTML = `
             <main class="pre26-painel pre26-painel--${modo}" aria-labelledby="pre26-titulo">
                 <header class="pre26-marca">

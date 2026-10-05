@@ -4,7 +4,7 @@
     const scriptAtual = document.currentScript;
     const basePublicacao = new URL('.', scriptAtual?.src || window.location.href);
     const BREAKPOINT_ESTRUTURAL = 760;
-    const BREAKPOINT_INFORMADO_PADRAO = 1050;
+    const BREAKPOINT_INFORMADO_PADRAO = BREAKPOINT_ESTRUTURAL;
 
     const formatos = {
         index: {
@@ -12,49 +12,49 @@
             desktop: { largura: 1180, altura: 680 },
             mobile: { altura: 250 },
             anos: [2022, 2026],
-            titulo: 'Painel eleitoral'
+            titulo: 'Placar das Urnas'
         },
         horizontal: {
             arquivo: 'horizontal.html',
             desktop: { largura: 1200, altura: 100 },
             mobile: { altura: 250 },
             anos: [2022, 2026],
-            titulo: 'Painel eleitoral horizontal'
+            titulo: 'Placar das Urnas horizontal'
         },
         '970x90': {
             arquivo: '970x90.html',
             desktop: { largura: 970, altura: 90 },
             mobile: { altura: 90 },
             anos: [2026],
-            titulo: 'Painel eleitoral 970 por 90'
+            titulo: 'Placar das Urnas 970 por 90'
         },
         '970x250': {
             arquivo: '970x250.html',
             desktop: { largura: 970, altura: 250 },
             mobile: { altura: 250 },
             anos: [2022, 2026],
-            titulo: 'Painel eleitoral 970 por 250'
+            titulo: 'Placar das Urnas 970 por 250'
         },
         '970x250x100': {
             arquivo: '970x250x100.html',
             desktop: { largura: 970, altura: 250 },
             mobile: { altura: 100 },
             anos: [2026],
-            titulo: 'Painel eleitoral 970 por 250, compacto em 100'
+            titulo: 'Placar das Urnas 970 por 250, compacto em 100'
         },
         '1260x100': {
             arquivo: '1260x100.html',
             desktop: { largura: 1260, altura: 100 },
             mobile: { altura: 100 },
             anos: [2026],
-            titulo: 'Painel eleitoral 1260 por 100'
+            titulo: 'Placar das Urnas 1260 por 100'
         },
         '1260x200': {
             arquivo: '1260x200.html',
             desktop: { largura: 1260, altura: 200 },
             mobile: { altura: 100 },
             anos: [2026],
-            titulo: 'Painel eleitoral 1260 por 200, compacto em 100'
+            titulo: 'Placar das Urnas 1260 por 200, compacto em 100'
         },
         '320x100': {
             arquivo: '320x100.html',
@@ -62,7 +62,7 @@
             mobile: { altura: 100 },
             anos: [2026],
             fixo: true,
-            titulo: 'Painel eleitoral mobile 320 por 100'
+            titulo: 'Placar das Urnas mobile 320 por 100'
         },
         '300x600': {
             arquivo: '300x600.html',
@@ -70,7 +70,7 @@
             mobile: { altura: 600 },
             anos: [2022, 2026],
             fixo: true,
-            titulo: 'Painel eleitoral 300 por 600'
+            titulo: 'Placar das Urnas 300 por 600'
         },
         '300x250': {
             arquivo: '300x250.html',
@@ -78,7 +78,7 @@
             mobile: { altura: 250 },
             anos: [2022, 2026],
             fixo: true,
-            titulo: 'Painel eleitoral 300 por 250'
+            titulo: 'Placar das Urnas 300 por 250'
         }
     };
 
@@ -119,7 +119,7 @@
 
         const alternativo = ano === 2022 ? formatoAlternativo2022(formato) : 'index';
         console.warn(
-            `[Painel Eleitoral] O formato "${formato}" não possui página de ${ano}. `
+            `[Placar das Urnas] O formato "${formato}" não possui página de ${ano}. `
             + `Usando "${alternativo}" sem criar uma rota inexistente.`
         );
         return alternativo;
@@ -147,27 +147,46 @@
         return Number.isFinite(numero) ? numero : 0;
     }
 
+    function obterLarguraViewport() {
+        return document.documentElement.clientWidth || window.innerWidth;
+    }
+
     function obterLarguraUtil(elemento) {
         let pai = elemento.parentElement;
+        const larguraViewport = obterLarguraViewport();
+        let inicio = 0;
+        let fim = larguraViewport;
+        let conteudoPai = null;
 
         while (pai) {
             const estilo = window.getComputedStyle(pai);
-            if (estilo.display === 'none' || estilo.visibility === 'collapse') return 0;
+            if (estilo.display === 'none' || estilo.visibility === 'collapse') return { largura: 0 };
             if (estilo.display === 'contents') {
                 pai = pai.parentElement;
                 continue;
             }
 
             const larguraCliente = pai.clientWidth;
-            if (larguraCliente <= 0) return 0;
+            if (larguraCliente <= 0) return { largura: 0 };
 
             const larguraConteudo = larguraCliente
                 - numeroCss(estilo.paddingLeft)
                 - numeroCss(estilo.paddingRight);
-            return Math.max(0, larguraConteudo);
+            const inicioConteudo = pai.getBoundingClientRect().left + pai.clientLeft
+                + numeroCss(estilo.paddingLeft);
+            if (!conteudoPai) conteudoPai = { inicio: inicioConteudo, largura: larguraConteudo };
+            inicio = Math.max(inicio, inicioConteudo);
+            fim = Math.min(fim, inicioConteudo + larguraConteudo);
+            pai = pai.parentElement;
         }
 
-        return 0;
+        const largura = Math.max(0, fim - inicio);
+        return {
+            largura,
+            // Nao centralizar em um pai largo quando so parte dele esta visivel.
+            margemEsquerda: conteudoPai && conteudoPai.largura > largura + 1
+                ? Math.max(0, inicio - conteudoPai.inicio) : null
+        };
     }
 
     function definirEstilo(elemento, propriedade, valor) {
@@ -215,6 +234,7 @@
             }
 
             if (nome === 'breakpoint' || nome === 'altura') {
+                if (nome === 'breakpoint') this.atualizarFonte();
                 this.atualizarDimensoes();
                 return;
             }
@@ -235,8 +255,9 @@
                     display: block !important;
                     isolation: isolate !important;
                     contain: layout style !important;
-                    margin: 0 auto !important;
+                    margin: 0 auto;
                     padding: 0 !important;
+                    min-width: 0 !important;
                     border: 0 !important;
                     background: transparent !important;
                     line-height: 0 !important;
@@ -275,7 +296,7 @@
             if (!alvo || alvo === this.elementoObservado) return;
             this.observador.disconnect();
             this.elementoObservado = alvo;
-            this.observador.observe(alvo);
+            for (let pai = alvo; pai; pai = pai.parentElement) this.observador.observe(pai);
         }
 
         agendarDimensoes() {
@@ -287,10 +308,47 @@
         }
 
         obterBreakpointInformado() {
-            const informado = Number.parseInt(this.getAttribute('breakpoint'), 10);
-            return Number.isFinite(informado) && informado > 0
+            const informado = Number(this.getAttribute('breakpoint'));
+            return Number.isInteger(informado) && informado > 0 && informado <= 10000
                 ? informado
                 : BREAKPOINT_INFORMADO_PADRAO;
+        }
+
+        obterBreakpointEfetivo() {
+            const { ano, definicao } = this.obterConfiguracao();
+            return ano === 2026 && !definicao.fixo
+                ? this.obterBreakpointInformado() : BREAKPOINT_ESTRUTURAL;
+        }
+
+        adicionarBreakpoint(endereco) {
+            const { ano, definicao } = this.obterConfiguracao();
+            const breakpoint = this.obterBreakpointEfetivo();
+            if (breakpoint !== BREAKPOINT_ESTRUTURAL) endereco.searchParams.set('breakpoint', String(breakpoint));
+            if (ano === 2026 && !definicao.fixo && this.isConnected) {
+                const area = obterLarguraUtil(this);
+                const largura = Math.min(definicao.desktop.largura,
+                    Math.max(1, Math.floor(area.largura || definicao.desktop.largura)));
+                endereco.searchParams.set('embed-modo', this.usarModoMobile(largura) ? 'mobile' : 'desktop');
+            }
+            // A pagina local de teste pode forcar as capas sem alterar o relogio.
+            // Nunca aceitar esse atalho quando o iframe aponta para producao.
+            if (['localhost', '127.0.0.1'].includes(endereco.hostname)
+                && ['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+                const consulta = new URLSearchParams(window.location.search);
+                for (const nome of ['pre-eleicao', 'duracao', 'reiniciar']) {
+                    if (consulta.has(nome)) endereco.searchParams.set(nome, consulta.get(nome));
+                }
+            }
+            return endereco;
+        }
+
+        usarModoMobile(largura) {
+            const { ano, definicao } = this.obterConfiguracao();
+            if (definicao.fixo) return false;
+            // Um banner de 970px nao vira mobile em uma pagina de 1400px
+            // somente porque o cliente informou breakpoint=1050.
+            return largura <= BREAKPOINT_ESTRUTURAL
+                || (ano === 2026 && obterLarguraViewport() <= this.obterBreakpointEfetivo());
         }
 
         reservarDimensoes() {
@@ -321,20 +379,24 @@
         atualizarDimensoes() {
             const configuracao = this.obterConfiguracao();
             const { formato, ano, definicao } = configuracao;
-            const larguraDisponivel = obterLarguraUtil(this);
+            const area = obterLarguraUtil(this);
+            const larguraDisponivel = area.largura;
             const breakpointInformado = this.obterBreakpointInformado();
+            const breakpointEfetivo = this.obterBreakpointEfetivo();
 
             this.dataset.embedEstado = larguraDisponivel > 0 ? 'visivel' : 'aguardando-largura';
             this.dataset.embedBreakpoint = String(breakpointInformado);
-            this.dataset.embedBreakpointEstrutural = String(BREAKPOINT_ESTRUTURAL);
+            this.dataset.embedBreakpointEstrutural = String(breakpointEfetivo);
             if (larguraDisponivel <= 0) return;
 
             const largura = definicao.fixo
                 ? definicao.desktop.largura
-                : Math.min(definicao.desktop.largura, Math.max(1, larguraDisponivel));
-            const modoMobile = !definicao.fixo && largura <= BREAKPOINT_ESTRUTURAL;
+                : Math.min(definicao.desktop.largura, Math.max(1, Math.floor(larguraDisponivel)));
+            const modoMobile = this.usarModoMobile(largura);
             const altura = this.obterAltura(definicao, modoMobile);
-            const assinatura = `${largura}x${altura}:${modoMobile}`;
+            const margemEsquerda = !definicao.fixo && area.margemEsquerda != null
+                ? `${area.margemEsquerda}px` : 'auto';
+            const assinatura = `${largura}x${altura}:${modoMobile}:${margemEsquerda}`;
             const iframe = this.shadowRoot.querySelector('iframe');
             const moldura = this.shadowRoot.querySelector('.moldura');
 
@@ -349,6 +411,8 @@
             this.ultimaMedida = assinatura;
 
             definirEstilo(this, 'width', `${Math.round(largura)}px`);
+            definirEstilo(this, 'margin-left', margemEsquerda);
+            definirEstilo(this, 'margin-right', 'auto');
             definirEstilo(this, 'max-width', definicao.fixo ? 'none' : '100%');
             definirEstilo(this, 'height', `${altura}px`);
             definirEstilo(this, 'min-height', `${altura}px`);
@@ -358,6 +422,10 @@
                 iframe.width = String(Math.max(1, Math.round(largura)));
                 iframe.height = String(altura);
             }
+            // Recarregar somente ao mudar o modo/atributos, nunca a cada pixel.
+            // Os filtros ja sao persistidos pela pagina; o modo fica no URL
+            // para continuar correto inclusive apos a transicao automatica.
+            this.atualizarFonte();
         }
 
         atualizarFonte() {
@@ -390,7 +458,7 @@
         criarEndereco() {
             const { ano, definicao } = this.obterConfiguracao();
             const prefixo = ano === 2026 ? '2026/' : '';
-            return adicionarPersonalizacao(new URL(`${prefixo}${definicao.arquivo}`, basePublicacao), this);
+            return this.adicionarBreakpoint(adicionarPersonalizacao(new URL(`${prefixo}${definicao.arquivo}`, basePublicacao), this));
         }
 
         obterAltura(definicao, modoMobile) {
@@ -420,7 +488,7 @@
 
         criarEndereco() {
             const { definicao } = this.obterConfiguracao();
-            return adicionarPersonalizacao(new URL(`2026/${definicao.arquivo}`, basePublicacao), this);
+            return this.adicionarBreakpoint(adicionarPersonalizacao(new URL(`2026/${definicao.arquivo}`, basePublicacao), this));
         }
     }
 

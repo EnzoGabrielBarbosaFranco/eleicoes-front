@@ -1,15 +1,19 @@
-# Integração dos banners eleitorais
+# Placar das Urnas — Integração dos banners
 
 Há duas integrações diferentes. Não misture os códigos de uma com a outra.
 
-**Domínio ativo e cache validado:** `apuracao.paineleleitoralnews.com.br` está conectado ao Pages com HTTPS, e dados da fase histórica atual, filtros, embed e iframe foram verificados no navegador. Os arquivos sem hash recebem cinco minutos de cache; os versionados recebem um ano. O teste em SafeFrame real do Ad Manager ainda é necessário. Não substituir o domínio por `pages.dev`: essa origem não está autorizada nas APIs.
+**Situação da nova entrega em 5 de outubro de 2026:** Placar das Urnas publicado em `apuracao.placardasurnas.com.br`, com HTTPS ativo e CORS publicado nos dois Workers. `placardasurnas.com.br` com/sem `www` e os portais licenciados existentes estão liberados na CSP e na licença. Clientes do domínio antigo precisam substituir o endereço nos códigos. `../testar-embed.html` serve para testes locais e não entra no build publicado.
+
+**Domínio ativo:** `apuracao.placardasurnas.com.br`. As páginas `/2026/` usam exclusivamente o backend de 2026. O build pede cinco minutos de cache para JS/CSS sem hash, mas a zona atualmente envia quatro horas; corrigir a configuração da zona com autorização antes de considerar a validação de cache concluída. Recursos com hash mantêm um ano. O teste em SafeFrame real do Ad Manager continua necessário. Não substituir o domínio por `pages.dev` sem preparar também as permissões do backend. Registro da publicação e testes em `../CLOUDFLARE-PAGES.md`.
+
+**Portais clientes autorizados:** `portaldeprefeitura.com.br`, `portalmais360.com.br`, `diariodajaragua.com.br`, `douradosnews.com.br` e `folhape.com.br`, nas origens HTTPS com e sem `www`. A liberação foi publicada no Pages após autorização. Embed e iframe foram testados nas dez origens simuladas, usando os arquivos públicos; isso não substitui a confirmação no portal real. Para outros domínios ou subdomínios, revisar a licença e a CSP antes da entrega.
 
 ## 1. Portal sem Google Ad Manager
 
 Carregue o `embed.js` deste projeto uma vez e adicione quantos componentes forem necessários. A URL das páginas é resolvida relativamente ao próprio script.
 
 ```html
-<script src="https://apuracao.paineleleitoralnews.com.br/embed.js" defer></script>
+<script src="https://apuracao.placardasurnas.com.br/embed.js" defer></script>
 
 <eleicoes-widget ano="2026" formato="970x250"></eleicoes-widget>
 ```
@@ -17,7 +21,7 @@ Carregue o `embed.js` deste projeto uma vez e adicione quantos componentes forem
 A tag legada `previa-eleitoral-2026` continua disponível. Prefira `eleicoes-widget`, especialmente se o portal também usa o projeto de prévias: dois scripts não podem registrar implementações diferentes da mesma tag no documento.
 
 ```html
-<script src="https://apuracao.paineleleitoralnews.com.br/embed.js" defer></script>
+<script src="https://apuracao.placardasurnas.com.br/embed.js" defer></script>
 
 <previa-eleitoral-2026
   formato="1260x200"
@@ -25,7 +29,7 @@ A tag legada `previa-eleitoral-2026` continua disponível. Prefira `eleicoes-wid
 </previa-eleitoral-2026>
 ```
 
-O atributo `breakpoint` é preservado por compatibilidade. O HTML interno muda estruturalmente em 760 px; por isso a altura externa sempre acompanha a largura real entregue ao iframe e não força a altura mobile entre 761 e 1050 px. Isso evita cortar o conteúdo. Uma coluna estreita em uma janela larga continua recebendo o layout e a altura compactos.
+O atributo `breakpoint` controla efetivamente a troca de layout dos formatos responsivos de 2026. Com `breakpoint="1050"`, uma viewport de até 1050 px recebe layout mobile e a altura correspondente. Acima disso, fica desktop, salvo quando o contêiner tem até 760 px. Um banner de 970 px em página larga não vira mobile somente por ter breakpoint 1050. Breakpoint e modo escolhido são enviados ao iframe, sincronizando CSS, JS e capa pré-eleição. Sem o atributo, o padrão continua 760 px. O embed limita a largura à área visível da viewport e dos ancestrais, mesmo que o pai imediato tenha uma largura desktop fixa. Formatos fixos e páginas históricas de 2022 não mudam de breakpoint. Não adicionar esse atributo a um iframe de Ad Manager: ele é uma opção do Web Component.
 
 Personalização aceita:
 
@@ -77,6 +81,6 @@ Reserve no slot exatamente a altura contratada para evitar mudança de layout. S
 
 ## Hospedagem
 
-O frontend está publicado em `https://apuracao.paineleleitoralnews.com.br`, com cache validado. Os snippets locais apontam para esse endereço, mas não foram enviados aos clientes. Validar no portal/SafeFrame antes da distribuição ampla. Novas publicações e mudanças externas exigem autorização explícita, conforme `../CLOUDFLARE-PAGES.md`.
+O frontend e os snippets locais estão preparados para `https://apuracao.placardasurnas.com.br`, mas isso não comprova que o domínio esteja ativo. Autorizar e validar publicação, DNS, HTTPS e CORS antes da entrega. Testar também no portal/SafeFrame real. Publicações e mudanças externas exigem autorização explícita, conforme `../CLOUDFLARE-PAGES.md`.
 
 Clientes que já usam `eleicoes-front.vercel.app` precisam receber o novo endereço para sair da Vercel. O domínio `vercel.app` não pode ser transferido para Pages via DNS. Mantenha a versão antiga funcionando durante a transição.

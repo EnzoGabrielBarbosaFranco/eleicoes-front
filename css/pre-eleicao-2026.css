@@ -105,6 +105,139 @@ body[data-widget="300x250"].identidade-2026 .controles .select-full {
     grid-column: auto;
 }
 
+/* Espera por dados e um estado normal, nao um alerta de erro.
+   Estas regras pertencem somente aos widgets oficiais de 2026. */
+body.identidade-2026 .estado-eleicao {
+    flex-direction: row;
+    gap: 12px;
+    padding: 14px 18px;
+    border-style: solid;
+    border-color: var(--slate-200);
+    border-radius: 10px;
+    color: var(--ink);
+    background: #fff;
+    text-align: left;
+}
+
+body.identidade-2026 .estado-aguardando {
+    border-color: color-mix(in srgb, var(--mint-dark) 16%, #fff);
+    background: linear-gradient(110deg, #fff, color-mix(in srgb, var(--mint) 14%, #fff));
+    box-shadow: 0 1px 3px rgba(7, 24, 45, 0.025);
+}
+
+body.identidade-2026 .estado-eleicao .estado-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 3px;
+}
+
+body.identidade-2026 .estado-eleicao strong {
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.25;
+}
+
+body.identidade-2026 .estado-eleicao .estado-descricao {
+    color: var(--slate-600);
+    font-size: 11px;
+    font-weight: 450;
+    line-height: 1.3;
+}
+
+body.identidade-2026 .estado-eleicao .estado-icone {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid color-mix(in srgb, var(--mint-dark) 12%, #fff);
+    border-radius: 10px;
+    color: var(--mint-dark);
+    background: color-mix(in srgb, var(--mint) 26%, #fff);
+    box-shadow: none;
+}
+
+body.identidade-2026 .estado-icone svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+}
+
+body.identidade-2026 .bloco-carrossel .estado-eleicao {
+    min-height: 52px;
+    padding: 8px 12px;
+}
+
+/* Na espera, o rotulo "resultados oficiais" nao precisa de uma faixa
+   separada. Reservar esse espaco cortava a mensagem nos banners baixos. */
+body.identidade-2026 :is(.widget-container, .widget-horizontal):has(.estado-aguardando) > .aviso-fonte-dados--oficial {
+    display: none;
+}
+
+body.identidade-2026 .widget-horizontal:has(.estado-aguardando) > .bloco-carrossel {
+    padding-block: 4px;
+}
+
+body.identidade-2026 .estado-erro {
+    border-color: #f4b4ae;
+    color: var(--danger-700);
+    background: #fff5f4;
+}
+
+body.identidade-2026 .estado-erro strong {
+    color: inherit;
+}
+
+body.identidade-2026[data-widget="300x250"] .estado-eleicao,
+body.identidade-2026.formato-320x100 .bloco-carrossel .estado-eleicao {
+    min-height: 38px;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 8px;
+}
+
+body.identidade-2026[data-widget="300x250"] .estado-eleicao strong,
+body.identidade-2026.formato-320x100 .estado-eleicao strong {
+    font-size: 11px;
+}
+
+body.identidade-2026[data-widget="300x250"] .estado-descricao,
+body.identidade-2026.formato-320x100 .estado-descricao {
+    font-size: 9px;
+}
+
+body.identidade-2026[data-widget="300x250"] .estado-eleicao .estado-icone,
+body.identidade-2026.formato-320x100 .estado-eleicao .estado-icone {
+    flex-basis: 26px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+}
+
+@media (max-width: 760px) {
+    body.identidade-2026:is(.formato-compacto-100, .formato-970x90) .bloco-carrossel .estado-eleicao {
+        min-height: 34px;
+        gap: 8px;
+        padding: 4px 8px;
+        border-radius: 8px;
+    }
+
+    body.identidade-2026:is(.formato-compacto-100, .formato-970x90) .estado-eleicao strong {
+        font-size: 11px;
+    }
+
+    body.identidade-2026:is(.formato-compacto-100, .formato-970x90) .estado-descricao {
+        font-size: 9px;
+    }
+
+    body.identidade-2026:is(.formato-compacto-100, .formato-970x90) .estado-eleicao .estado-icone {
+        flex-basis: 26px;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+    }
+}
+
 body.index-mobile-300x250 .estado-eleicao .estado-icone {
     display: none;
 }

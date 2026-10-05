@@ -1,6 +1,6 @@
 # Pages: preservar a lista de portais licenciados e permitir os frames internos do Google.
 /*
-  Content-Security-Policy: frame-ancestors 'self' https://apuracao.paineleleitoralnews.com.br https://eleicoes-front.vercel.app https://angular-transportes.vercel.app https://paineleleitoral2026.vercel.app https://www.paineleleitoralnews.com.br https://tpc.googlesyndication.com https://pagead2.googlesyndication.com https://securepubads.g.doubleclick.net https://googleads.g.doubleclick.net https://*.safeframe.googlesyndication.com http://localhost:* http://127.0.0.1:*;
+  Content-Security-Policy: frame-ancestors 'self' https://apuracao.placardasurnas.com.br https://eleicoes-front.vercel.app https://angular-transportes.vercel.app https://paineleleitoral2026.vercel.app https://placardasurnas.com.br https://www.placardasurnas.com.br https://portaldeprefeitura.com.br https://www.portaldeprefeitura.com.br https://portalmais360.com.br https://www.portalmais360.com.br https://diariodajaragua.com.br https://www.diariodajaragua.com.br https://douradosnews.com.br https://www.douradosnews.com.br https://folhape.com.br https://www.folhape.com.br https://tpc.googlesyndication.com https://pagead2.googlesyndication.com https://securepubads.g.doubleclick.net https://googleads.g.doubleclick.net https://*.safeframe.googlesyndication.com http://localhost:* http://127.0.0.1:*;
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
 
