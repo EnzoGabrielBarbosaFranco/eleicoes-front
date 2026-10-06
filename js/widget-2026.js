@@ -9,6 +9,9 @@
     const breakpoint = window.PreEleicao2026?.breakpoint || 760;
     const consultaMobile = window.PreEleicao2026?.consultaMobile || `(max-width: ${breakpoint}px)`;
     const consultaDesktop = window.PreEleicao2026?.consultaDesktop || `(min-width: ${breakpoint + 1}px)`;
+    const formatadorDiaAtual = new Intl.DateTimeFormat('pt-BR', {
+        timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit',
+    });
 
     function obterApiBaseUrl() {
         const ambienteLocal = window.location.hostname === '127.0.0.1'
@@ -48,7 +51,7 @@
 
     function extrairHorario(atualizacao) {
         const correspondencia = String(atualizacao || '').match(/\b(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\b/);
-        return correspondencia ? correspondencia[0] : '';
+        return correspondencia ? correspondencia[0].slice(0, 5) : '';
     }
 
     function obterIniciais(nome) {
@@ -83,6 +86,105 @@
         const estaOculto = bloco.classList.contains('oculto');
         texto.innerText = estaOculto ? 'Ver resumo de votos' : 'Ocultar resumo';
         if (botao) botao.setAttribute('aria-expanded', String(!estaOculto));
+    }
+
+    // Mantido igual nas tres versoes: sem recurso extra nem nova requisicao.
+    function configurarArrasteCandidatos(lista, estado) {
+        let ponteiroDentro = false;
+        let arraste = null;
+        let bloquearCliqueAte = 0;
+        let disponivel = false;
+
+        function retomarAutomatico(atraso = 500) {
+            estado.pausado = false;
+            estado.iniciarAutoScrollEm = Date.now() + atraso;
+        }
+
+        function finalizarArraste(evento) {
+            if (!arraste || (evento?.pointerId != null && evento.pointerId !== arraste.id)) return;
+            const anterior = arraste;
+            arraste = null;
+            lista.classList.remove('arrastando-candidatos');
+            if (lista.hasPointerCapture(anterior.id)) lista.releasePointerCapture(anterior.id);
+            if (anterior.moveu) {
+                // O click gerado ao soltar um arraste nao deve acionar um card/botao.
+                bloquearCliqueAte = performance.now() + 400;
+                retomarAutomatico();
+            } else if (!ponteiroDentro || evento?.type === 'pointercancel' || evento?.type === 'blur') {
+                retomarAutomatico();
+            }
+        }
+
+        lista.addEventListener('pointerenter', (evento) => {
+            if (evento.pointerType === 'touch') return;
+            ponteiroDentro = true;
+            estado.pausado = true;
+        });
+        lista.addEventListener('pointerleave', (evento) => {
+            if (evento.pointerType === 'touch') return;
+            ponteiroDentro = false;
+            if (!arraste) retomarAutomatico();
+        });
+        lista.addEventListener('pointerdown', (evento) => {
+            if (evento.pointerType === 'touch' || !evento.isPrimary || evento.button !== 0
+                || lista.scrollWidth <= lista.clientWidth + 1) return;
+            bloquearCliqueAte = 0;
+            estado.pausado = true;
+            arraste = { id: evento.pointerId, x: evento.clientX, scroll: lista.scrollLeft, moveu: false };
+        });
+        window.addEventListener('pointermove', (evento) => {
+            if (!arraste || evento.pointerId !== arraste.id) return;
+            if (!(evento.buttons & 1)) {
+                finalizarArraste(evento);
+                return;
+            }
+            const distancia = evento.clientX - arraste.x;
+            if (!arraste.moveu && Math.abs(distancia) < 5) return;
+            if (!arraste.moveu) {
+                arraste.moveu = true;
+                // Capturar so depois do limiar preserva o alvo dos cliques normais.
+                lista.setPointerCapture(arraste.id);
+                lista.classList.add('arrastando-candidatos');
+            }
+            evento.preventDefault();
+            lista.scrollLeft = arraste.scroll - distancia;
+        }, { passive: false });
+        window.addEventListener('pointerup', finalizarArraste);
+        window.addEventListener('pointercancel', finalizarArraste);
+        lista.addEventListener('lostpointercapture', finalizarArraste);
+        window.addEventListener('blur', finalizarArraste);
+        lista.addEventListener('click', (evento) => {
+            if (evento.detail !== 0 && performance.now() < bloquearCliqueAte) {
+                evento.preventDefault();
+                evento.stopImmediatePropagation();
+                bloquearCliqueAte = 0;
+            }
+        }, true);
+        lista.addEventListener('dragstart', (evento) => {
+            if (disponivel) evento.preventDefault();
+        });
+        // O toque continua usando a rolagem nativa, sem captura ou preventDefault.
+        lista.addEventListener('touchstart', () => {
+            estado.pausado = true;
+        }, { passive: true });
+        function liberarAposToque(evento) {
+            if (!evento.touches.length) retomarAutomatico(700);
+        }
+        lista.addEventListener('touchend', liberarAposToque, { passive: true });
+        lista.addEventListener('touchcancel', liberarAposToque, { passive: true });
+        lista.addEventListener('wheel', () => {
+            estado.iniciarAutoScrollEm = Date.now() + 700;
+        }, { passive: true });
+
+        return function atualizarDisponibilidade() {
+            const podeArrastar = lista.scrollWidth > lista.clientWidth + 1;
+            if (podeArrastar !== disponivel) {
+                disponivel = podeArrastar;
+                lista.classList.toggle('arraste-disponivel', disponivel);
+                if (!disponivel) finalizarArraste();
+            }
+            return disponivel;
+        };
     }
 
     function iniciar(opcoes = {}) {
@@ -142,9 +244,6 @@
             if (fase === 'simulado') {
                 mensagem = 'SIMULAÇÃO DO TSE — DADOS DE TESTE';
                 modificador = 'aviso-fonte-dados--simulacao';
-            } else if (fase === 'oficial') {
-                mensagem = 'RESULTADOS OFICIAIS — ELEIÇÕES 2026';
-                modificador = 'aviso-fonte-dados--oficial';
             }
 
             removerAvisoDados();
@@ -205,7 +304,7 @@
                 || (window.matchMedia(consultaMobile).matches && (formato970x90 || formatoCompacto100));
             const valorResumo = (total, percentual) => resumoCompactoMobile
                 ? `${percentual || '0,00'}%`
-                : `${total || '--'}\n(${percentual || '0,00'}%)`;
+                : `${total || '--'} (${percentual || '0,00'}%)`;
             const campos = {
                 'votos-validos': resumo ? valorResumo(resumo.validos, resumo.pctValidos) : '--',
                 'votos-brancos': resumo ? valorResumo(resumo.brancos, resumo.pctBrancos) : '--',
@@ -220,6 +319,8 @@
         }
 
         function limparProgresso() {
+            ultimaAtualizacao.removeAttribute('title');
+            ultimaAtualizacao.removeAttribute('aria-label');
             textoPercurso.innerText = '0%';
             barraPercurso.style.width = '0%';
             if (barraProgresso) barraProgresso.setAttribute('aria-valuenow', '0');
@@ -307,12 +408,19 @@
             barraPercurso.style.width = `${percentualApurado}%`;
             if (barraProgresso) barraProgresso.setAttribute('aria-valuenow', String(percentualApurado));
 
-            const andamento = percentualApurado >= 100 ? 'Finalizado' : 'Em andamento';
-            const horarioAtualizacao = extrairHorario(data.atualizacao);
-            ultimaAtualizacao.innerText = horarioAtualizacao
-                ? `${andamento} · ${horarioAtualizacao}`
-                : andamento;
+            atualizarFonteDados(data);
             atualizarResumo(data.resumo || {});
+        }
+
+        function atualizarFonteDados(data) {
+            const diaAtual = formatadorDiaAtual.format(new Date());
+            const horarioAtualizacao = extrairHorario(data.atualizacao);
+            ultimaAtualizacao.innerText = `Fonte: TSE · ${diaAtual} · ${horarioAtualizacao || '--:--'}`;
+            // A data visivel e o dia da exibicao, nao uma nova publicacao do TSE.
+            const descricao = `Fonte: Tribunal Superior Eleitoral. Data de exibição: ${diaAtual} (Brasília). `
+                + `Última atualização dos dados do TSE: ${data.atualizacao || 'horário não informado'}.`;
+            ultimaAtualizacao.title = descricao;
+            ultimaAtualizacao.setAttribute('aria-label', descricao);
         }
 
         function criarBadgeSituacao(candidato) {
@@ -552,28 +660,7 @@
                 : (formatoCompacto100 ? 34 : 88);
             const permiteAutoScroll = window.matchMedia(consultaDesktop);
 
-            lista.addEventListener('mouseenter', () => {
-                if (permiteAutoScroll.matches) estado.pausado = true;
-            });
-            lista.addEventListener('mouseleave', () => {
-                if (!permiteAutoScroll.matches) return;
-                estado.pausado = false;
-                estado.iniciarAutoScrollEm = Date.now() + 500;
-            });
-            lista.addEventListener('touchstart', () => {
-                estado.pausado = true;
-            }, { passive: true });
-
-            function liberarAposToque() {
-                estado.pausado = false;
-                estado.iniciarAutoScrollEm = Date.now() + 700;
-            }
-
-            lista.addEventListener('touchend', liberarAposToque, { passive: true });
-            lista.addEventListener('touchcancel', liberarAposToque, { passive: true });
-            lista.addEventListener('wheel', () => {
-                estado.iniciarAutoScrollEm = Date.now() + 700;
-            }, { passive: true });
+            const atualizarArraste = configurarArrasteCandidatos(lista, estado);
 
             function animarAutoScroll(tempoAtual) {
                 const tempoDecorrido = Math.min(tempoAtual - ultimoFrame, 50);
@@ -582,7 +669,8 @@
                     ? velocidadeDesktop
                     : velocidadeMobile;
 
-                if (!estado.pausado && Date.now() >= estado.iniciarAutoScrollEm && lista.scrollWidth > lista.clientWidth) {
+                const podeRolar = atualizarArraste();
+                if (!estado.pausado && Date.now() >= estado.iniciarAutoScrollEm && podeRolar) {
                     lista.scrollLeft += (velocidadeAtual * tempoDecorrido) / 1000;
 
                     if (lista.scrollLeft >= lista.scrollWidth - lista.clientWidth - 1) {
@@ -601,6 +689,14 @@
         definirAnoExibido();
         consultarStatusEleicao();
         window.setInterval(consultarStatusEleicao, 120000);
+        const atualizarDiaExibido = () => {
+            if (estado.ultimaApuracao) atualizarFonteDados(estado.ultimaApuracao);
+        };
+        // A virada do dia nao precisa consultar novamente a API.
+        window.setInterval(atualizarDiaExibido, 60000);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) atualizarDiaExibido();
+        });
     }
 
     window.toggleResumo = toggleResumo;

@@ -85,6 +85,105 @@
         if (botao) botao.setAttribute('aria-expanded', String(!estaOculto));
     }
 
+    // Mantido igual nas tres versoes: sem recurso extra nem nova requisicao.
+    function configurarArrasteCandidatos(lista, estado) {
+        let ponteiroDentro = false;
+        let arraste = null;
+        let bloquearCliqueAte = 0;
+        let disponivel = false;
+
+        function retomarAutomatico(atraso = 500) {
+            estado.pausado = false;
+            estado.iniciarAutoScrollEm = Date.now() + atraso;
+        }
+
+        function finalizarArraste(evento) {
+            if (!arraste || (evento?.pointerId != null && evento.pointerId !== arraste.id)) return;
+            const anterior = arraste;
+            arraste = null;
+            lista.classList.remove('arrastando-candidatos');
+            if (lista.hasPointerCapture(anterior.id)) lista.releasePointerCapture(anterior.id);
+            if (anterior.moveu) {
+                // O click gerado ao soltar um arraste nao deve acionar um card/botao.
+                bloquearCliqueAte = performance.now() + 400;
+                retomarAutomatico();
+            } else if (!ponteiroDentro || evento?.type === 'pointercancel' || evento?.type === 'blur') {
+                retomarAutomatico();
+            }
+        }
+
+        lista.addEventListener('pointerenter', (evento) => {
+            if (evento.pointerType === 'touch') return;
+            ponteiroDentro = true;
+            estado.pausado = true;
+        });
+        lista.addEventListener('pointerleave', (evento) => {
+            if (evento.pointerType === 'touch') return;
+            ponteiroDentro = false;
+            if (!arraste) retomarAutomatico();
+        });
+        lista.addEventListener('pointerdown', (evento) => {
+            if (evento.pointerType === 'touch' || !evento.isPrimary || evento.button !== 0
+                || lista.scrollWidth <= lista.clientWidth + 1) return;
+            bloquearCliqueAte = 0;
+            estado.pausado = true;
+            arraste = { id: evento.pointerId, x: evento.clientX, scroll: lista.scrollLeft, moveu: false };
+        });
+        window.addEventListener('pointermove', (evento) => {
+            if (!arraste || evento.pointerId !== arraste.id) return;
+            if (!(evento.buttons & 1)) {
+                finalizarArraste(evento);
+                return;
+            }
+            const distancia = evento.clientX - arraste.x;
+            if (!arraste.moveu && Math.abs(distancia) < 5) return;
+            if (!arraste.moveu) {
+                arraste.moveu = true;
+                // Capturar so depois do limiar preserva o alvo dos cliques normais.
+                lista.setPointerCapture(arraste.id);
+                lista.classList.add('arrastando-candidatos');
+            }
+            evento.preventDefault();
+            lista.scrollLeft = arraste.scroll - distancia;
+        }, { passive: false });
+        window.addEventListener('pointerup', finalizarArraste);
+        window.addEventListener('pointercancel', finalizarArraste);
+        lista.addEventListener('lostpointercapture', finalizarArraste);
+        window.addEventListener('blur', finalizarArraste);
+        lista.addEventListener('click', (evento) => {
+            if (evento.detail !== 0 && performance.now() < bloquearCliqueAte) {
+                evento.preventDefault();
+                evento.stopImmediatePropagation();
+                bloquearCliqueAte = 0;
+            }
+        }, true);
+        lista.addEventListener('dragstart', (evento) => {
+            if (disponivel) evento.preventDefault();
+        });
+        // O toque continua usando a rolagem nativa, sem captura ou preventDefault.
+        lista.addEventListener('touchstart', () => {
+            estado.pausado = true;
+        }, { passive: true });
+        function liberarAposToque(evento) {
+            if (!evento.touches.length) retomarAutomatico(700);
+        }
+        lista.addEventListener('touchend', liberarAposToque, { passive: true });
+        lista.addEventListener('touchcancel', liberarAposToque, { passive: true });
+        lista.addEventListener('wheel', () => {
+            estado.iniciarAutoScrollEm = Date.now() + 700;
+        }, { passive: true });
+
+        return function atualizarDisponibilidade() {
+            const podeArrastar = lista.scrollWidth > lista.clientWidth + 1;
+            if (podeArrastar !== disponivel) {
+                disponivel = podeArrastar;
+                lista.classList.toggle('arraste-disponivel', disponivel);
+                if (!disponivel) finalizarArraste();
+            }
+            return disponivel;
+        };
+    }
+
     function iniciar(opcoes = {}) {
         const tipo = opcoes.tipo || 'padrao';
         const loteDeputados = opcoes.loteDeputados || 20;
@@ -376,28 +475,7 @@
             const velocidadeMobile = 88;
             const permiteAutoScroll = window.matchMedia('(min-width: 761px)');
 
-            lista.addEventListener('mouseenter', () => {
-                if (permiteAutoScroll.matches) estado.pausado = true;
-            });
-            lista.addEventListener('mouseleave', () => {
-                if (!permiteAutoScroll.matches) return;
-                estado.pausado = false;
-                estado.iniciarAutoScrollEm = Date.now() + 500;
-            });
-            lista.addEventListener('touchstart', () => {
-                estado.pausado = true;
-            }, { passive: true });
-
-            function liberarAposToque() {
-                estado.pausado = false;
-                estado.iniciarAutoScrollEm = Date.now() + 700;
-            }
-
-            lista.addEventListener('touchend', liberarAposToque, { passive: true });
-            lista.addEventListener('touchcancel', liberarAposToque, { passive: true });
-            lista.addEventListener('wheel', () => {
-                estado.iniciarAutoScrollEm = Date.now() + 700;
-            }, { passive: true });
+            const atualizarArraste = configurarArrasteCandidatos(lista, estado);
 
             function animarAutoScroll(tempoAtual) {
                 const tempoDecorrido = Math.min(tempoAtual - ultimoFrame, 50);
@@ -406,7 +484,8 @@
                     ? velocidadeDesktop
                     : velocidadeMobile;
 
-                if (!estado.pausado && Date.now() >= estado.iniciarAutoScrollEm && lista.scrollWidth > lista.clientWidth) {
+                const podeRolar = atualizarArraste();
+                if (!estado.pausado && Date.now() >= estado.iniciarAutoScrollEm && podeRolar) {
                     lista.scrollLeft += (velocidadeAtual * tempoDecorrido) / 1000;
 
                     if (lista.scrollLeft >= lista.scrollWidth - lista.clientWidth - 1) {

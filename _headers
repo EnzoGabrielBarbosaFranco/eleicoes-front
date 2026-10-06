@@ -19,3 +19,17 @@
   Cache-Control: public, max-age=300, must-revalidate
 /2026/assets/*
   Cache-Control: public, max-age=300, must-revalidate
+
+# Identidades sao estaticas e nao consomem Workers. Nao usar immutable nos logos.
+/personalizados/clientes.js
+  Cache-Control: public, max-age=300, must-revalidate
+/personalizados/identidade.js
+  Cache-Control: public, max-age=300, must-revalidate
+/personalizados/identidade.css
+  Cache-Control: public, max-age=300, must-revalidate
+/personalizados/css/*
+  Cache-Control: public, max-age=300, must-revalidate
+/personalizados/js/*
+  Cache-Control: public, max-age=300, must-revalidate
+/personalizados/logos/*
+  Cache-Control: public, max-age=300, must-revalidate

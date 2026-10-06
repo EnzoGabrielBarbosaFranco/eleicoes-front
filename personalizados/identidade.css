@@ -1,0 +1,89 @@
+/* Folha exclusiva dos banners personalizados. Nao afeta /2026/. */
+.produto-link {
+    display: none !important;
+}
+
+.brand-mark::before,
+.brand-mark::after {
+    content: none;
+}
+
+body.cliente-personalizado .brand-mark.cliente-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.cliente-personalizado .cliente-logo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+body.cliente-personalizado .cliente-iniciais {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    color: var(--mint);
+    background: var(--ink);
+    border-radius: 8px;
+    font: 700 14px/1 system-ui, sans-serif;
+}
+
+body.cliente-personalizado .header-copy { min-width: 0; }
+body.cliente-personalizado .header-copy :is(h1, h2) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Correio do Estado: azul institucional, logo original sobre base branca.
+   Nenhuma destas regras altera as identidades dos demais clientes. */
+body[data-cliente="correio-do-estado"] :is(.widget-header, .bloco-header) {
+    background: linear-gradient(110deg, #134282, #1D5B9F);
+}
+
+body[data-cliente="correio-do-estado"] .brand-mark.cliente-logo {
+    padding: 4px;
+    border: 1px solid #fff;
+    border-radius: 9px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(4, 26, 59, 0.16);
+}
+
+body[data-cliente="correio-do-estado"] .header-copy :is(h1, h2) {
+    color: #fff;
+    font-weight: 750;
+}
+
+body[data-cliente="correio-do-estado"] .header-kicker {
+    color: #E8F1FC;
+}
+
+body[data-cliente="correio-do-estado"] .resumo-votos {
+    border-color: #DAE6F5;
+    background: #F3F7FD;
+}
+
+body[data-cliente="correio-do-estado"] :is(.card-cand, .candidato-card) {
+    border-color: #DAE6F5;
+}
+
+body.cliente-indisponivel :is(.widget-container, .widget-horizontal) {
+    align-items: center;
+    justify-content: center;
+}
+
+.cliente-aviso {
+    margin: 0;
+    padding: 4px 10px;
+    color: #334155;
+    text-align: center;
+    font: 12px/1.3 system-ui, sans-serif;
+}

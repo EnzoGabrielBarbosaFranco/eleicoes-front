@@ -1,0 +1,279 @@
+html {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    min-height: 100px;
+}
+
+body.formato-320x100,
+body.formato-320x100.identidade-2026 {
+    display: grid;
+    width: 320px;
+    max-width: 100%;
+    height: 100px;
+    min-height: 100px;
+    margin: 0 auto;
+    place-items: center;
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+}
+
+body.formato-320x100 .widget-horizontal,
+body.formato-320x100.identidade-2026 .widget-horizontal {
+    display: flex;
+    width: 320px;
+    max-width: 100%;
+    height: 100px;
+    min-height: 100px;
+    max-height: 100px;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(16, 82, 155, 0.16);
+    border-radius: 9px;
+    background: #fff;
+    box-shadow: none;
+}
+
+body.formato-320x100 .bloco-header,
+body.formato-320x100.identidade-2026 .bloco-header {
+    display: block;
+    flex: 0 0 31px;
+    width: 100%;
+    height: 31px;
+    padding: 4px 6px;
+    background: #fff;
+}
+
+body.formato-320x100 .bloco-header .header-brand,
+body.formato-320x100 .bloco-status,
+body.formato-320x100 .resumo-toggle,
+body.formato-320x100 .aviso-fonte-dados {
+    display: none !important;
+}
+
+body.formato-320x100 .bloco-header .controles,
+body.formato-320x100.identidade-2026 .bloco-header .controles {
+    display: grid;
+    height: 23px;
+    grid-template-columns: minmax(0, 1.7fr) minmax(58px, 0.65fr);
+    gap: 6px;
+}
+
+body.formato-320x100 .bloco-header .controles .sel-turno {
+    display: none;
+}
+
+body.formato-320x100 .bloco-header .controles select,
+body.formato-320x100.identidade-2026 .bloco-header .controles select {
+    width: 100%;
+    height: 23px;
+    min-width: 0;
+    padding: 0 22px 0 8px;
+    border-color: #b9c8d8;
+    border-radius: 6px;
+    color: var(--slate-950);
+    background-color: #fff;
+    background-position: right 7px center;
+    background-size: 9px;
+    font-size: 0.5rem;
+}
+
+body.formato-320x100 .resumo-votos.resumo-mobile-horizontal,
+body.formato-320x100 .resumo-votos.resumo-mobile-horizontal.oculto {
+    display: grid !important;
+    flex: 0 0 21px;
+    width: 100%;
+    height: 21px;
+    min-height: 21px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+    overflow: hidden;
+    border-block: 1px solid color-mix(in srgb, var(--mint-strong) 30%, transparent);
+    color: var(--ink);
+    background: color-mix(in srgb, var(--mint) 24%, #fff);
+}
+
+body.formato-320x100 .resumo-votos .resumo-item {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    align-self: stretch;
+    align-items: baseline;
+    align-content: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 0;
+    padding: 0 2px;
+    column-gap: 2px;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+}
+
+body.formato-320x100 .resumo-votos .resumo-item::after {
+    top: 20%;
+    height: 60%;
+    background: color-mix(in srgb, var(--mint-strong) 26%, transparent);
+}
+
+body.formato-320x100 .resumo-votos .resumo-item > span:first-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    color: var(--slate-500);
+    font-size: 0.33rem;
+    font-weight: 750;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+body.formato-320x100 .resumo-votos .resumo-valor {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    color: var(--ink);
+    font-size: 0.36rem;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+body.formato-320x100 .bloco-carrossel,
+body.formato-320x100.identidade-2026 .bloco-carrossel {
+    display: flex;
+    flex: 0 0 46px;
+    width: 100%;
+    height: 46px;
+    min-height: 0;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-start;
+    padding: 2px 5px 3px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: var(--slate-50);
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+}
+
+body.formato-320x100 .bloco-carrossel::-webkit-scrollbar {
+    display: none;
+}
+
+body.formato-320x100 .bloco-carrossel .eleicao-meta {
+    display: none;
+}
+
+body.formato-320x100 .card-cand,
+body.formato-320x100.identidade-2026 .card-cand {
+    position: relative;
+    flex: 0 0 142px;
+    width: 142px;
+    max-width: none;
+    height: 41px;
+    gap: 4px;
+    padding: 2px 30px 2px 5px;
+    overflow: hidden;
+    border-radius: 5px;
+    box-shadow: none;
+}
+
+body.formato-320x100 .card-cand .ranking-cand,
+body.formato-320x100 .card-pct,
+body.formato-320x100 .card-barra-bg,
+body.formato-320x100 .card-votos,
+body.formato-320x100 .card-complemento,
+body.formato-320x100 .card-cand > .eleito-badge {
+    display: none;
+}
+
+body.formato-320x100 .card-cand .foto-container {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    font-size: 0.44rem;
+}
+
+body.formato-320x100 .info-cand {
+    width: 100%;
+    justify-content: center;
+}
+
+body.formato-320x100 .card-topo {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0;
+}
+
+body.formato-320x100 .card-cargo-compacto {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 1px 3px;
+    border-radius: 999px;
+    color: var(--ink);
+    background: var(--mint);
+    font-size: 0.26rem;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+body.formato-320x100 .card-nome {
+    display: block;
+    width: 100%;
+    font-size: 0.43rem;
+    line-height: 1.05;
+}
+
+body.formato-320x100 .card-identificacao {
+    display: none;
+}
+
+body.formato-320x100 .card-partido-compacto {
+    display: block;
+    margin-top: 1px;
+    overflow: hidden;
+    color: var(--slate-500);
+    font-size: 0.32rem;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.formato-320x100 .card-numero-compacto {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    display: block;
+    margin: 0;
+    color: var(--mint-dark);
+    font-size: 0.68rem;
+    font-weight: 950;
+    line-height: 1;
+    transform: translateY(-50%);
+}
+
+body.formato-320x100 .bloco-carrossel .carregar-mais {
+    flex: 0 0 142px;
+    width: 142px;
+    height: 41px;
+    min-height: 0;
+    padding: 4px;
+    font-size: 0.46rem;
+}
+
+body.formato-320x100 .bloco-carrossel .estado-eleicao,
+body.formato-320x100 .bloco-carrossel .loading-msg {
+    width: 100%;
+    min-width: 100%;
+    min-height: 38px;
+    padding: 4px 8px;
+    font-size: 0.46rem;
+}

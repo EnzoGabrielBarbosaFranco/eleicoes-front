@@ -10,8 +10,9 @@ const marcador = '.pages-build.json';
 const gerador = 'eleicoes-front-pages-v1';
 const formatos2022 = ['index', 'horizontal', '970x250', '300x250', '300x600'];
 const formatos2026 = [...formatos2022, '970x90', '970x250x100', '1260x100', '1260x200', '320x100'];
+const paginasPersonalizadas = formatos2026.map((nome) => `personalizados/${nome}.html`);
 const paginas = [...formatos2022.map((nome) => `${nome}.html`),
-    ...formatos2026.map((nome) => `2026/${nome}.html`)];
+    ...formatos2026.map((nome) => `2026/${nome}.html`), ...paginasPersonalizadas];
 const hash = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex').slice(0, 16);
 
 function ler(arquivo) {
@@ -35,9 +36,10 @@ function gerar() {
     const versionados = new Map();
     // Lista permitida: nunca copiar o repositorio inteiro, credenciais, backend ou entrega.
     // As paginas de 2026 nao distribuem amostras historicas nem JSON de candidatos.
-    for (const pasta of ['css', 'js']) {
+    for (const pasta of ['css', 'js', 'personalizados']) {
         for (const arquivo of listar(pasta)) {
-            if (!/\.(css|js|json)$/.test(arquivo)) throw new Error(`Recurso inesperado: ${arquivo}`);
+            if (paginasPersonalizadas.includes(arquivo)) continue;
+            if (!/\.(css|js|json|svg|png|webp|jpg|jpeg)$/.test(arquivo)) throw new Error(`Recurso inesperado: ${arquivo}`);
             arquivos.set(arquivo, ler(arquivo));
         }
     }
@@ -81,10 +83,10 @@ function gerar() {
         fs.mkdirSync(path.dirname(alvo), { recursive: true });
         fs.writeFileSync(alvo, bytes);
     }
-    console.log(`Build Pages: ${arquivos.size} arquivos, ${(Array.from(arquivos.values()).reduce((s, b) => s + b.length, 0) / 1024 / 1024).toFixed(2)} MiB; 15 paginas.`);
+    console.log(`Build Pages: ${arquivos.size} arquivos, ${(Array.from(arquivos.values()).reduce((s, b) => s + b.length, 0) / 1024 / 1024).toFixed(2)} MiB; ${paginas.length} paginas.`);
     console.log('Somente build local. Nenhuma publicacao, DNS ou chamada ao backend.');
     return { destino, paginas, versionados };
 }
 
 if (require.main === module) gerar();
-module.exports = { gerar, paginas, formatos2022, formatos2026 };
+module.exports = { gerar, paginas, paginasPersonalizadas, formatos2022, formatos2026 };

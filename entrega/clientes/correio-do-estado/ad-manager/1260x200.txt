@@ -1,0 +1,1 @@
+<iframe src="https://apuracao.placardasurnas.com.br/personalizados/1260x200.html?site=correio-do-estado" width="1260" height="200" title="Apuração das Eleições 2026" scrolling="no" style="position:absolute;inset:0;display:block;width:100%;height:100%;margin:0;padding:0;border:0;overflow:hidden"></iframe>

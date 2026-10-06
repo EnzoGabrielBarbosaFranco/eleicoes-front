@@ -73,14 +73,14 @@ async function verificarPages(endereco) {
     const amostraAntiga = await buscar(new URL('2026/assets/dados-2022.json', base));
     assert.equal(amostraAntiga.status, 404, 'Nao distribuir a amostra historica nas paginas de 2026.');
     await amostraAntiga.arrayBuffer();
-    console.log(`${base.origin}: 15 paginas e todos os recursos identicos, parametros, CSP e 404: OK.`);
+    console.log(`${base.origin}: ${paginas.length} paginas e todos os recursos identicos, parametros, CSP e 404: OK.`);
     // Continuar o inventario em caso de TTL divergente, sem aceitar silenciosamente
     // o cache incorreto. Assim o diagnostico identifica todos os caminhos afetados.
     if (divergenciasCache.length) {
         console.error(JSON.stringify({ divergenciasCache }, null, 2));
         assert.fail('O cache publico diverge do build. Nao considerar a validacao completa.');
     }
-    console.log(`${base.origin}: 15 paginas, parametros, recursos identicos, CSP, cache e 404: OK.`);
+    console.log(`${base.origin}: ${paginas.length} paginas, parametros, recursos identicos, CSP, cache e 404: OK.`);
 }
 
 async function main() {

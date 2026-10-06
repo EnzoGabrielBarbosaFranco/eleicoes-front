@@ -50,6 +50,19 @@
   <main class="area-teste"><div class="propaganda"></div></main>
   <script>
     const consultaTeste = new URLSearchParams(location.search);
+    if (consultaTeste.has('site')) {
+      const seletorCapa = document.querySelector('select[name="pre-eleicao"]');
+      seletorCapa.closest('label').hidden = true;
+      seletorCapa.closest('label').style.display = 'none';
+      seletorCapa.disabled = true;
+      for (const campo of document.querySelectorAll('[name="duracao"],[name="reiniciar"]')) campo.disabled = true;
+      for (const nome of ['site', 'formato']) {
+        if (!consultaTeste.has(nome)) continue;
+        const campo = document.createElement('input');
+        campo.type = 'hidden'; campo.name = nome; campo.value = consultaTeste.get(nome);
+        document.querySelector('form').append(campo);
+      }
+    }
     for (const campoTeste of document.querySelectorAll('form [name]')) {
       if (consultaTeste.has(campoTeste.name)) campoTeste.value = consultaTeste.get(campoTeste.name);
     }
@@ -57,6 +70,7 @@
     const widgetTeste = document.createElement('eleicoes-widget');
     widgetTeste.setAttribute('ano', '2026');
     widgetTeste.setAttribute('formato', consultaTeste.get('formato') || '1260x200');
+    if (consultaTeste.has('site')) widgetTeste.setAttribute('site', consultaTeste.get('site'));
     if (consultaTeste.get('breakpoint') !== 'padrao') {
       widgetTeste.setAttribute('breakpoint', consultaTeste.get('breakpoint') || '940');
     }

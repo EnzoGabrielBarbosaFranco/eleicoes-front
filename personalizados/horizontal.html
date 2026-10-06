@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="ad.size" content="width=1200,height=100">
+    <title>Apuração 2026 — Apuração 2026 - Horizontal</title>
+    <link rel="stylesheet" href="/personalizados/css/horizontal.css">
+    <link rel="stylesheet" href="/personalizados/css/widget.css">
+    <link rel="stylesheet" href="/personalizados/css/apresentacao.css">
+    <link rel="stylesheet" href="/personalizados/identidade.css">
+</head>
+<body data-widget="horizontal">
+    <div class="widget-horizontal">
+        <div class="bloco-header">
+            <div class="header-brand">
+                <div class="header-copy">
+                    <h2>Apuração 2026</h2>
+                </div>
+                <a class="produto-link" href="https://placardasurnas.com.br/" target="_blank" rel="noopener noreferrer" aria-label="Tenha este widget no seu site">
+                    <span class="produto-link-amplo">Tenha este widget</span>
+                    <span class="produto-link-curto">Obter widget</span>
+                    <span aria-hidden="true">↗</span>
+                </a>
+            </div>
+            <div class="controles" role="group" aria-label="Filtros da apuração">
+                <select id="select-turno" class="sel-turno" aria-label="Turno">
+                    <option value="1">1º</option>
+                    <option value="2">2º</option>
+                </select>
+                <select id="select-cargo" class="sel-cargo" aria-label="Cargo">
+                    <option value="1">Presidente</option>
+                    <option value="3">Governador</option>
+                    <option value="5">Senador</option>
+                    <option value="6">Dep. Federal</option>
+                    <option value="7">Dep. Estadual</option>
+                </select>
+                <select id="select-uf" class="sel-uf" aria-label="Unidade federativa">
+                    <option value="br">BR</option>
+                    <option value="ac">AC</option>
+                    <option value="al">AL</option>
+                    <option value="ap">AP</option>
+                    <option value="am">AM</option>
+                    <option value="ba">BA</option>
+                    <option value="ce">CE</option>
+                    <option value="df">DF</option>
+                    <option value="es">ES</option>
+                    <option value="go">GO</option>
+                    <option value="ma">MA</option>
+                    <option value="mt">MT</option>
+                    <option value="ms">MS</option>
+                    <option value="mg">MG</option>
+                    <option value="pa">PA</option>
+                    <option value="pb">PB</option>
+                    <option value="pr">PR</option>
+                    <option value="pe">PE</option>
+                    <option value="pi">PI</option>
+                    <option value="rj">RJ</option>
+                    <option value="rn">RN</option>
+                    <option value="rs">RS</option>
+                    <option value="ro">RO</option>
+                    <option value="rr">RR</option>
+                    <option value="sc">SC</option>
+                    <option value="sp">SP</option>
+                    <option value="se">SE</option>
+                    <option value="to">TO</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="bloco-status">
+            <div class="status-topo">
+                <span class="status-label"><span class="status-dot" aria-hidden="true"></span>Urnas apuradas</span>
+                <span id="txt-percurso">0,00%</span>
+            </div>
+            <div class="barra-total-bg" role="progressbar" aria-label="Percentual de urnas apuradas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="barra-percurso" class="barra-total-fill"></div>
+            </div>
+            <span id="ultima-atualizacao" class="data-hora" aria-live="polite">Conectando...</span>
+        </div>
+
+        <button type="button" class="resumo-toggle resumo-mobile-horizontal" onclick="toggleResumo()" aria-expanded="false" aria-controls="bloco-resumo">
+            <span id="txt-toggle">Ver resumo de votos</span>
+        </button>
+
+        <div id="bloco-resumo" class="resumo-votos resumo-mobile-horizontal oculto">
+            <div class="resumo-item"><span>Válidos</span><span class="resumo-valor" id="votos-validos">--</span></div>
+            <div class="resumo-item"><span>Brancos</span><span class="resumo-valor" id="votos-brancos">--</span></div>
+            <div class="resumo-item"><span>Nulos</span><span class="resumo-valor" id="votos-nulos">--</span></div>
+            <div class="resumo-item"><span>Abstenções</span><span class="resumo-valor" id="votos-abstencoes">--</span></div>
+        </div>
+
+        <div id="lista-candidatos" class="bloco-carrossel" aria-live="polite" aria-busy="true">
+            <span class="loading-msg"><span class="loading-spinner" aria-hidden="true"></span>Buscando dados no TSE...</span>
+        </div>
+    </div>
+    <script src="/seguranca.js"></script>
+    <script src="/personalizados/clientes.js"></script>
+    <script src="/personalizados/identidade.js"></script>
+    <script src="/personalizados/js/apresentacao.js"></script>
+    <script src="/personalizados/js/widget-2026.js"></script>
+    <script src="/personalizados/js/horizontal.js"></script>
+</body>
+</html>

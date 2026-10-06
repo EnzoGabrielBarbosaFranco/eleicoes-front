@@ -1,5 +1,7 @@
 # Placar das Urnas — Apuração
 
+**Personalizados e ajustes publicados com nova autorização em 5 de outubro de 2026:** deployment Pages `2955eb39-1be3-44c6-a4a9-096bde982f8f`, produção em `https://apuracao.placardasurnas.com.br`. Inclui as dez páginas personalizadas, identidade do Correio do Estado, resumo de votos em uma linha, fonte TSE/data/horário sem segundos e arraste nos carrosséis de 2022/2026/personalizados. Testes locais e públicos de layout/integração passaram com APIs interceptadas. Os 25 HTMLs e recursos correspondem ao build; a validação integral de cache continua falhando porque a zona impõe quatro horas aos arquivos sem hash. Domínio do Correio não foi liberado. Backend, DNS e cache não foram alterados. Registro em [CLOUDFLARE-PAGES.md](./CLOUDFLARE-PAGES.md).
+
 **Nova marca publicada com autorização em 5 de outubro de 2026:** banners em `https://apuracao.placardasurnas.com.br` e domínio comercial `https://placardasurnas.com.br/`. Deployment Pages `73947072-91bd-4ec8-a39e-7cc8e61e7ba2`; CORS publicado nos dois Workers. Site principal com/sem `www` e portais existentes liberados na CSP e na licença. Cores, símbolo, filtros, medidas e tags foram preservados. A configuração da zona ainda aumenta o cache dos scripts sem hash de cinco minutos para quatro horas; essa divergência não foi ocultada no teste nem alterada nesta publicação. Consulte [CLOUDFLARE-PAGES.md](./CLOUDFLARE-PAGES.md). Os registros abaixo são históricos. Calendário do segundo turno exige ajuste e testes separados.
 
 Frontend em HTML, CSS e JavaScript puro. Não é necessário executar `npm install`.
@@ -75,6 +77,18 @@ Enquanto os resultados não estiverem disponíveis, as páginas de 2026 mostram 
 As respostas de status e apuração precisam informar explicitamente `ano=2026`; dados com fase `historico` também são rejeitados. Em uma falha, preservam-se apenas os últimos dados válidos de 2026, quando disponíveis. O Worker de produção está configurado para o ambiente oficial do TSE. Fixtures usadas nos testes ficam somente no navegador de teste, nunca no build entregue.
 
 Em produção, o frontend de 2022 usa `https://backend-eleicoes.enzo-eleicoes-backend.workers.dev` e o frontend de 2026 usa `https://backend-eleicoes-2026.enzo-eleicoes-backend.workers.dev`.
+
+## Interação dos carrosséis
+
+Nos carrosséis de 2022, 2026 e personalizados, passar o mouse pausa a rolagem e
+mostra o cursor de mão aberta. Clicar e arrastar movimenta os candidatos nos dois
+sentidos, com mão fechada. Ao soltar um arraste, o automático retoma após 500 ms,
+mesmo com o mouse sobre os cards; sair e entrar novamente volta a pausar.
+Cliques simples e o botão “Carregar mais” permanecem funcionais. No celular,
+o toque conserva a rolagem nativa, pausando enquanto o dedo está na lista.
+Sem conteúdo excedente não aparece o cursor de arraste. Listas verticais mantêm
+o comportamento anterior. A interação não adiciona consultas à API nem altera
+os códigos de incorporação. Publicada no deployment `2955eb39` com autorização.
 
 ## Incorporar os widgets em outros sites
 
@@ -175,3 +189,10 @@ http://127.0.0.1:5500/testar-embed.html?pre-eleicao=dia&breakpoint=940&cenario=p
 ```
 
 Abra o modo responsivo do navegador e confira 320, 360, 390 e 400 px, além de 940 e 941 px. A página permite simular pai com 1260 px, ancestral estreito, flex, grid, display contents e contêiner inicialmente oculto. Os parâmetros de prévia só são encaminhados pelo embed quando tanto a página de teste quanto o iframe são locais; o embed de produção não permite forçar a capa.
+
+## Banners por cliente
+
+As dez versoes de 2026 tambem possuem copias isoladas em `personalizados/`.
+Consulte [o guia de personalizacao e entrega](entrega/PERSONALIZADOS.md).
+O exemplo `cliente-x` e demonstracao. A identidade visual do Correio do Estado
+esta publicada em `site=correio-do-estado`, sem liberacao do dominio do cliente.

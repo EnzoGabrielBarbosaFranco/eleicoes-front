@@ -22,9 +22,13 @@ function criarPaginaPortal(embed, opcoes = {}) {
     const [largura,altura] = tamanhos[formato];
     const token = String(opcoes.token || '').replace(/[^a-zA-Z0-9]/g,'');
     const marca = token ? ` marca="${token}"` : '';
+    const site = opcoes.site === 'correio-do-estado' ? opcoes.site : '';
+    const atributoSite = site ? ` site="${site}"` : '';
+    const pastaBanner = site ? 'personalizados' : '2026';
+    const consultaSite = site ? `?site=${site}` : '';
     const conteudo = embed
-        ? `<script src="${dominio}/embed.js" defer></script><eleicoes-widget ano="2026" formato="${formato}" breakpoint="1050"${marca}></eleicoes-widget>`
-        : `<iframe src="${dominio}/2026/${formato}.html" width="${largura}" height="${altura}" scrolling="no" style="display:block;border:0"></iframe>`;
+        ? `<script src="${dominio}/embed.js" defer></script><eleicoes-widget ano="2026" formato="${formato}" breakpoint="1050"${marca}${atributoSite}></eleicoes-widget>`
+        : `<iframe src="${dominio}/${pastaBanner}/${formato}.html${consultaSite}" width="${largura}" height="${altura}" scrolling="no" style="display:block;border:0"></iframe>`;
     const estilo = opcoes.cenario==='pai-largo' ? 'width:1260px' : '';
     return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"></head><body style="margin:0"><div class="propaganda" style="${estilo}">${conteudo}</div></body></html>`;
 }
@@ -166,7 +170,7 @@ async function main() {
                     : { ano: 2026, fase: 'oficial', turno: Number(url.searchParams.get('turno')),
                         cargo: Number(url.searchParams.get('cargo')), uf: url.searchParams.get('uf'),
                         percurso: '63,50', atualizacao: '04/10/2026 as 18:30:00', finalizado: false, vagas: 1,
-                        totalCandidatos: 3, candidatos: Array.from({ length: 3 }, (_, i) => ({
+                        totalCandidatos: 8, candidatos: Array.from({ length: 8 }, (_, i) => ({
                             nome: `Fixture 2026 ${i + 1}`, numero: String(10 + i), partido: 'TESTE',
                             votos: String(40 - i), votosNumero: 400 - i, total: String(400 - i),
                             situacao: 'Nao eleito', eleito: false, foto: '',
@@ -250,6 +254,56 @@ async function main() {
         await aguardar(() => avaliar("document.getElementById('lista-candidatos').getAttribute('aria-busy')==='false' && document.querySelectorAll('.card-cand').length>0"), 'filtro UF MT');
         assert(resultados.some(r => r.url.includes('cargo=3&uf=mt') && r.status === 200));
         console.log('Dominio publico com API interceptada de 2026: 1260x200 desktop, 100px mobile e filtros cargo/UF: OK.');
+        for (const [formato, [nativa, desktop, mobile]] of Object.entries(tamanhos)) {
+            for (const viewport of [...new Set([nativa, 320])]) {
+                await enviar('Emulation.setDeviceMetricsOverride', { width: viewport, height: 800, deviceScaleFactor: 1, mobile: false }, sessionId);
+                await esperar(250);
+                await avaliar("if(document.body)document.body.dataset.testeAnterior='1'");
+                await enviar('Page.navigate', { url: `${dominio}/personalizados/${formato}.html?site=correio-do-estado` }, sessionId);
+                const caminho = formato === 'index' ? '/personalizados/' : `/personalizados/${formato}`;
+                await aguardar(() => avaliar(`location.pathname===${JSON.stringify(caminho)} && !!document.body && !document.body.dataset.testeAnterior && document.body.dataset.cliente==='correio-do-estado' && (${candidatos}) && [...document.querySelectorAll('.cliente-logo img')].every(i=>i.complete&&i.naturalWidth>0)`), `Correio ${formato}/${viewport}`);
+                const identidade = await avaliar(`(() => {
+                    const r=document.querySelector('.widget-horizontal,.widget-container').getBoundingClientRect();
+                    return { titulo:document.title, cor:getComputedStyle(document.body).getPropertyValue('--brand-900').trim(),
+                        logos:[...document.querySelectorAll('.cliente-logo img')].map(i=>new URL(i.src).pathname),
+                        pre:!!document.querySelector('.pre26-painel'), w:r.width,h:r.height };
+                })()`);
+                assert(identidade.titulo.startsWith('Correio do Estado'), `${formato}: identidade publicada`);
+                assert.equal(identidade.cor, '#134282');
+                assert(identidade.logos.length > 0 && identidade.logos.every(p=>p==='/personalizados/logos/correiodoestado.png'));
+                assert.equal(identidade.pre, false);
+                assert.equal(identidade.w, formatosFixos.includes(formato) ? nativa : Math.min(nativa,viewport));
+                assert.equal(identidade.h, viewport===320 && !formatosFixos.includes(formato) ? mobile : desktop);
+                if (formato === '1260x200') {
+                    const r=await avaliar("(()=>{const r=document.querySelector('.widget-horizontal').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()");
+                    const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:r},sessionId);
+                    fs.writeFileSync(path.join(pasta,`publico-correio-${formato}-${viewport}.png`),Buffer.from(captura.data,'base64'));
+                }
+            }
+        }
+        await enviar('Emulation.setDeviceMetricsOverride', {width:360,height:500,deviceScaleFactor:1,mobile:false},sessionId);
+        await enviar('Page.navigate',{url:`${portal}/embed?site=correio-do-estado&formato=1260x200`},sessionId);
+        let sessaoCorreio;
+        await aguardar(async()=>{
+            sessaoCorreio=[...sessoes].find(([,a])=>a.type==='iframe'&&a.url.startsWith(`${dominio}/personalizados/1260x200`))?.[0];
+            return sessaoCorreio && await avaliar(`document.body?.dataset.cliente==='correio-do-estado' && (${candidatos})`,sessaoCorreio);
+        },'Correio no embed publico');
+        assert.equal(await avaliar("document.querySelector('eleicoes-widget').getBoundingClientRect().height"),100);
+        const posicao=await avaliar(`(()=>{const e=document.getElementById('lista-candidatos'),r=e.getBoundingClientRect();e.scrollLeft=50;return {x:180,y:r.y+r.height/2};})()`,sessaoCorreio);
+        async function moverMouse(type,x,y,pressionado=false) {
+            await enviar('Input.dispatchMouseEvent',{type,x,y,button:type==='mouseMoved'&&!pressionado?'none':'left',buttons:pressionado?1:0,...(type==='mouseMoved'?{}:{clickCount:1})},sessionId);
+        }
+        await moverMouse('mouseMoved',posicao.x,posicao.y);
+        await avaliar("document.getElementById('lista-candidatos').scrollLeft=50",sessaoCorreio);
+        await esperar(150);
+        assert.equal(await avaliar("document.getElementById('lista-candidatos').scrollLeft",sessaoCorreio),50);
+        await moverMouse('mousePressed',posicao.x,posicao.y,true);
+        await moverMouse('mouseMoved',posicao.x-60,posicao.y,true);
+        await aguardar(()=>avaliar("document.getElementById('lista-candidatos').scrollLeft>=109 && !!document.querySelector('.arrastando-candidatos')",sessaoCorreio),'arraste no embed Correio');
+        await moverMouse('mouseReleased',posicao.x-60,posicao.y);
+        const aoSoltar=await avaliar("document.getElementById('lista-candidatos').scrollLeft",sessaoCorreio);
+        await aguardar(()=>avaliar(`document.getElementById('lista-candidatos').scrollLeft>${aoSoltar+5} && !document.querySelector('.arrastando-candidatos')`,sessaoCorreio),'retomada apos soltar no embed Correio');
+        console.log('Correio publicado: dez formatos desktop/mobile, logo PNG, paleta azul, dimensoes e embed mobile com hover/arraste/retomada: OK.');
         for (const modo of ['aguardando', 'sem-votos']) {
             modoApi = modo;
             for (const [formato, largura, altura] of [

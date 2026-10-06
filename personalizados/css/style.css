@@ -1,0 +1,37 @@
+body[data-widget="padrao"] {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    padding: 0;
+    place-items: center;
+    overflow: hidden;
+}
+
+body[data-widget="padrao"] .widget-container {
+    width: min(100%, 1180px);
+    height: min(100%, 680px);
+}
+
+@media (max-width: 760px) {
+    body[data-widget="padrao"] {
+        display: block;
+        padding: 0;
+        background: #fff;
+    }
+
+    body[data-widget="padrao"] .widget-container {
+        width: 100%;
+        height: 250px;
+        min-height: 250px;
+        max-height: 250px;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    body.index-mobile-300x250 .widget-container {
+        width: 100%;
+        height: 250px;
+    }
+}

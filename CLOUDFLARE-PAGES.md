@@ -1,5 +1,42 @@
 # Apuração no Cloudflare Pages
 
+## Personalizados, Correio e arraste — publicação autorizada em 5 de outubro de 2026
+
+Após nova autorização específica, o frontend estático foi publicado no Pages
+`eleicoes-front`, branch `main`, deployment de produção
+`2955eb39-1be3-44c6-a4a9-096bde982f8f`, URL `https://2955eb39.eleicoes-front.pages.dev`.
+O domínio final continua sendo `https://apuracao.placardasurnas.com.br`.
+O build possui 113 arquivos e 25 HTMLs: cinco históricos de 2022, dez de 2026 e
+dez personalizados. O upload usou `--commit-dirty=true`: o Source `d2b126f` no
+painel identifica a base Git, não a ausência dos ajustes locais no conteúdo.
+
+Inclui identidade do Correio com a logo PNG original e azul `#134282`, cadastro
+por `site`, entrega individual para sites/Ad Manager e recursos isolados dos
+personalizados. Somente personalizados não possuem pré-eleição. Inclui também
+fonte TSE com data atual/horário sem segundos, resumo em uma linha, remoção da
+faixa oficial redundante e arraste com mão nos carrosséis das três versões.
+Ao soltar um arraste, o automático retoma mesmo com o mouse sobre os cards.
+
+O teste local concluiu com 25 páginas, 640 consultas simuladas e zero erros.
+O teste público passou nos dez formatos do Correio em desktop/320 px, verificando
+logo, paleta, dimensões, ausência de capa e embed com hover/arraste/retomada.
+Os embeds existentes passaram nos 150 cenários de formatos/fases/larguras, além
+das 12 origens licenciadas simuladas. A comparação estática confirmou os bytes
+dos 25 HTMLs e recursos, CSP e 404; a logo pública corresponde ao PNG fornecido.
+
+**Cache ainda pendente:** a validação integral do inventário falha expressamente
+porque arquivos sem hash e a logo retornam `max-age=14400`, enquanto o build
+solicita `max-age=300`. Recursos versionados continuam immutable por um ano.
+Não se afrouxou a expectativa do teste, nem se alterou a zona ou fez purge.
+Navegadores com o embed antigo em cache podem precisar de recarga forçada.
+
+Os testes interceptaram as APIs com fixtures e bloquearam DNS de Workers/Vercel;
+não validam resultados oficiais reais nem SafeFrame real. Nenhum portal real
+foi consultado/modificado, nenhum snapshot/KV foi gravado e não houve deploy de
+Workers, mudança de DNS/CORS ou liberação do domínio do Correio. A publicação
+anterior `73947072` foi preservada; qualquer retorno exige nova autorização.
+O usuário autorizou separadamente o envio destas alterações ao Git do frontend.
+
 ## Liberação do site principal e publicação autorizada — 5 de outubro de 2026
 
 Após autorização explícita para publicar e enviar os frontends ao Git, o projeto `eleicoes-front` recebeu o deployment de produção `73947072-91bd-4ec8-a39e-7cc8e61e7ba2`, URL `https://73947072.eleicoes-front.pages.dev`, concluído em `2026-10-05T22:35:54Z` (18:35 em Cuiabá). O domínio `apuracao.placardasurnas.com.br` está ativo com HTTPS. CSP e licença permitem o site comercial com/sem `www`, os cinco portais existentes e os frames do Google. A marca e os links são Placar das Urnas. Nenhum DNS ou código do site comercial foi alterado nesta publicação.

@@ -83,7 +83,7 @@
     };
 
     const atributosPersonalizacao = [
-        'visao', 'view', 'marca', 'nome',
+        'site', 'visao', 'view', 'marca', 'nome',
         'cor-primaria', 'cor-destaque', 'cor-clara',
         'cor1', 'cor2', 'cor3'
     ];
@@ -333,7 +333,8 @@
             // A pagina local de teste pode forcar as capas sem alterar o relogio.
             // Nunca aceitar esse atalho quando o iframe aponta para producao.
             if (['localhost', '127.0.0.1'].includes(endereco.hostname)
-                && ['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+                && ['localhost', '127.0.0.1'].includes(window.location.hostname)
+                && this.getAttribute('site') === null) {
                 const consulta = new URLSearchParams(window.location.search);
                 for (const nome of ['pre-eleicao', 'duracao', 'reiniciar']) {
                     if (consulta.has(nome)) endereco.searchParams.set(nome, consulta.get(nome));
@@ -439,7 +440,8 @@
             const iframe = this.shadowRoot.querySelector('iframe');
             if (!iframe) return;
             const { ano, definicao } = this.obterConfiguracao();
-            iframe.title = this.getAttribute('titulo') || `${definicao.titulo} — Eleições ${ano}`;
+            iframe.title = this.getAttribute('titulo') || (this.getAttribute('site') !== null
+                ? `Apuração personalizada — Eleições ${ano}` : `${definicao.titulo} — Eleições ${ano}`);
             iframe.loading = this.getAttribute('loading') === 'lazy' ? 'lazy' : 'eager';
         }
     }
@@ -450,15 +452,18 @@
         }
 
         obterConfiguracao() {
-            const ano = normalizarAno(this.getAttribute('ano') || '2026');
+            const ano = this.getAttribute('site') !== null ? 2026 : normalizarAno(this.getAttribute('ano') || '2026');
             const formato = resolverFormato(this.getAttribute('formato') || 'index', ano);
             return { ano, formato, definicao: formatos[formato] };
         }
 
         criarEndereco() {
             const { ano, definicao } = this.obterConfiguracao();
-            const prefixo = ano === 2026 ? '2026/' : '';
-            return this.adicionarBreakpoint(adicionarPersonalizacao(new URL(`${prefixo}${definicao.arquivo}`, basePublicacao), this));
+            const site = this.getAttribute('site');
+            const prefixo = site !== null ? 'personalizados/' : (ano === 2026 ? '2026/' : '');
+            const endereco = new URL(`${prefixo}${definicao.arquivo}`, basePublicacao);
+            if (site !== null) endereco.searchParams.set('site', site);
+            return this.adicionarBreakpoint(adicionarPersonalizacao(endereco, this));
         }
 
         obterAltura(definicao, modoMobile) {
@@ -488,7 +493,10 @@
 
         criarEndereco() {
             const { definicao } = this.obterConfiguracao();
-            return this.adicionarBreakpoint(adicionarPersonalizacao(new URL(`2026/${definicao.arquivo}`, basePublicacao), this));
+            const site = this.getAttribute('site');
+            const endereco = new URL(`${site !== null ? 'personalizados/' : '2026/'}${definicao.arquivo}`, basePublicacao);
+            if (site !== null) endereco.searchParams.set('site', site);
+            return this.adicionarBreakpoint(adicionarPersonalizacao(endereco, this));
         }
     }
 

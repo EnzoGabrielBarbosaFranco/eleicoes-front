@@ -84,6 +84,64 @@ body.identidade-2026 #select-turno {
     display: none;
 }
 
+/* Resumo em uma faixa: rotulo, total e percentual sem empilhar linhas.
+   Em espacos estreitos a faixa desliza, sem ocultar os totais do TSE. */
+body.identidade-2026 .resumo-votos {
+    grid-template-columns: repeat(4, minmax(max-content, 1fr)) !important;
+    grid-template-rows: auto !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+}
+
+body.identidade-2026 .resumo-votos::-webkit-scrollbar {
+    display: none;
+}
+
+body.identidade-2026 .resumo-votos .resumo-item {
+    flex-direction: row !important;
+    align-items: center;
+    gap: 6px;
+    padding-block: 4px !important;
+    border-bottom: 0 !important;
+    white-space: nowrap;
+}
+
+body.identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    margin: 0 !important;
+    flex-shrink: 0;
+}
+
+body.identidade-2026 .resumo-votos .resumo-valor {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+@media (min-width: 761px) {
+    body.identidade-2026.formato-compacto-100[data-widget="970x250"] .preview-desktop-widget > .resumo-votos {
+        flex-basis: 22px;
+    }
+
+    body.identidade-2026.formato-compacto-100.formato-1260x200 .card-cand,
+    body.identidade-2026.formato-compacto-100.formato-1260x200 .bloco-carrossel .carregar-mais {
+        height: 62px;
+    }
+}
+
+/* Os banners de 90/100 px ja reservam uma unica linha para percentuais. */
+body.identidade-2026.formato-320x100 .resumo-votos .resumo-item {
+    padding-block: 0 !important;
+    gap: 2px;
+}
+
+@media (max-width: 760px) {
+    body.identidade-2026:is(.formato-compacto-100, .formato-970x90) .resumo-votos .resumo-item {
+        padding-block: 0 !important;
+        gap: 2px;
+    }
+}
+
 body[data-widget="padrao"].identidade-2026 .controles {
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
 }
