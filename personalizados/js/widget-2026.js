@@ -304,8 +304,9 @@
         function atualizarResumo(resumo) {
             const resumoCompactoMobile = formato320x100
                 || (window.matchMedia(consultaMobile).matches && (formato970x90 || formatoCompacto100));
-            const valorResumo = (total, percentual) => resumoCompactoMobile
-                ? `${percentual || '0,00'}%`
+            const valorResumo = (total, percentual) => document.body.classList.contains('resumo-empilhado')
+                ? `${total || '--'}\n(${percentual || '0,00'}%)`
+                : resumoCompactoMobile ? `${percentual || '0,00'}%`
                 : `${total || '--'} (${percentual || '0,00'}%)`;
             const campos = {
                 'votos-validos': resumo ? valorResumo(resumo.validos, resumo.pctValidos) : '--',

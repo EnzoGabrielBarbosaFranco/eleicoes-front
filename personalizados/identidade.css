@@ -46,7 +46,8 @@ body.cliente-personalizado .header-copy :is(h1, h2) {
 /* Correio do Estado: azul institucional, logo original sobre base branca.
    Nenhuma destas regras altera as identidades dos demais clientes. */
 body[data-cliente="correio-do-estado"] :is(.widget-header, .bloco-header) {
-    background: linear-gradient(110deg, #134282, #1D5B9F);
+    --cliente-cabecalho: linear-gradient(110deg, #134282, #1D5B9F);
+    background: var(--cliente-cabecalho);
 }
 
 body[data-cliente="correio-do-estado"] .brand-mark.cliente-logo {
@@ -73,6 +74,367 @@ body[data-cliente="correio-do-estado"] .resumo-votos {
 
 body[data-cliente="correio-do-estado"] :is(.card-cand, .candidato-card) {
     border-color: #DAE6F5;
+}
+
+/* Primeira Pagina: preservar o degrade fornecido, sem alterar outras marcas. */
+body[data-cliente="primeira-pagina"].cliente-personalizado {
+    --cliente-gradiente: linear-gradient(90deg, #9c27b0 -30%, #ff5722 130%);
+}
+
+body[data-cliente="primeira-pagina"][data-widget].cliente-personalizado :is(.widget-header, .bloco-header) {
+    --cliente-cabecalho: var(--cliente-gradiente);
+    background: var(--cliente-cabecalho);
+}
+
+body[data-cliente="primeira-pagina"] .brand-mark.cliente-logo {
+    padding: 3px;
+    border: 1px solid #fff;
+    border-radius: 9px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(65, 16, 73, 0.16);
+}
+
+body[data-cliente="primeira-pagina"] .header-copy :is(h1, h2) {
+    color: #fff;
+    font-weight: 750;
+    text-shadow: 0 1px 2px rgba(50, 10, 58, 0.25);
+}
+
+body[data-cliente="primeira-pagina"] .header-kicker { color: #fff; }
+
+body[data-cliente="primeira-pagina"] .controles select {
+    background-color: rgba(58, 12, 67, 0.58);
+}
+
+body[data-cliente="primeira-pagina"] .controles select:hover {
+    background-color: rgba(58, 12, 67, 0.72);
+}
+
+body[data-cliente="primeira-pagina"] .controles select:focus-visible {
+    border-color: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+body[data-cliente="primeira-pagina"].cliente-personalizado :is(.barra-total-fill, .preenchimento-total, .card-barra-fill, .barra-cand-fill) {
+    background: var(--cliente-gradiente);
+    box-shadow: none;
+}
+
+/* Laranja permanece nos destaques; roxo escuro melhora o contraste do texto. */
+body[data-cliente="primeira-pagina"].cliente-personalizado :is(.card-pct, .percentual, .card-numero-compacto, .resumo-toggle) {
+    color: #812193;
+}
+
+body[data-cliente="primeira-pagina"] .resumo-votos {
+    border-color: #EFDCF1;
+    background: #FBF5FC;
+}
+
+body[data-cliente="primeira-pagina"] :is(.card-cand, .candidato-card) {
+    border-color: #EEDAF0;
+}
+
+/* Identidade e filtros na mesma linha: nao retirar altura dos candidatos.
+   A classe segue o modo real do embed, inclusive breakpoint personalizado.
+   Os verticais 300x250/300x600 ficam intactos. O 320x100 e sempre compacto;
+   os demais formatos mantem o cabecalho desktop original. */
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .bloco-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
+    grid-auto-rows: minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    background: var(--cliente-cabecalho, var(--ink));
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .bloco-header .header-brand {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
+    height: 100%;
+    gap: 4px;
+    margin: 0;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .bloco-header .brand-mark.cliente-logo {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    padding: 1px;
+    margin: 0;
+    border-radius: 4px;
+    transform: none;
+    box-shadow: none;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .bloco-header .header-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .bloco-header .header-copy :is(h1, h2) {
+    margin: 0;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 750;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .bloco-header .header-kicker {
+    display: none;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .bloco-header .controles {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(40px, 0.42fr);
+    gap: 4px;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .bloco-header .controles select {
+    min-width: 0;
+    min-height: 0;
+    height: 21px;
+    padding: 0 15px 0 5px;
+    border-radius: 4px;
+    background-position: right 4px center;
+    background-size: 9px;
+    font-size: 8.5px;
+}
+
+/* Legibilidade comum a todas as marcas, apenas nos personalizados.
+   Preservar alturas e a faixa unica; formatos compactos usam sua escala. */
+body.cliente-personalizado[data-widget].identidade-2026 :is(.card-votos, .votos-absolutos) {
+    font-size: 14px !important;
+    line-height: 1.15;
+    color: var(--slate-600);
+    font-variant-numeric: tabular-nums;
+}
+
+body.cliente-personalizado[data-widget].identidade-2026 :is(.numero-cand, .card-partido-compacto) {
+    font-size: 13px !important;
+    line-height: 1.1;
+    color: var(--slate-600);
+}
+
+body.cliente-personalizado[data-widget].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    font-size: 12px !important;
+    line-height: 1.1;
+    letter-spacing: 0.025em;
+    color: var(--slate-600);
+}
+
+body.cliente-personalizado[data-widget].identidade-2026 .resumo-votos .resumo-valor {
+    font-size: 14px !important;
+    line-height: 1.1;
+}
+
+body.cliente-personalizado[data-widget="horizontal"].identidade-2026 :is(.card-votos, .numero-cand, .card-partido-compacto),
+body.cliente-personalizado[data-widget="970x250"].identidade-2026 :is(.card-votos, .numero-cand, .card-partido-compacto),
+body.cliente-personalizado[data-widget="300x250"].identidade-2026 :is(.votos-absolutos, .numero-cand) {
+    font-size: 11px !important;
+}
+
+body.cliente-personalizado[data-widget="horizontal"].identidade-2026 .resumo-votos .resumo-item > span:first-child,
+body.cliente-personalizado[data-widget="970x250"].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    font-size: 11px !important;
+}
+
+body.cliente-personalizado[data-widget="300x250"].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    font-size: 9.5px !important;
+}
+
+body.cliente-personalizado[data-widget="300x250"].identidade-2026 .resumo-votos .resumo-valor {
+    font-size: 10.5px !important;
+}
+
+body.cliente-personalizado[data-widget="300x600"].identidade-2026 :is(.votos-absolutos, .numero-cand) {
+    font-size: 12px !important;
+}
+
+body.cliente-personalizado[data-widget="300x600"].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    font-size: 10px !important;
+}
+
+body.cliente-personalizado[data-widget="300x600"].identidade-2026 .resumo-votos .resumo-valor,
+body.cliente-personalizado.formato-compacto-100[data-widget].identidade-2026 .resumo-votos .resumo-valor {
+    font-size: 11px !important;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .card-votos {
+    font-size: 9px !important;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .card-partido-compacto,
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .resumo-votos .resumo-valor {
+    font-size: 8.5px !important;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    font-size: 8px !important;
+}
+
+/* Nos compactos de 90/100 px, destacar a porcentagem, nao o numero de urna.
+   Reservar largura para ate 100,00%, sem alterar a altura dos cards/banners. */
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .card-cand {
+    flex-basis: 180px;
+    width: 180px;
+    max-width: none;
+    padding: 2px 58px 2px 5px;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 :is(.card-numero-compacto, .card-votos) {
+    display: none !important;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .card-pct {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    display: block !important;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 860;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    transform: translateY(-50%);
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .card-nome {
+    display: block;
+    width: 100%;
+    font-size: 9px;
+    line-height: 1.05;
+}
+
+body.cliente-personalizado.cliente-mobile-compacto[data-widget].identidade-2026 .card-partido-compacto {
+    display: block;
+    margin-top: 1px;
+    font-size: 6.5px !important;
+    line-height: 1.1;
+}
+
+/* Excecao somente nos HTMLs 300x250, 300x600 e 1260x100: titulo,
+   total e percentual em tres linhas, mantendo os quatro indicadores. */
+body.cliente-personalizado.resumo-empilhado[data-widget].identidade-2026 .resumo-votos {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-rows: auto !important;
+    overflow-x: hidden !important;
+}
+
+body.cliente-personalizado.resumo-empilhado:is([data-widget="300x250"], [data-widget="300x600"]).identidade-2026 .resumo-votos {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, auto) !important;
+}
+
+body.cliente-personalizado.resumo-empilhado:is([data-widget="300x250"], [data-widget="300x600"]).identidade-2026 .resumo-item:nth-child(even)::after {
+    display: none;
+}
+
+body.cliente-personalizado.resumo-empilhado:is([data-widget="300x250"], [data-widget="300x600"]).identidade-2026 .resumo-item:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--slate-200) !important;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-formato="1260x100"]:not(.cliente-mobile-compacto).identidade-2026 .resumo-votos {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget].identidade-2026 .resumo-votos .resumo-item {
+    flex-direction: column !important;
+    gap: 1px;
+    white-space: normal;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    margin: 0;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget].identidade-2026 .resumo-votos .resumo-valor {
+    display: block;
+    white-space: pre-line;
+}
+
+/* Liberar espaco para candidatos enquanto o resumo do 300x250 esta aberto.
+   Fechado, o cabecalho e a lista mantem exatamente sua apresentacao anterior. */
+body.cliente-personalizado.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .controles {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.8fr);
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .eleicao-meta {
+    display: none;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .lista-candidatos {
+    padding-block: 2px;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .resumo-toggle {
+    min-height: 20px;
+    margin-block: 1px 5px;
+    padding-block: 1px;
+}
+
+/* Separar o botao do resumo sem tirar espaco dos candidatos no banner curto. */
+body.cliente-personalizado.resumo-empilhado[data-widget="300x250"].identidade-2026 .resumo-votos:not(.oculto) {
+    margin-bottom: 3px;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .widget-header {
+    padding-block: 5px 4px;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .header-brand {
+    margin-bottom: 4px;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .status-geral {
+    padding-block: 2px;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .info-topo {
+    margin-bottom: 2px;
+}
+
+body.cliente-personalizado.resumo-empilhado[data-widget="300x250"].identidade-2026 .resumo-votos .resumo-item {
+    padding-block: 1px !important;
+}
+
+/* No 1260x100 mobile o resumo ganha 10 px, compensados no carrossel.
+   A altura externa continua em 100 px, com percentual dos candidatos visivel. */
+body.cliente-personalizado.resumo-empilhado.cliente-mobile-compacto[data-widget].identidade-2026 .resumo-votos {
+    flex-basis: 31px;
+    height: 31px;
+    min-height: 31px;
+}
+
+body.cliente-personalizado.resumo-empilhado.cliente-mobile-compacto[data-widget].identidade-2026 .resumo-votos .resumo-item {
+    padding-block: 0 !important;
+}
+
+body.cliente-personalizado.resumo-empilhado.cliente-mobile-compacto[data-widget].identidade-2026 .bloco-carrossel {
+    flex-basis: 36px;
+    height: 36px;
+}
+
+body.cliente-personalizado.resumo-empilhado.cliente-mobile-compacto[data-widget].identidade-2026 .card-cand,
+body.cliente-personalizado.resumo-empilhado.cliente-mobile-compacto[data-widget].identidade-2026 .bloco-carrossel .carregar-mais {
+    height: 31px;
+}
+
+body.cliente-personalizado.resumo-empilhado.cliente-mobile-compacto[data-widget].identidade-2026 .card-cand .foto-container {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
 }
 
 body.cliente-indisponivel :is(.widget-container, .widget-horizontal) {

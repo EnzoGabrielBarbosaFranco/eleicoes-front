@@ -1,0 +1,1 @@
+<iframe src="https://apuracao.placardasurnas.com.br/personalizados/index.html?site=primeira-pagina" width="1180" height="680" title="Apuração das Eleições 2026" scrolling="no" style="position:absolute;inset:0;display:block;width:100%;height:100%;margin:0;padding:0;border:0;overflow:hidden"></iframe>

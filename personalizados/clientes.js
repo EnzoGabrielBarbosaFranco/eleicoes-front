@@ -4,6 +4,14 @@
     // Cadastro publico: nunca incluir tokens, senhas ou dados privados aqui.
     // A chave identifica a mesma marca em todos os dez formatos.
     const clientes = {
+        'primeira-pagina': {
+            nome: 'Primeira Página',
+            logo: '/personalizados/logos/primeira-pagina.webp',
+            icone: '/personalizados/logos/primeira-pagina.webp',
+            cores: { primaria: '#9C27B0', destaque: '#FF5722', clara: '#F9EBF4' },
+            // Cadastrar/autorizar o dominio antes da entrega ao portal.
+            dominios: []
+        },
         'correio-do-estado': {
             nome: 'Correio do Estado',
             logo: '/personalizados/logos/correiodoestado.png',

@@ -11,6 +11,7 @@ const { setTimeout: esperar } = require('node:timers/promises');
 const { gerar, paginas, paginasPersonalizadas, formatos2022, formatos2026 } = require('./preparar-pages');
 const { gerarCodigos } = require('./gerar-entrega-cliente');
 const raiz = path.resolve(__dirname, '..');
+const apenasCompactos = process.argv[2] === '--compactos';
 const dominio = 'https://apuracao.placardasurnas.com.br';
 const portaisClientes = ['portaldeprefeitura.com.br', 'portalmais360.com.br',
     'diariodajaragua.com.br', 'douradosnews.com.br', 'folhape.com.br'];
@@ -57,6 +58,20 @@ function validarBuild(build) {
     assert(fs.existsSync(path.join(build.destino, '404.html')));
     assert(!fs.existsSync(path.join(build.destino, '2026/assets/dados-2022.json')));
     const widget2026 = ler('js/widget-2026.js');
+    const cssClientes = ler('personalizados/identidade.css');
+    const inicioLegibilidade=cssClientes.indexOf('/* Legibilidade comum');
+    const espelho=cssClientes.slice(inicioLegibilidade,cssClientes.indexOf('body.cliente-indisponivel'))
+        .replaceAll('body.cliente-personalizado','body.apuracao-legivel')
+        .replaceAll('.cliente-mobile-compacto','.turnos-mobile-compacto');
+    const css2026=ler('css/legibilidade-2026.css').split('/* Cabecalho original:')[0];
+    assert.equal(css2026.slice(css2026.indexOf('body.apuracao-legivel')).replace(/\r/g,'').trim(),
+        espelho.slice(espelho.indexOf('body.apuracao-legivel')).replace(/\r/g,'').trim(),
+        'Mesmos ajustes de legibilidade/resumos dos personalizados, sem importar identidade de clientes');
+    for(const pagina of paginas) {
+        const fonte=fs.readFileSync(path.join(raiz,pagina),'utf8');
+        assert.equal(fonte.includes('/css/legibilidade-2026.css'),pagina.startsWith('2026/'),
+            `${pagina}: aplicar somente aos dez formatos 2026`);
+    }
     const extrairArraste = fonte => fonte.slice(fonte.indexOf('    function configurarArrasteCandidatos('),
         fonte.indexOf('    function iniciar(opcoes = {}) {'));
     const arraste = extrairArraste(ler('js/widget.js'));
@@ -151,7 +166,10 @@ function validarBuild(build) {
     for (const pagina of paginasPersonalizadas) {
         const html = ler(pagina);
         const fonte = fs.readFileSync(path.join(raiz, pagina), 'utf8');
-        assert(!/(?:src|href)="\/(?:css|js)\//.test(fonte), `${pagina}: recurso nao isolado`);
+        // Somente o novo aviso informativo e compartilhado; manter layouts,
+        // API, filtros e calendario de capas isolados nos personalizados.
+        const compartilhados=[...fonte.matchAll(/(?:src|href)="(\/(?:css|js)\/[^\"]+)"/g)].map(m=>m[1]);
+        assert.deepEqual(compartilhados,['/css/aviso-turnos-2026.css','/js/aviso-turnos-2026.js'], `${pagina}: recurso nao isolado`);
         assert(html.indexOf('personalizados-clientes.') < html.lastIndexOf('personalizados-identidade.'), 'Cadastro deve preceder identidade');
         assert(html.lastIndexOf('personalizados-identidade.') < html.indexOf('personalizados-js-apresentacao.'), 'Identidade deve preceder a apresentacao');
         assert(!fonte.includes('pre-eleicao'), `${pagina}: nao carregar recursos de pre-eleicao`);
@@ -166,6 +184,13 @@ function validarBuild(build) {
         }
     }
     const codigosCliente = gerarCodigos('cliente-x');
+    const codigosPrimeiraPagina = gerarCodigos('primeira-pagina');
+    assert.equal(codigosPrimeiraPagina.length, 10);
+    assert(codigosPrimeiraPagina.every(c => c.site.includes('site="primeira-pagina"')
+        && c.url.endsWith('?site=primeira-pagina')));
+    assert(fs.readFileSync(path.join(build.destino, 'personalizados/logos/primeira-pagina.webp'))
+        .equals(fs.readFileSync(path.join(raiz, 'personalizados/logos/primeira-pagina.webp'))),
+    'Primeira Pagina: preservar os bytes da logo fornecida');
     assert.equal(codigosCliente.length, 10);
     assert.throws(() => gerarCodigos('../cliente-x'));
     assert.throws(() => gerarCodigos('nao-cadastrado'));
@@ -309,6 +334,12 @@ async function testarNavegador(build) {
                 if (ano === 2026) {
                     if (cenario2026 === 'finalizado') { json.finalizado = true; json.percurso = '100,00'; }
                     if (cenario2026 === 'sem-horario') json.atualizacao = null;
+                    if (cenario2026 === 'tipografia' && Array.isArray(json.candidatos)) {
+                        json.candidatos.forEach(c => { c.total='53.879.538';c.votosNumero=53879538;c.partido='PSDB';c.situacao='2º turno'; });
+                    }
+                    if (cenario2026 === 'compactos' && Array.isArray(json.candidatos)) {
+                        json.candidatos.forEach((c,i)=>{c.votos=['45.16','0.01','100.00','10.05'][i%4];c.partido='REPUBLICANOS';});
+                    }
                     if (cenario2026 === 'ano-2022') json.ano = 2022;
                     if (cenario2026 === 'sem-ano') delete json.ano;
                     if (cenario2026 === 'historico') json.fase = 'historico';
@@ -369,6 +400,398 @@ async function testarNavegador(build) {
             if (esperado.searchParams.get('pre-eleicao') === 'teste') esperado.searchParams.delete('reiniciar');
             await aguardar(`location.href === ${JSON.stringify(esperado.href)} && document.body && !document.body.dataset.testeAnterior && (!!document.getElementById('select-cargo') || !!document.querySelector('.pre26-painel,.cliente-aviso,eleicoes-widget'))`);
         }
+        // O resumo alto do 1260x100 nao pode cortar a espera na area restante.
+        disponivel=false;
+        await navegar('2026/1260x100.html',320);
+        await aguardar("document.querySelector('.estado-aguardando .estado-descricao')");
+        assert(await avaliar(`(() => {
+            const e=document.querySelector('.estado-aguardando'),r=e.getBoundingClientRect();
+            const l=document.getElementById('lista-candidatos').getBoundingClientRect();
+            return r.y>=l.y&&r.bottom<=l.bottom&&[...e.querySelectorAll('strong,.estado-descricao')]
+                .every(t=>parseFloat(getComputedStyle(t).fontSize)>=9&&t.getBoundingClientRect().bottom<=r.bottom);
+        })()`),'1260x100 mobile: espera inteira e legivel junto ao resumo empilhado');
+        disponivel=true;
+        // Apenas os tres HTMLs solicitados empilham rotulo, total e percentual.
+        // Conferir todas as marcas, modos mobile/desktop e os outros sete formatos.
+        cenario2026='normal';
+        for (const cliente of ['','cliente-x','correio-do-estado','primeira-pagina']) {
+            for(const formato of formatos2026) {
+                const empilhado=['300x250','300x600','1260x100'].includes(formato);
+                const larguras=[...new Set([tamanho[formato][0],320,...(empilhado?[360,390,400]:[])])];
+                for(const largura of larguras) {
+                    await navegar(`${cliente?'personalizados':'2026'}/${formato}.html`,largura,cliente?`?site=${cliente}`:'');
+                    await aguardar("document.querySelectorAll('.card-cand,.candidato-card').length===8");
+                    const contexto=`resumo ${cliente||'2026'}/${formato}/${largura}`;
+                    const fechado=await avaliar("document.querySelector('.resumo-votos').getBoundingClientRect().height===0");
+                    if(fechado) await avaliar("document.querySelector('.resumo-toggle').click()");
+                    await avaliar("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+                    await avaliar("document.getElementById('lista-candidatos').scrollTop=0");
+                    const estado=await avaliar(`(() => {
+                        const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,w:r.width,h:r.height};};
+                        const dentro=(a,b)=>a.x>=b.x-0.5&&a.right<=b.right+0.5&&a.y>=b.y-0.5&&a.bottom<=b.bottom+0.5;
+                        const resumo=document.querySelector('.resumo-votos'),r=rect(resumo);
+                        return {empilhado:document.body.classList.contains('resumo-empilhado'),
+                            espacoBotaoResumo:document.querySelector('.resumo-toggle')
+                                ?r.y-rect(document.querySelector('.resumo-toggle')).bottom:null,
+                            h:rect(document.querySelector('.widget-horizontal,.widget-container')).h,
+                            fotoVisivel:(() => {
+                                const lista=document.getElementById('lista-candidatos'),foto=lista.querySelector('.foto-container');
+                                const a=rect(foto),b=rect(lista);return {cabe:a.y>=b.y-0.5&&a.bottom<=b.bottom+0.5,foto:a,lista:b};
+                            })(),
+                            indicadores:[...resumo.querySelectorAll('.resumo-item')].map(e=>{
+                                const label=e.firstElementChild,v=e.querySelector('.resumo-valor'),a=rect(label),b=rect(v);
+                                const range=document.createRange();range.selectNodeContents(v);
+                                const linhas=[...range.getClientRects()].filter(t=>t.width>0&&t.height>0);
+                                return {texto:v.innerText,direcao:getComputedStyle(e).flexDirection,
+                                    area:rect(e),label:a,valor:b,resumo:r,caixasTexto:linhas.map(t=>({x:t.x,y:t.y,right:t.right,bottom:t.bottom,w:t.width,h:t.height})),
+                                    linhas:[...new Set(linhas.map(t=>Math.round(t.y)))].length,
+                                    labelAcima:a.bottom<=b.y,
+                                    cabe:dentro(rect(e),r)&&dentro(a,rect(e))&&dentro(b,rect(e))&&linhas.every(t=>dentro(t,rect(e)))
+                                        &&v.scrollWidth<=v.clientWidth+1&&label.scrollWidth<=label.clientWidth+1};
+                            })};
+                    })()`);
+                    assert.equal(estado.empilhado,empilhado,`${contexto}: somente os tres HTMLs`);
+                    assert.equal(estado.indicadores.length,4,contexto);
+                    if(empilhado) {
+                        assert.equal(estado.h,tamanho[formato][1],`${contexto}: preservar altura externa`);
+                        assert(estado.fotoVisivel.cabe,`${contexto}: candidatos continuam visiveis com o resumo aberto: ${JSON.stringify(estado.fotoVisivel)}`);
+                        if(['300x250','300x600'].includes(formato)) {
+                            assert.equal(estado.espacoBotaoResumo,formato==='300x250'?5:7,`${contexto}: espaco entre botao e resumo`);
+                            const [a,b,c,d]=estado.indicadores.map(i=>i.area);
+                            assert(Math.abs(a.y-b.y)<1&&Math.abs(c.y-d.y)<1&&c.y>=a.bottom-1&&d.y>=b.bottom-1
+                                &&Math.abs(a.x-c.x)<1&&Math.abs(b.x-d.x)<1&&b.x>=a.right-1,
+                                `${contexto}: grade de duas linhas e duas colunas`);
+                        }
+                        for(const indicador of estado.indicadores) {
+                            assert.equal(indicador.direcao,'column',contexto);
+                            assert.equal(indicador.linhas,2,`${contexto}: total e percentual separados`);
+                            assert(indicador.labelAcima&&indicador.cabe,`${contexto}: tres linhas completas sem cortes: ${JSON.stringify(indicador)}`);
+                        }
+                        assert.equal(estado.indicadores[0].texto,'119.300.788\n(95,23%)',`${contexto}: mostrar total tambem no mobile`);
+                        if(largura===tamanho[formato][0]||largura===320) {
+                            const clip=await avaliar("(() => {const r=document.querySelector('.widget-horizontal,.widget-container').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()");
+                            const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip},sessionId);
+                            fs.writeFileSync(path.join(diretorioTestes,`resumo-${cliente||'2026'}-${formato}-${largura}.png`),Buffer.from(captura.data,'base64'));
+                        }
+                    } else {
+                        estado.indicadores.forEach(i=>{
+                            assert.equal(i.direcao,'row',`${contexto}: manter resumo em linha`);
+                            assert(!i.texto.includes('\n'),`${contexto}: nao alterar outros formatos`);
+                        });
+                    }
+                    if(fechado) {
+                        await avaliar("document.querySelector('.resumo-toggle').click()");
+                        assert(await avaliar("document.querySelector('.resumo-votos').getBoundingClientRect().height===0"),`${contexto}: ocultar resumo preservado`);
+                    }
+                }
+            }
+        }
+        console.log('Resumos 2026 e personalizados: 300x250/300x600 em grade 2x2; somente estes e 1260x100 com dados em tres linhas; quatro indicadores completos, totais mobile, alturas, espaco do botao e mostrar/ocultar preservados; outros sete formatos em linha: OK.');
+        cenario2026='compactos';
+        for (const cliente of ['','cliente-x','correio-do-estado','primeira-pagina']) {
+            for(const formato of ['320x100','970x90','970x250x100','1260x100','1260x200']) {
+                for(const largura of [320,360,390,400]) {
+                    await navegar(`${cliente?'personalizados':'2026'}/${formato}.html`,largura,cliente?`?site=${cliente}`:'');
+                    await aguardar("document.querySelectorAll('.card-cand').length===8");
+                    const estado=await avaliar(`(() => {
+                        const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,w:r.width,h:r.height};};
+                        const dentro=(a,b)=>a.x>=b.x&&a.right<=b.right&&a.y>=b.y&&a.bottom<=b.bottom;
+                        return {altura:rect(document.querySelector('.widget-horizontal')).h,
+                            marca:rect(document.querySelector('.brand-mark')).w>0,
+                            aviso:rect(document.querySelector('.aviso-turnos')).w>0,
+                            cards:[...document.querySelectorAll('.card-cand')].map(c=>{
+                                const pct=c.querySelector('.card-pct'),partido=c.querySelector('.card-partido-compacto'),nome=c.querySelector('.card-nome');
+                                const p=rect(pct),n=rect(nome),r=rect(c),s=rect(partido);
+                                return {texto:pct.textContent,fPct:parseFloat(getComputedStyle(pct).fontSize),fPartido:parseFloat(getComputedStyle(partido).fontSize),
+                                    altura:r.h,pctCabe:p.w>0&&p.h>0&&dentro(p,r)&&pct.scrollWidth<=pct.clientWidth+1,
+                                    partidoCabe:s.w>0&&s.h>0&&dentro(s,r)&&partido.scrollWidth<=partido.clientWidth+1,
+                                    separados:p.x>=n.right&&p.x>=s.right,
+                                    urnaOculta:rect(c.querySelector('.card-numero-compacto')).w===0,
+                                    totalOculto:rect(c.querySelector('.card-votos')).w===0};
+                            })};
+                    })()`);
+                    const contexto=`percentuais ${cliente||'2026'}/${formato}/${largura}`;
+                    assert.equal(estado.altura,formato==='970x90'?90:100,contexto);
+                    assert(estado.marca&&estado.aviso,`${contexto}: manter marca e calendario`);
+                    estado.cards.forEach((c,i)=>{
+                        assert.equal(c.texto,['45,16%','0,01%','100,00%','10,05%'][i%4],contexto);
+                        assert.equal(c.fPct,12,contexto);assert.equal(c.fPartido,6.5,contexto);
+                        assert.equal(c.altura,formato==='970x90'?34:formato==='1260x100'?31:41,contexto);
+                        assert(c.pctCabe&&c.partidoCabe&&c.separados&&c.urnaOculta&&c.totalOculto,`${contexto}: percentual e partido sem cortes: ${JSON.stringify(c)}`);
+                    });
+                    if(largura===320) {
+                        const a=await avaliar("(() => {const r=document.querySelector('.widget-horizontal').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()");
+                        const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:a},sessionId);
+                        fs.writeFileSync(path.join(diretorioTestes,`percentuais-${cliente||'2026'}-${formato}.png`),Buffer.from(captura.data,'base64'));
+                        const mouseCompacto=(type,x,y,button='none',buttons=0)=>enviar('Input.dispatchMouseEvent',{type,x,y,button,buttons,clickCount:button==='left'?1:0},sessionId);
+                        await mouseCompacto('mouseMoved',319,790);
+                        await avaliar("window.__testeRelogio.agora+=3000");
+                        await aguardar("document.getElementById('lista-candidatos').scrollLeft>5");
+                        const ponto=await avaliar("(() => {const e=document.getElementById('lista-candidatos'),r=e.getBoundingClientRect();e.scrollLeft=50;return {x:r.x+90,y:r.y+r.height/2};})()");
+                        await mouseCompacto('mouseMoved',ponto.x,ponto.y);
+                        const parado=await avaliar("document.getElementById('lista-candidatos').scrollLeft");
+                        await avaliar("window.__testeRelogio.agora+=3000");await esperar(100);
+                        assert.equal(await avaliar("document.getElementById('lista-candidatos').scrollLeft"),parado,`${contexto}: hover pausa`);
+                        await mouseCompacto('mousePressed',ponto.x,ponto.y,'left',1);
+                        await mouseCompacto('mouseMoved',ponto.x-45,ponto.y,'left',1);
+                        await mouseCompacto('mouseReleased',ponto.x-45,ponto.y,'left',0);
+                        const arrastado=await avaliar("document.getElementById('lista-candidatos').scrollLeft");
+                        assert(arrastado>parado+30,`${contexto}: arraste preservado`);
+                        await avaliar("window.__testeRelogio.agora+=1000");
+                        await aguardar(`document.getElementById('lista-candidatos').scrollLeft>${arrastado+5}`);
+                        await mouseCompacto('mouseMoved',319,790);
+                    }
+                }
+            }
+        }
+        cenario2026='normal';
+        assert.equal(erros.length,0,JSON.stringify(erros));
+        console.log('Compactos 2026 e personalizados: quatro identidades/cinco formatos/quatro larguras; percentuais 0,01% a 100,00% destacados, partido menor sem cortes, marca/calendario/alturas/hover/arraste/retomada preservados: OK.');
+        if(apenasCompactos) {await enviar('Browser.close');return;}
+
+        cenario2026='tipografia';
+        for (const cliente of ['','cliente-x','correio-do-estado','primeira-pagina']) {
+            for (const formato of formatos2026) {
+                for(const viewport of [...new Set([tamanho[formato][0],320])]) {
+                    await navegar(`${cliente?'personalizados':'2026'}/${formato}.html`,viewport,cliente?`?site=${cliente}`:'');
+                    await aguardar("document.querySelectorAll('.card-cand,.candidato-card').length>0");
+                    await avaliar("if(!document.querySelector('.resumo-votos').getBoundingClientRect().height) window.toggleResumo()");
+                    await esperar(100);
+                    const tipografia=await avaliar(`(() => {
+                        const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,w:r.width,h:r.height};};
+                        const card=document.querySelector('.card-cand,.candidato-card');
+                        const alvos=()=>[...document.querySelector('.card-cand,.candidato-card').querySelectorAll('.card-votos,.votos-absolutos,.numero-cand,.card-partido-compacto')]
+                            .filter(e=>rect(e).w>0&&rect(e).h>0).concat([...document.querySelectorAll('.resumo-item > span:first-child')]);
+                        const medir=()=>alvos().map(e=>({texto:e.textContent,fonte:parseFloat(getComputedStyle(e).fontSize),r:rect(e),
+                            tipo:e.closest('.resumo-item')?'rotulo':e.matches('.numero-cand,.card-partido-compacto')?'partido':'votos'}));
+                        const novos=medir();
+                        const resumo=document.querySelector('.resumo-votos');
+                        const dentro=(a,b)=>a.x>=b.x-1&&a.right<=b.right+1&&a.y>=b.y-1&&a.bottom<=b.bottom+1;
+                        const labels=[...document.querySelectorAll('.resumo-item > span:first-child')].filter(e=>rect(e).w>0&&rect(e).h>0);
+                        const textos=[...card.querySelectorAll('.card-votos,.votos-absolutos,.numero-cand,.card-partido-compacto')]
+                            .filter(e=>rect(e).w>0&&rect(e).h>0);
+                        const votos=card.querySelector('.card-votos');
+                        const badge=card.querySelector(':scope > .eleito-badge');
+                        let semSobreposicao=true;
+                        if(votos&&badge&&rect(votos).w>0&&rect(badge).w>0){
+                            const range=document.createRange();range.selectNodeContents(votos);
+                            const a=range.getBoundingClientRect(),b=badge.getBoundingClientRect();
+                            semSobreposicao=a.right<=b.x||a.x>=b.right||a.bottom<=b.y||a.y>=b.bottom;
+                        }
+                        return {novos,compacto:document.body.matches('.cliente-mobile-compacto,.turnos-mobile-compacto'),widget:document.body.dataset.widget,
+                            card:rect(card),labelsCabem:labels.every(e=>rect(e).h>0&&rect(e).y>=rect(resumo).y&&rect(e).bottom<=rect(resumo).bottom),
+                            textosCabem:textos.every(e=>dentro(rect(e),rect(card))),semSobreposicao,
+                            linhaVotosCompleta:!votos||rect(votos).w===0||votos.scrollWidth<=votos.clientWidth+1,
+                            overflow:document.documentElement.scrollWidth>innerWidth,
+                            painel:rect(document.querySelector('.widget-container,.widget-horizontal'))};
+                    })()`);
+                    const contexto=`tipografia ${cliente||'2026'}/${formato}/${viewport}`;
+                    assert(tipografia.novos.length>=5,`${contexto}: rotulos e dados do candidato devem permanecer presentes`);
+                    const fontes=tipografia.compacto?{votos:9,partido:6.5,rotulo:8}
+                        :tipografia.widget==='300x250'?{votos:11,partido:11,rotulo:9.5}
+                        :tipografia.widget==='300x600'?{votos:12,partido:12,rotulo:10}
+                        :['horizontal','970x250'].includes(tipografia.widget)?{votos:11,partido:11,rotulo:11}
+                        :{votos:14,partido:13,rotulo:12};
+                    tipografia.novos.forEach(e=>assert.equal(e.fonte,fontes[e.tipo],`${contexto}: aplicar fonte maior em ${e.texto}`));
+                    assert(tipografia.labelsCabem&&tipografia.textosCabem&&tipografia.semSobreposicao&&tipografia.linhaVotosCompleta&&!tipografia.overflow,
+                        `${contexto}: sem cortes verticais/sobreposicao/overflow da pagina: ${JSON.stringify(tipografia)}`);
+                    const fixo=['320x100','300x250','300x600'].includes(formato);
+                    const alturaMobile=['1260x200','1260x100','970x250x100'].includes(formato)?100
+                        :['index','horizontal'].includes(formato)?250:tamanho[formato][1];
+                    assert.equal(tipografia.painel.h,viewport===320&&!fixo?alturaMobile:tamanho[formato][1]);
+                    if (['','primeira-pagina'].includes(cliente)&&['1260x200','970x90','300x250','320x100'].includes(formato)) {
+                        const p=tipografia.painel;
+                        const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:p.x,y:p.y,width:p.w,height:p.h,scale:1}},sessionId);
+                        fs.writeFileSync(path.join(diretorioTestes,`tipografia-${cliente||'2026'}-${formato}-${viewport}.png`),Buffer.from(captura.data,'base64'));
+                    }
+                }
+            }
+        }
+        cenario2026='normal';
+        console.log('Tipografia 2026 e personalizados: quatro marcas/dez formatos desktop/mobile; fontes ampliadas verificadas, totais com oito digitos e PSDB, resumos e dimensoes, sem cortes/sobreposicao/alturas alteradas: OK.');
+
+        // A data e apenas informativa; nenhum turno/API/calendario e trocado.
+        for (const perfil of ['', 'cliente-x', 'correio-do-estado', 'primeira-pagina']) {
+            for (const formato of formatos2026) {
+                for (const viewport of [...new Set([tamanho[formato][0],320])]) {
+                    const pagina=`${perfil?'personalizados':'2026'}/${formato}.html`;
+                    await navegar(pagina,viewport,perfil?`?site=${perfil}`:'');
+                    await aguardar("document.querySelectorAll('.card-cand,.candidato-card').length>0 && !!document.querySelector('.aviso-turnos')");
+                    const aviso=await avaliar(`(() => {
+                        const e=document.querySelector('.aviso-turnos'), b=e.getBoundingClientRect();
+                        const c=document.querySelector('.widget-header,.bloco-header').getBoundingClientRect();
+                        const n=document.querySelector('.header-copy h1,.header-copy h2').getBoundingClientRect();
+                        const logo=document.querySelector('.brand-mark').getBoundingClientRect();
+                        const copia=document.querySelector('.header-copy').getBoundingClientRect();
+                        const filtros=[...document.querySelectorAll('.controles select')].map(e=>e.getBoundingClientRect()).filter(r=>r.width>0);
+                        const painel=document.querySelector('.widget-container,.widget-horizontal').getBoundingClientRect();
+                        return {quantidade:document.querySelectorAll('.aviso-turnos').length,texto:e.textContent,aria:e.getAttribute('aria-label'),
+                            data:e.querySelector('time').dateTime,turno:document.getElementById('select-turno').value,
+                            visivel:b.width>0&&b.height>0,cabe:b.x>=c.x-1&&b.right<=c.right+1&&b.y>=c.y-1&&b.bottom<=c.bottom+1,
+                            nomeCabe:n.x>=c.x&&n.right<=c.right+1&&n.y>=c.y&&n.bottom<=c.bottom+1,
+                            semSobreposicao:filtros.every(r=>r.x>=b.right||r.right<=b.x||r.y>=b.bottom||r.bottom<=b.y),
+                            logoVisivel:logo.width>0&&logo.height>0,w:painel.width,h:painel.height,
+                            dentroCopia:b.x>=copia.x-1&&b.right<=copia.right+1,
+                            labelCompleta:e.scrollWidth<=e.clientWidth+1};
+                    })()`);
+                    const contexto=`${pagina}/${perfil}/${viewport}`;
+                    assert.equal(aviso.quantidade,1, `${contexto}: aviso unico apos DOMContentLoaded`);
+                    assert.equal(aviso.data,'2026-10-25');
+                    assert.match(aviso.texto,/1º turno.*2º turno: 25\/10/);
+                    assert.match(aviso.aria,/onde houver disputa/);
+                    assert.equal(aviso.turno,'1');
+                    assert(aviso.visivel&&aviso.cabe&&aviso.nomeCabe&&aviso.semSobreposicao&&aviso.logoVisivel&&aviso.labelCompleta&&aviso.dentroCopia,
+                        `${contexto}: aviso/nome/logo/filtros devem caber no cabecalho: ${JSON.stringify(aviso)}`);
+                    const fixo=['320x100','300x250','300x600'].includes(formato);
+                    const alturaMobile=['1260x200','1260x100','970x250x100'].includes(formato)?100
+                        :['index','horizontal'].includes(formato)?250:tamanho[formato][1];
+                    assert.equal(aviso.h,viewport===320&&!fixo?alturaMobile:tamanho[formato][1]);
+                    if (['1260x200','320x100','970x90','300x250'].includes(formato) && ['','primeira-pagina','correio-do-estado'].includes(perfil)) {
+                        const clip=await avaliar("(() => {const r=document.querySelector('.widget-container,.widget-horizontal').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()");
+                        const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip},sessionId);
+                        fs.writeFileSync(path.join(diretorioTestes,`turnos-${perfil||'2026'}-${formato}-${viewport}.png`),Buffer.from(captura.data,'base64'));
+                    }
+                }
+            }
+        }
+        for(const pagina of formatos2022.map(f=>`${f}.html`)) {
+            await navegar(pagina,tamanho[path.basename(pagina,'.html')][0]);
+            assert.equal(await avaliar("document.querySelectorAll('.aviso-turnos').length"),0,'Nao inserir calendario 2026 no historico');
+        }
+        console.log('Aviso dos turnos: vinte paginas, tres clientes/identidade original, desktop/mobile; 1o turno preservado, data 25/10 acessivel, sem cortes/sobreposicao; historico intacto: OK.');
+        const formatosMarcaCompacta = ['320x100','970x90','970x250x100','1260x100','1260x200'];
+        const medirMarcaMobile = `(() => {
+            const r=e=>{const b=e.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom,w:b.width,h:b.height};};
+            const header=document.querySelector('.bloco-header,.widget-header');
+            const nome=document.querySelector('.header-copy h1,.header-copy h2');
+            const logo=document.querySelector('.cliente-logo img');
+            const controles=[...document.querySelectorAll('.controles select')].map(r).filter(b=>b.w>0);
+            return {compacto:document.body.classList.contains('cliente-mobile-compacto'),
+                resumoEmpilhado:document.body.classList.contains('resumo-empilhado'),header:r(header),
+                nome:r(nome),nomeCompleto:nome.scrollWidth<=nome.clientWidth+1,logo:r(logo),imagem:logo.naturalWidth,
+                controles,painel:r(document.querySelector('.widget-container,.widget-horizontal')),
+                card:r(document.querySelector('.card-cand,.candidato-card')),
+                resumo:r(document.querySelector('.resumo-votos')),
+                overflow:document.documentElement.scrollWidth>innerWidth};
+        })()`;
+        function conferirMarcaMobile(m, altura, contexto) {
+            assert(m.compacto, `${contexto}: identidade compacta deve acompanhar o modo mobile`);
+            assert(m.imagem>0 && m.logo.w>0 && m.logo.h>0, `${contexto}: logo visivel e carregada`);
+            assert(m.nome.w>0 && m.nome.h>0 && m.nomeCompleto, `${contexto}: nome completo visivel`);
+            assert.equal(m.controles.length,2, `${contexto}: preservar cargo e UF`);
+            for (const b of [m.logo,m.nome,...m.controles]) {
+                assert(b.x>=m.header.x && b.right<=m.header.right+1 && b.y>=m.header.y && b.bottom<=m.header.bottom+1,
+                    `${contexto}: identidade/filtros cortados: ${JSON.stringify(m)}`);
+            }
+            assert(m.controles.every(b=>b.x>=m.nome.right && b.w>=40 && b.h>=20), `${contexto}: filtros sem sobreposicao`);
+            assert.equal(m.painel.h,altura, `${contexto}: manter altura contratada`);
+            assert.equal(m.resumo.h,altura===90?20:m.resumoEmpilhado?31:21, `${contexto}: preservar resumo`);
+            assert.equal(m.card.h,altura===90?34:m.resumoEmpilhado?31:41, `${contexto}: preservar altura dos cards`);
+            assert.equal(m.overflow,false, `${contexto}: sem overflow horizontal`);
+        }
+        for (const cliente of ['cliente-x','correio-do-estado','primeira-pagina']) {
+            for (const formato of formatosMarcaCompacta) {
+                for (const viewport of [320,360,390,400]) {
+                    await navegar(`personalizados/${formato}.html`,viewport,`?site=${cliente}`);
+                    await aguardar("document.querySelectorAll('.card-cand').length>0 && document.querySelector('.cliente-logo img')?.complete");
+                    conferirMarcaMobile(await avaliar(medirMarcaMobile),formato==='970x90'?90:100,`${cliente}/${formato}/${viewport}`);
+                    if (viewport===320 && ['320x100','970x90'].includes(formato)) {
+                        const clip=await avaliar("(() => {const r=document.querySelector('.widget-horizontal').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()");
+                        const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip},sessionId);
+                        fs.writeFileSync(path.join(diretorioTestes,`marca-mobile-${cliente}-${formato}.png`),Buffer.from(captura.data,'base64'));
+                    }
+                }
+            }
+            for (const formato of ['300x250','300x600']) {
+                await navegar(`personalizados/${formato}.html`,320,`?site=${cliente}`);
+                await aguardar("document.querySelectorAll('.candidato-card').length>0");
+                const m=await avaliar(medirMarcaMobile);
+                assert.equal(m.compacto,false, `${cliente}/${formato}: nao aplicar layout compacto nos verticais`);
+                assert.equal(m.painel.w,300);
+                assert.equal(m.painel.h,tamanho[formato][1]);
+            }
+        }
+        await navegar('personalizados/1260x200.html',1040,'?site=primeira-pagina&breakpoint=1050');
+        await aguardar("document.querySelectorAll('.card-cand').length>0");
+        conferirMarcaMobile(await avaliar(medirMarcaMobile),100,'breakpoint personalizado 1050');
+        for (const largura of [1100,1040]) {
+            await enviar('Emulation.setDeviceMetricsOverride',{width:largura,height:800,deviceScaleFactor:1,mobile:false},sessionId);
+            await aguardar(`document.body.classList.contains('cliente-mobile-compacto')===${largura<=1050}`);
+            await aguardar(`document.querySelector('.widget-horizontal').getBoundingClientRect().height===${largura<=1050?100:200}`);
+            if(largura<=1050) conferirMarcaMobile(await avaliar(medirMarcaMobile),100,'resize volta ao mobile');
+            else assert.equal((await avaliar(medirMarcaMobile)).painel.h,200);
+        }
+        for (const [viewport,cenario] of [[1040,'normal'],[1400,'ancestral-estreito']]) {
+            await navegar('testar-embed.html',viewport,`?site=primeira-pagina&formato=1260x200&breakpoint=1050&cenario=${cenario}`);
+            await aguardar("document.querySelector('eleicoes-widget')?.shadowRoot?.querySelector('iframe')?.contentDocument?.querySelectorAll('.card-cand').length>0");
+            const m=await avaliar(`(() => {const d=document.querySelector('eleicoes-widget').shadowRoot.querySelector('iframe').contentDocument;
+                return (function(){const document=d,innerWidth=d.defaultView.innerWidth;return ${medirMarcaMobile};})();})()`);
+            conferirMarcaMobile(m,100,`embed ${cenario}`);
+        }
+        console.log('Identidade mobile: tres clientes, cinco compactos, quatro larguras, breakpoint/resize e ancestral 340px; logo/nome/filtros sem cortes, alturas/cards preservados, verticais intactos: OK.');
+
+        const gradientePrimeiraPagina = 'linear-gradient(90deg, rgb(156, 39, 176) -30%, rgb(255, 87, 34) 130%)';
+        for (const formato of formatos2026) {
+            for (const viewport of [...new Set([tamanho[formato][0], 320])]) {
+                const antes = chamadasApi.length;
+                await navegar(`personalizados/${formato}.html`, viewport, '?site=primeira-pagina');
+                await aguardar("document.querySelectorAll('.card-cand,.candidato-card').length>0 && document.querySelector('.cliente-logo img')?.complete");
+                const marca = await avaliar(`(() => {
+                    const logo=document.querySelector('.cliente-logo'), img=logo.querySelector('img');
+                    const l=logo.getBoundingClientRect(), i=img.getBoundingClientRect();
+                    const cabecalho=document.querySelector('.widget-header,.bloco-header');
+                    const painel=document.querySelector('.widget-container,.widget-horizontal').getBoundingClientRect();
+                    return {nome:document.querySelector('.header-copy h1,.header-copy h2').textContent,
+                        cliente:document.body.dataset.cliente,src:img.getAttribute('src'),imagem:img.naturalWidth,
+                        cores:['--ink','--mint-strong','--mint'].map(v=>getComputedStyle(document.body).getPropertyValue(v).trim()),
+                        fundoLogo:getComputedStyle(logo).backgroundColor,
+                        gradiente:getComputedStyle(cabecalho).backgroundImage,
+                        barra:getComputedStyle(document.getElementById('barra-percurso')).backgroundImage,
+                        barras:[...document.querySelectorAll('.card-barra-fill,.barra-cand-fill')].map(e=>getComputedStyle(e).backgroundImage),
+                        texto:getComputedStyle(document.querySelector('.card-pct,.percentual')).color,
+                        logoVisivel:l.width>0&&l.height>0,
+                        logoCabe:i.x>=l.x-1&&i.y>=l.y-1&&i.right<=l.right+1&&i.bottom<=l.bottom+1,
+                        w:painel.width,h:painel.height,pre:!!document.querySelector('.pre26-painel')};
+                })()`);
+                assert.equal(marca.nome, 'Primeira Página');
+                assert.equal(marca.cliente, 'primeira-pagina');
+                assert.equal(marca.src, '/personalizados/logos/primeira-pagina.webp');
+                assert(marca.imagem>0, 'Primeira Pagina: logo original deve carregar');
+                assert.deepEqual(marca.cores, ['#9C27B0','#FF5722','#F9EBF4']);
+                assert.equal(marca.fundoLogo, 'rgb(255, 255, 255)');
+                assert.equal(marca.gradiente, gradientePrimeiraPagina, `${formato}: degrade do cabecalho`);
+                assert.equal(marca.barra, gradientePrimeiraPagina, `${formato}: degrade do progresso`);
+                assert(marca.barras.length>0 && marca.barras.every(b=>b===gradientePrimeiraPagina), `${formato}: degrade das barras dos candidatos`);
+                assert.equal(marca.texto,'rgb(129, 33, 147)', `${formato}: texto pequeno deve usar roxo escuro`);
+                if (marca.logoVisivel) assert(marca.logoCabe, `${formato}/${viewport}: logo cortada`);
+                const fixo=['300x250','300x600','320x100'].includes(formato);
+                const alturaMobile=['1260x200','1260x100','970x250x100'].includes(formato) ? 100
+                    : ['index','horizontal'].includes(formato) ? 250 : tamanho[formato][1];
+                assert.equal(marca.w,fixo ? tamanho[formato][0] : Math.min(tamanho[formato][0],viewport));
+                assert.equal(marca.h,viewport===320&&!fixo ? alturaMobile : tamanho[formato][1]);
+                assert.equal(marca.pre,false);
+                assert(chamadasApi.length>antes);
+                assert(chamadasApi.slice(antes).every(url=>new URL(url).searchParams.get('ano')==='2026'
+                    && !new URL(url).searchParams.has('site')), 'Identidade nao pode alterar consultas da API');
+                if (['1260x200','300x250','970x90'].includes(formato)) {
+                    const r=await avaliar(`(() => {const r=document.querySelector('.widget-container,.widget-horizontal').getBoundingClientRect();
+                        return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()`);
+                    const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:r},sessionId);
+                    fs.writeFileSync(path.join(diretorioTestes,`primeira-pagina-${formato}-${viewport}.png`),Buffer.from(captura.data,'base64'));
+                }
+            }
+        }
+        for (const viewport of [1400,360]) {
+            await navegar('testar-embed.html',viewport,'?site=primeira-pagina&formato=1260x200&breakpoint=1050');
+            await aguardar("document.querySelector('eleicoes-widget')?.shadowRoot?.querySelector('iframe')?.contentDocument?.querySelectorAll('.card-cand').length>0");
+            const estado=await avaliar(`(() => {const host=document.querySelector('eleicoes-widget'),d=host.shadowRoot.querySelector('iframe').contentDocument;
+                return {cliente:d.body.dataset.cliente,cor:getComputedStyle(d.body).getPropertyValue('--ink').trim(),altura:host.getBoundingClientRect().height};})()`);
+            assert.equal(estado.cliente,'primeira-pagina');
+            assert.equal(estado.cor,'#9C27B0');
+            assert.equal(estado.altura,viewport===1400?200:100);
+        }
+        console.log('Primeira Pagina: logo WebP original, degrade exato no cabecalho/barras, dez formatos desktop/mobile e embed responsivo; marcas anteriores preservadas: OK.');
+
         for (const pagina of paginas.filter(p => !p.startsWith('personalizados/'))) {
             const formato = path.basename(pagina, '.html');
             const [largura] = tamanho[formato];
@@ -411,11 +834,21 @@ async function testarNavegador(build) {
                         }) };
                     })()`);
                     if (resumo.altura > 0) {
-                        assert(resumo.itens.every(i => Math.abs(i.centroRotulo - i.centroValor) < 2 &&
-                            !i.texto.includes('\n') && i.cabe),
-                        `${pagina}/${viewport}: resumo empilhado ou cortado ${JSON.stringify(resumo)}`);
-                        assert(resumo.itens.every(i => Math.abs(i.y - resumo.itens[0].y) < 1),
-                            `${pagina}/${viewport}: as quatro categorias devem compartilhar uma linha`);
+                        if(['300x250','300x600','1260x100'].includes(formato)) {
+                            assert(resumo.itens.every(i=>i.centroRotulo<i.centroValor&&i.texto.includes('\n')&&i.cabe),
+                                `${pagina}/${viewport}: tres linhas no resumo sem cortes`);
+                            if(formato!=='1260x100'||viewport===1260) {
+                                assert(Math.abs(resumo.itens[0].y-resumo.itens[1].y)<1
+                                    &&Math.abs(resumo.itens[2].y-resumo.itens[3].y)<1&&resumo.itens[2].y>resumo.itens[0].y,
+                                    `${pagina}/${viewport}: resumo em grade 2x2`);
+                            }
+                        } else {
+                            assert(resumo.itens.every(i => Math.abs(i.centroRotulo - i.centroValor) < 2 &&
+                                !i.texto.includes('\n') && i.cabe),
+                            `${pagina}/${viewport}: resumo empilhado ou cortado ${JSON.stringify(resumo)}`);
+                            assert(resumo.itens.every(i => Math.abs(i.y - resumo.itens[0].y) < 1),
+                                `${pagina}/${viewport}: as quatro categorias devem compartilhar uma linha`);
+                        }
                     }
                     if (formato === '1260x200' && viewport === 1260) {
                         assert.equal(resumo.altura, 22, '1260x200: resumo deve liberar 10px para os candidatos');
@@ -660,6 +1093,7 @@ async function testarNavegador(build) {
             assert.equal(estado.altura,viewport===1400?200:100);
         }
         console.log('Correio do Estado: logo original, paleta azul exclusiva, dez formatos desktop/mobile e embed responsivo: OK.');
+
         // Encerrar o embed anterior: trocar a viewport pode recarregar aquele
         // iframe antes da navegacao, sem relacao com o cliente invalido abaixo.
         await navegar('personalizados/1260x200.html', 1260, '?site=inexistente');
@@ -1030,7 +1464,7 @@ async function testarNavegador(build) {
 }
 
 async function main() {
-    assert.equal(process.argv.length, 2, 'Este teste aceita somente execucao local, sem argumentos.');
+    assert(process.argv.length===2||(process.argv.length===3&&apenasCompactos), 'Somente execucao local, opcionalmente --compactos.');
     const build = gerar();
     validarBuild(build);
     await testarNavegador(build);

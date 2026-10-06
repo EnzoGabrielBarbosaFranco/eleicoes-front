@@ -1,0 +1,16 @@
+Arquivos locais; gerar esta entrega nao publica os banners.
+Sites: carregar embed.js uma vez por pagina. O atributo site identifica a marca.
+Ad Manager: criativo HTML com iframe, sem embed.js no criativo; tamanho nativo em desktop.
+Mobile no Ad Manager: usar criativo 320x100 e size mapping no portal. O iframe nao aumenta o slot sozinho.
+Antes de distribuir: autorizar os dominios em seguranca.js, _headers e vercel.json; publicar com aprovacao.
+URLs para conferir:
+https://apuracao.placardasurnas.com.br/personalizados/index.html?site=primeira-pagina
+https://apuracao.placardasurnas.com.br/personalizados/horizontal.html?site=primeira-pagina
+https://apuracao.placardasurnas.com.br/personalizados/970x250.html?site=primeira-pagina
+https://apuracao.placardasurnas.com.br/personalizados/300x250.html?site=primeira-pagina
+https://apuracao.placardasurnas.com.br/personalizados/300x600.html?site=primeira-pagina
+https://apuracao.placardasurnas.com.br/personalizados/970x90.html?site=primeira-pagina
+https://apuracao.placardasurnas.com.br/personalizados/970x250x100.html?site=primeira-pagina
+https://apuracao.placardasurnas.com.br/personalizados/1260x100.html?site=primeira-pagina
+https://apuracao.placardasurnas.com.br/personalizados/1260x200.html?site=primeira-pagina
+https://apuracao.placardasurnas.com.br/personalizados/320x100.html?site=primeira-pagina

@@ -342,7 +342,8 @@
             marca.setAttribute('aria-hidden', 'true');
             cabecalho.prepend(marca);
         }
-        document.body.classList.add('identidade-2026');
+        document.body.classList.add('identidade-2026', 'apuracao-legivel');
+        window.AvisoTurnos2026?.aplicar(cabecalho, consultaMobile);
     }
 
     function escaparHtml(valor) {

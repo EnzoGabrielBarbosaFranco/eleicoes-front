@@ -14,6 +14,14 @@
 
     aplicarCoresPersonalizadas(obterConfiguracaoVisual());
     const formatoOriginal = document.body.dataset.widget || '';
+    const formatoMobileCompacto = document.body.matches('.formato-compacto-100, .formato-970x90, .formato-320x100');
+    const mediaMobile = window.matchMedia(consultaMobile);
+    function ajustarMarcaMobile() {
+        document.body.classList.toggle('cliente-mobile-compacto', formatoMobileCompacto
+            && (document.body.classList.contains('formato-320x100') || mediaMobile.matches));
+    }
+    ajustarMarcaMobile();
+    mediaMobile.addEventListener('change', ajustarMarcaMobile);
     const indexCompacto = prepararIndexResponsivo();
     aplicarIdentidadeNormal();
     document.addEventListener('DOMContentLoaded', aplicarIdentidadeNormal, { once: true });
@@ -151,5 +159,6 @@
         }
         window.aplicarLogoCliente2026(cabecalho);
         document.body.classList.add('identidade-2026');
+        window.AvisoTurnos2026?.aplicar(cabecalho, consultaMobile);
     }
 })();

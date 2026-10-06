@@ -1,0 +1,252 @@
+/* Mesma legibilidade dos personalizados, apenas na apuracao /2026/.
+   Preservar alturas e a faixa unica; formatos compactos usam sua escala. */
+body.apuracao-legivel[data-widget].identidade-2026 :is(.card-votos, .votos-absolutos) {
+    font-size: 14px !important;
+    line-height: 1.15;
+    color: var(--slate-600);
+    font-variant-numeric: tabular-nums;
+}
+
+body.apuracao-legivel[data-widget].identidade-2026 :is(.numero-cand, .card-partido-compacto) {
+    font-size: 13px !important;
+    line-height: 1.1;
+    color: var(--slate-600);
+}
+
+body.apuracao-legivel[data-widget].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    font-size: 12px !important;
+    line-height: 1.1;
+    letter-spacing: 0.025em;
+    color: var(--slate-600);
+}
+
+body.apuracao-legivel[data-widget].identidade-2026 .resumo-votos .resumo-valor {
+    font-size: 14px !important;
+    line-height: 1.1;
+}
+
+body.apuracao-legivel[data-widget="horizontal"].identidade-2026 :is(.card-votos, .numero-cand, .card-partido-compacto),
+body.apuracao-legivel[data-widget="970x250"].identidade-2026 :is(.card-votos, .numero-cand, .card-partido-compacto),
+body.apuracao-legivel[data-widget="300x250"].identidade-2026 :is(.votos-absolutos, .numero-cand) {
+    font-size: 11px !important;
+}
+
+body.apuracao-legivel[data-widget="horizontal"].identidade-2026 .resumo-votos .resumo-item > span:first-child,
+body.apuracao-legivel[data-widget="970x250"].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    font-size: 11px !important;
+}
+
+body.apuracao-legivel[data-widget="300x250"].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    font-size: 9.5px !important;
+}
+
+body.apuracao-legivel[data-widget="300x250"].identidade-2026 .resumo-votos .resumo-valor {
+    font-size: 10.5px !important;
+}
+
+body.apuracao-legivel[data-widget="300x600"].identidade-2026 :is(.votos-absolutos, .numero-cand) {
+    font-size: 12px !important;
+}
+
+body.apuracao-legivel[data-widget="300x600"].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    font-size: 10px !important;
+}
+
+body.apuracao-legivel[data-widget="300x600"].identidade-2026 .resumo-votos .resumo-valor,
+body.apuracao-legivel.formato-compacto-100[data-widget].identidade-2026 .resumo-votos .resumo-valor {
+    font-size: 11px !important;
+}
+
+body.apuracao-legivel.turnos-mobile-compacto[data-widget].identidade-2026 .card-votos {
+    font-size: 9px !important;
+}
+
+body.apuracao-legivel.turnos-mobile-compacto[data-widget].identidade-2026 .card-partido-compacto,
+body.apuracao-legivel.turnos-mobile-compacto[data-widget].identidade-2026 .resumo-votos .resumo-valor {
+    font-size: 8.5px !important;
+}
+
+body.apuracao-legivel.turnos-mobile-compacto[data-widget].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    font-size: 8px !important;
+}
+
+/* Nos compactos de 90/100 px, destacar a porcentagem, nao o numero de urna.
+   Reservar largura para ate 100,00%, sem alterar a altura dos cards/banners. */
+body.apuracao-legivel.turnos-mobile-compacto[data-widget].identidade-2026 .card-cand {
+    flex-basis: 180px;
+    width: 180px;
+    max-width: none;
+    padding: 2px 58px 2px 5px;
+}
+
+body.apuracao-legivel.turnos-mobile-compacto[data-widget].identidade-2026 :is(.card-numero-compacto, .card-votos) {
+    display: none !important;
+}
+
+body.apuracao-legivel.turnos-mobile-compacto[data-widget].identidade-2026 .card-pct {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    display: block !important;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 860;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    transform: translateY(-50%);
+}
+
+body.apuracao-legivel.turnos-mobile-compacto[data-widget].identidade-2026 .card-nome {
+    display: block;
+    width: 100%;
+    font-size: 9px;
+    line-height: 1.05;
+}
+
+body.apuracao-legivel.turnos-mobile-compacto[data-widget].identidade-2026 .card-partido-compacto {
+    display: block;
+    margin-top: 1px;
+    font-size: 6.5px !important;
+    line-height: 1.1;
+}
+
+/* Excecao somente nos HTMLs 300x250, 300x600 e 1260x100: titulo,
+   total e percentual em tres linhas, mantendo os quatro indicadores. */
+body.apuracao-legivel.resumo-empilhado[data-widget].identidade-2026 .resumo-votos {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-rows: auto !important;
+    overflow-x: hidden !important;
+}
+
+body.apuracao-legivel.resumo-empilhado:is([data-widget="300x250"], [data-widget="300x600"]).identidade-2026 .resumo-votos {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, auto) !important;
+}
+
+body.apuracao-legivel.resumo-empilhado:is([data-widget="300x250"], [data-widget="300x600"]).identidade-2026 .resumo-item:nth-child(even)::after {
+    display: none;
+}
+
+body.apuracao-legivel.resumo-empilhado:is([data-widget="300x250"], [data-widget="300x600"]).identidade-2026 .resumo-item:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--slate-200) !important;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-formato="1260x100"]:not(.turnos-mobile-compacto).identidade-2026 .resumo-votos {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget].identidade-2026 .resumo-votos .resumo-item {
+    flex-direction: column !important;
+    gap: 1px;
+    white-space: normal;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget].identidade-2026 .resumo-votos .resumo-item > span:first-child {
+    margin: 0;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget].identidade-2026 .resumo-votos .resumo-valor {
+    display: block;
+    white-space: pre-line;
+}
+
+/* Liberar espaco para candidatos enquanto o resumo do 300x250 esta aberto.
+   Fechado, o cabecalho e a lista mantem exatamente sua apresentacao anterior. */
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .controles {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.8fr);
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .eleicao-meta {
+    display: none;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .lista-candidatos {
+    padding-block: 2px;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .resumo-toggle {
+    min-height: 20px;
+    margin-block: 1px 5px;
+    padding-block: 1px;
+}
+
+/* Separar o botao do resumo sem tirar espaco dos candidatos no banner curto. */
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .resumo-votos:not(.oculto) {
+    margin-bottom: 3px;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .widget-header {
+    padding-block: 5px 4px;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .header-brand {
+    margin-bottom: 4px;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .status-geral {
+    padding-block: 2px;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .info-topo {
+    margin-bottom: 2px;
+}
+
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .resumo-votos .resumo-item {
+    padding-block: 1px !important;
+}
+
+/* No 1260x100 mobile o resumo ganha 10 px, compensados no carrossel.
+   A altura externa continua em 100 px, com percentual dos candidatos visivel. */
+body.apuracao-legivel.resumo-empilhado.turnos-mobile-compacto[data-widget].identidade-2026 .resumo-votos {
+    flex-basis: 31px;
+    height: 31px;
+    min-height: 31px;
+}
+
+body.apuracao-legivel.resumo-empilhado.turnos-mobile-compacto[data-widget].identidade-2026 .resumo-votos .resumo-item {
+    padding-block: 0 !important;
+}
+
+body.apuracao-legivel.resumo-empilhado.turnos-mobile-compacto[data-widget].identidade-2026 .bloco-carrossel {
+    flex-basis: 36px;
+    height: 36px;
+}
+
+body.apuracao-legivel.resumo-empilhado.turnos-mobile-compacto[data-widget].identidade-2026 .card-cand,
+body.apuracao-legivel.resumo-empilhado.turnos-mobile-compacto[data-widget].identidade-2026 .bloco-carrossel .carregar-mais {
+    height: 31px;
+}
+
+body.apuracao-legivel.resumo-empilhado.turnos-mobile-compacto[data-widget].identidade-2026 .card-cand .foto-container {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
+}
+
+/* Cabecalho original: o link comercial nao existe nos personalizados.
+   Ocultar apenas com o resumo aberto no 300x250 para nao empurrar os candidatos. */
+body.apuracao-legivel.resumo-empilhado[data-widget="300x250"].identidade-2026 .widget-container:has(.resumo-votos:not(.oculto)) .produto-link {
+    display: none;
+}
+
+/* O resumo maior do 1260x100 deixa 31 px uteis para estados sem candidatos. */
+body.apuracao-legivel.resumo-empilhado.turnos-mobile-compacto[data-widget].identidade-2026 .bloco-carrossel :is(.estado-eleicao, .loading-msg) {
+    min-height: 30px;
+    padding: 1px 6px;
+}
+
+body.apuracao-legivel.resumo-empilhado.turnos-mobile-compacto[data-widget].identidade-2026 .estado-copy {
+    gap: 1px;
+}
+
+body.apuracao-legivel.resumo-empilhado.turnos-mobile-compacto[data-widget].identidade-2026 .estado-eleicao strong {
+    font-size: 10px;
+}
+
+body.apuracao-legivel.resumo-empilhado.turnos-mobile-compacto[data-widget].identidade-2026 .estado-descricao {
+    font-size: 9px;
+}

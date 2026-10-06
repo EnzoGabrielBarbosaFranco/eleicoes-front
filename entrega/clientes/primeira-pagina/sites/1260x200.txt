@@ -1,0 +1,2 @@
+<script src="https://apuracao.placardasurnas.com.br/embed.js" defer></script>
+<eleicoes-widget ano="2026" formato="1260x200" breakpoint="1050" site="primeira-pagina"></eleicoes-widget>

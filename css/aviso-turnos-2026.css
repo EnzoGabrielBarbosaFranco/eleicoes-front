@@ -1,0 +1,133 @@
+/* Compartilhado apenas por /2026/ e /personalizados/. Sem faixas adicionais. */
+body.com-aviso-turnos .header-copy {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    min-width: 0;
+    gap: 3px 8px;
+}
+
+body.com-aviso-turnos .header-copy :is(h1, h2) {
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+}
+
+body.com-aviso-turnos .header-kicker { display: none; }
+
+.aviso-turnos {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 4px;
+    padding: 2px 5px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 4px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.14);
+    font: 600 9px/1.1 system-ui, sans-serif;
+    white-space: nowrap;
+}
+
+/* Nas colunas estreitas dos banners desktop de 90/100 px, priorizar
+   nome e calendario; o botao comercial permanece nos cabecalhos maiores. */
+@media (min-width: 761px) {
+    body.com-aviso-turnos.formato-970x90 .produto-link,
+    body.com-aviso-turnos[data-widget="horizontal"] .produto-link {
+        display: none !important;
+    }
+}
+
+/* Nos compactos, identidade e filtros dividem a linha de 29/31 px.
+   Nome e calendario ficam juntos, preservando resumo e altura dos cards. */
+body.com-aviso-turnos.turnos-mobile-compacto[data-widget].identidade-2026 .bloco-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
+    grid-auto-rows: minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    background: var(--cliente-cabecalho, var(--ink));
+}
+
+body.com-aviso-turnos.turnos-mobile-compacto[data-widget].identidade-2026 .bloco-header .header-brand {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
+    height: 100%;
+    gap: 4px;
+    margin: 0;
+}
+
+body.com-aviso-turnos.turnos-mobile-compacto[data-widget].identidade-2026 .bloco-header .brand-mark {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    border-radius: 4px;
+    transform: none;
+    box-shadow: none;
+}
+
+body.com-aviso-turnos.turnos-mobile-compacto .brand-mark::before,
+body.com-aviso-turnos.turnos-mobile-compacto .brand-mark::after {
+    left: 4px;
+    top: 5px;
+    width: 12px;
+    height: 4px;
+}
+body.com-aviso-turnos.turnos-mobile-compacto .brand-mark::after { top: 11px; width: 8px; }
+
+body.com-aviso-turnos.turnos-mobile-compacto[data-widget].identidade-2026 .bloco-header .header-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 1px;
+}
+
+body.com-aviso-turnos.turnos-mobile-compacto[data-widget].identidade-2026 .bloco-header .header-copy :is(h1, h2) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 750;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+body.com-aviso-turnos.turnos-mobile-compacto .aviso-turnos {
+    gap: 3px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 8px;
+    line-height: 1.1;
+}
+body.com-aviso-turnos.turnos-mobile-compacto .aviso-turnos-extenso { display: none; }
+body.com-aviso-turnos.turnos-mobile-compacto .produto-link { display: none !important; }
+
+body.com-aviso-turnos.turnos-mobile-compacto[data-widget].identidade-2026 .bloco-header .controles {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(40px, 0.42fr);
+    gap: 4px;
+}
+
+body.com-aviso-turnos.turnos-mobile-compacto[data-widget].identidade-2026 .bloco-header .controles select {
+    min-width: 0;
+    min-height: 0;
+    height: 21px;
+    padding: 0 15px 0 5px;
+    border-radius: 4px;
+    background-position: right 4px center;
+    background-size: 9px;
+    font-size: 8.5px;
+}

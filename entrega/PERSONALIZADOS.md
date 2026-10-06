@@ -2,11 +2,20 @@
 
 As dez paginas e os recursos de layout foram copiados para `personalizados/`.
 Elas usam a mesma API oficial de 2026, mas possuem CSS e JavaScript proprios.
+Somente o aviso informativo dos turnos compartilha dois recursos de apresentacao
+com /2026/: css/aviso-turnos-2026.css e js/aviso-turnos-2026.js. Esse aviso nao
+altera filtros, chamadas, resultados nem o calendario das capas.
 Alteracoes futuras de layout/funcoes devem ser feitas nessas copias quando forem
 exclusivas dos clientes. Correcoes importantes na versao original precisam ser
 replicadas e testadas nas copias; nao existe sincronizacao automatica.
 
 ## Conferir a estrutura
+
+`primeira-pagina` tem uma identidade preparada localmente com a logo WebP
+fornecida e o degrade `linear-gradient(90deg, #9c27b0 -30%, #ff5722 130%)`
+no cabecalho e nas barras. Os textos pequenos usam roxo escuro para contraste.
+Ainda nao foi publicado nem autorizado o dominio do portal.
+Teste local: `/testar-embed.html?site=primeira-pagina&formato=1260x200&breakpoint=1050`.
 
 `cliente-x` usa nome, logo, icone e cores de demonstracao.
 `correio-do-estado` possui uma identidade publicada com a logo fornecida, azul
@@ -32,8 +41,44 @@ Preservam dimensoes, filtros, carrossel e dados exclusivos de 2026.
 Os personalizados exibem apenas a apuracao: nao possuem capas, contagem regressiva,
 transicoes nem calendario de pre-eleicao. As versoes originais em /2026/ continuam iguais.
 A retirada da marca/"Obter widget" nao remove a fonte TSE nem os alertas de simulacao.
-Nos layouts compactos que ja ocultavam o cabecalho, a logo permanece oculta para
-nao reduzir o espaco dos candidatos. Nos cabecalhos visiveis, aparece a logo.
+Nos personalizados compactos mobile de 90/100 px, logo e nome ficam na mesma
+linha dos filtros, sem aumentar a altura nem reduzir os cards. O modo acompanha
+o breakpoint real do embed. O 320x100 sempre usa essa linha compacta.
+Os formatos 300x250/300x600 e os demais cabecalhos mantem o layout anterior.
+Esta melhoria mobile ainda e local, sem publicacao.
+
+Votos/partido e os rotulos Validos, Brancos, Nulos e Abstencoes usam fontes
+maiores em todas as marcas e formatos personalizados, com escala propria nos
+compactos. Nos mobile de 90/100 px, cards de 180 px priorizam o percentual
+de votos (12 px) na direita em vez do numero de urna; o partido fica menor
+(6.5 px) abaixo do nome. Os totais absolutos ficam nos layouts maiores.
+Alturas de 90/100 px, resumo, identidade, aviso e rolagem continuam iguais.
+Ajuste apenas local.
+
+Somente os HTMLs 300x250, 300x600 e 1260x100 usam `resumo-empilhado`:
+rotulo, total de votos e percentual em tres linhas por indicador, em todas as
+marcas. Os outros formatos (inclusive o index responsivo) continuam em linha.
+Nos 300x250 e 300x600 a grade e 2x2: Validos/Brancos acima, Nulos/Abstencoes
+abaixo. O 1260x100 conserva sua grade de desktop/mobile.
+No 1260x100 mobile, o resumo tem 31 px e os cards 31 px, conservando os 100 px
+do banner, a identidade, os filtros, o percentual e a rolagem dos candidatos.
+O botao de mostrar/ocultar resumo permanece nos verticais. Somente enquanto o
+resumo do 300x250 estiver aberto, os filtros ficam lado a lado, as margens
+internas ficam compactas e a contagem de candidatos fica oculta para conservar
+espaco para a lista. Ajuste apenas local.
+No 300x250, o botao fica separado do resumo aberto por 5 px; o 300x600
+mantem os 7 px anteriores. A altura externa dos banners continua igual.
+
+Os mesmos ajustes de legibilidade/resumos agora estao tambem nos dez banners
+originais de /2026/, em `css/legibilidade-2026.css`, preservando a marca Placar
+das Urnas. A folha e ativada apenas na apuracao; capas, relogios e transicoes
+de pre-eleicao e os historicos nao recebem essas alteracoes. O teste compara
+os estilos com os personalizados e valida as quatro identidades. Apenas local.
+
+O cabecalho tambem identifica o 1º turno e informa "2º turno: 25/10" (2026),
+onde houver disputa, conforme o TSE. Nos compactos, a data fica abaixo do nome
+na mesma linha de altura dos filtros. Esse ajuste e apenas local e informativo:
+nao habilita consultas do segundo turno automaticamente.
 
 ## Cadastrar depois, quando houver uma marca real
 
@@ -133,6 +178,12 @@ Na mesma origem local usada para testar o projeto:
 /personalizados/1260x200.html?site=cliente-x
 /personalizados/320x100.html?site=cliente-x
 ```
+
+Trocar `site` por `primeira-pagina` ou `correio-do-estado` para ver cada marca.
+No tester, escolher conteiner `Normal` e usar o modo responsivo do navegador
+em 320/360/390/400 px. O cenario `Ancestral com 340 px` deixa a area de teste
+a esquerda de proposito: o embed centraliza dentro desses 340 px, nao da janela.
+Conferir logo/nome e filtros na mesma linha nos compactos, sem alterar a altura.
 
 Os testes automatizados interceptam as APIs com dados ficticios, sem TSE/KV real.
 Links antigos com parametros de capa sao ignorados nos personalizados.
