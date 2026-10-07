@@ -10,8 +10,23 @@ const { spawn } = require('node:child_process');
 const { setTimeout: esperar } = require('node:timers/promises');
 const { gerar, paginas, paginasPersonalizadas, formatos2022, formatos2026 } = require('./preparar-pages');
 const { gerarCodigos } = require('./gerar-entrega-cliente');
+const cadastroClientes = require('../personalizados/clientes');
+const novasIdentidades = {
+    midiamax: { fundo: 'rgb(3, 44, 69)', texto: 'rgb(3, 44, 69)', barra: 'rgb(3, 44, 69)', fundoLogo: 'rgb(255, 255, 255)' },
+    diariodolitoral: { fundo: 'rgb(0, 43, 142)', texto: 'rgb(0, 43, 142)', barra: 'rgb(0, 147, 231)', fundoLogo: 'rgb(255, 255, 255)' },
+    gazetasp: { fundo: 'rgb(0, 147, 231)', texto: 'rgb(0, 147, 231)', barra: 'rgb(0, 147, 231)', fundoLogo: 'rgb(255, 255, 255)' },
+    diariodoestadoms: { fundo: 'rgb(35, 37, 42)', texto: 'rgb(35, 37, 42)', barra: 'rgb(102, 102, 102)', fundoLogo: 'rgb(255, 255, 255)' },
+    jd1noticias: { fundo: 'rgb(16, 37, 57)', texto: 'rgb(16, 37, 57)', barra: 'rgb(102, 183, 252)', fundoLogo: 'rgb(255, 255, 255)' },
+    pixnewsms: { fundo: 'rgb(0, 0, 0)', texto: 'rgb(0, 0, 0)', barra: 'rgb(198, 255, 2)', fundoLogo: 'rgb(0, 0, 0)' },
+    pulsoms: { fundo: 'rgb(31, 55, 97)', texto: 'rgb(31, 55, 97)', barra: 'rgb(132, 199, 103)', fundoLogo: 'rgb(31, 55, 97)' },
+    acritica: { gradiente: 'linear-gradient(270deg, rgb(0, 79, 149) 0.02%, rgb(31, 127, 212) 50.44%, rgb(0, 79, 149) 99.9%)', texto: 'rgb(0, 79, 149)' },
+    agenciacidades: { fundo: 'rgb(0, 15, 61)', texto: 'rgb(0, 15, 61)' },
+    capitaldopantanal: { gradiente: 'linear-gradient(to right, rgb(203, 18, 37), rgb(158, 26, 39), rgb(116, 14, 24))', texto: 'rgb(116, 14, 24)' }
+};
 const raiz = path.resolve(__dirname, '..');
 const apenasCompactos = process.argv[2] === '--compactos';
+const apenasCabecalhos = process.argv[2] === '--cabecalhos';
+const clienteCabecalhos = process.argv[3];
 const dominio = 'https://apuracao.placardasurnas.com.br';
 const portaisClientes = ['portaldeprefeitura.com.br', 'portalmais360.com.br',
     'diariodajaragua.com.br', 'douradosnews.com.br', 'folhape.com.br'];
@@ -21,6 +36,16 @@ const tamanho = { index: [1180, 680], horizontal: [1200, 100], '970x250': [970, 
 
 function validarBuild(build) {
     const ler = (arquivo) => fs.readFileSync(path.join(build.destino, arquivo), 'utf8');
+    for (const site of Object.keys(novasIdentidades)) {
+        const cliente = cadastroClientes[site];
+        assert.deepEqual(cliente.dominios, [], `${site}: identidade nao autoriza dominios desconhecidos`);
+        assert(fs.readFileSync(path.join(build.destino, cliente.logo.slice(1)))
+            .equals(fs.readFileSync(path.join(raiz, cliente.logo.slice(1)))), `${site}: logo original no build`);
+        const codigos = gerarCodigos(site);
+        assert.equal(codigos.length,10);
+        assert(codigos.every(c=>c.site.includes(`site="${site}"`) && c.url.endsWith(`?site=${site}`)
+            && c.adManager.includes(c.url)), `${site}: codigos site/Ad Manager corretos`);
+    }
     for (const pagina of paginas) {
         const html = ler(pagina);
         assert(html.includes(pagina.startsWith('personalizados/') ? '<title>Apuração 2026' : '<title>Placar das Urnas'),
@@ -399,6 +424,133 @@ async function testarNavegador(build) {
             const esperado = new URL(`${origem}${caminho}${consulta}`);
             if (esperado.searchParams.get('pre-eleicao') === 'teste') esperado.searchParams.delete('reiniciar');
             await aguardar(`location.href === ${JSON.stringify(esperado.href)} && document.body && !document.body.dataset.testeAnterior && (!!document.getElementById('select-cargo') || !!document.querySelector('.pre26-painel,.cliente-aviso,eleicoes-widget'))`);
+        }
+        if (!apenasCompactos) {
+            let casos = 0;
+            const clientesTeste = clienteCabecalhos ? [clienteCabecalhos] : Object.keys(cadastroClientes);
+            const clientesEmbed = Object.keys(novasIdentidades).filter(site=>!clienteCabecalhos||site===clienteCabecalhos);
+            for (const cliente of clientesTeste) {
+                for (const formato of formatos2026) {
+                    const compacto=['320x100','970x90','970x250x100','1260x100','1260x200'].includes(formato);
+                    for (const largura of [...new Set([tamanho[formato][0], 320,
+                        ...(novasIdentidades[cliente] && compacto ? [360,390,400] : [])])]) {
+                        await navegar(`personalizados/${formato}.html`, largura, `?site=${cliente}`);
+                        await aguardar("document.querySelectorAll('.card-cand,.candidato-card').length===8 && document.querySelector('.aviso-turnos') && document.querySelector('.cliente-logo img')?.complete");
+                        const contexto = `${cliente}/${formato}/${largura}`;
+                        await avaliar("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+                        const identidade = await avaliar(`(() => {
+                            const logo=document.querySelector('.cliente-logo img'),nome=document.querySelector('.header-copy h1,.header-copy h2');
+                            const header=getComputedStyle(document.querySelector('.widget-header,.bloco-header'));
+                            return {nome:nome.textContent,nomeCompleto:nome.scrollWidth<=nome.clientWidth+1,logo:logo.getAttribute('src'),imagem:logo.naturalWidth,
+                                icone:document.querySelector('link[rel="icon"]').getAttribute('href'),
+                                cores:['--ink','--mint-strong','--mint'].map(v=>getComputedStyle(document.body).getPropertyValue(v).trim()),
+                                gradiente:header.backgroundImage,fundo:header.backgroundColor,
+                                barra:getComputedStyle(document.getElementById('barra-percurso')).backgroundImage,
+                                corBarra:getComputedStyle(document.getElementById('barra-percurso')).backgroundColor,
+                                barras:[...document.querySelectorAll('.card-barra-fill,.barra-cand-fill')].map(e=>getComputedStyle(e).backgroundColor),
+                                fundoLogo:getComputedStyle(logo.parentElement).backgroundColor,
+                                bordaLogo:{largura:getComputedStyle(logo.parentElement).borderTopWidth,
+                                    estilo:getComputedStyle(logo.parentElement).borderTopStyle,
+                                    cor:getComputedStyle(logo.parentElement).borderTopColor},
+                                texto:getComputedStyle(document.querySelector('.card-pct,.percentual')).color};
+                        })()`);
+                        const configuracao=cadastroClientes[cliente],esperado=novasIdentidades[cliente];
+                        assert.equal(identidade.nome,configuracao.nome,contexto);
+                        assert.equal(identidade.logo,configuracao.logo,contexto);
+                        assert.equal(identidade.icone,configuracao.icone,contexto);
+                        assert(identidade.imagem>0,`${contexto}: logo original carregada, sem iniciais de fallback`);
+                        assert.deepEqual(identidade.cores,['primaria','destaque','clara'].map(c=>configuracao.cores[c]),contexto);
+                        if (['pixnewsms','pulsoms'].includes(cliente)) {
+                            assert.deepEqual(identidade.bordaLogo,{largura:'1px',estilo:'solid',cor:esperado.barra},
+                                `${contexto}: borda colorida independente da borda geral zerada`);
+                        } else if (!configuracao.demonstracao) {
+                            assert.equal(identidade.bordaLogo.largura,'0px',`${contexto}: preservar borda zerada dos demais clientes`);
+                        }
+                        if (esperado) {
+                            assert.equal(identidade.texto,esperado.texto,`${contexto}: contraste do percentual`);
+                            if (esperado.gradiente) assert.equal(identidade.gradiente,esperado.gradiente,`${contexto}: degrade fornecido`);
+                            else {assert.equal(identidade.gradiente,'none',contexto);assert.equal(identidade.fundo,esperado.fundo,contexto);}
+                            if (esperado.gradiente) assert.equal(identidade.barra,esperado.gradiente,contexto);
+                            if (esperado.barra) {
+                                assert.equal(identidade.barra,'none',contexto);
+                                assert.equal(identidade.corBarra,esperado.barra,contexto);
+                                assert(identidade.barras.length>0&&identidade.barras.every(c=>c===esperado.barra),`${contexto}: cor das barras dos candidatos`);
+                                assert.equal(identidade.fundoLogo,esperado.fundoLogo,`${contexto}: contraste da logo`);
+                            }
+                            if(compacto && largura<=400) assert(identidade.nomeCompleto,`${contexto}: nome completo no mobile`);
+                        }
+                        for (const aberto of [false, true]) {
+                            if (aberto) {
+                                const mudou = await avaliar("(() => { const b=document.querySelector('.resumo-toggle'); if(!b || !b.getBoundingClientRect().height) return false; b.click(); return true; })()");
+                                if (!mudou) continue;
+                            }
+                            await avaliar("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+                            const estado = await avaliar(`(() => {
+                                const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,w:r.width,h:r.height};};
+                                const dentro=(a,b)=>a.x>=b.x-1&&a.right<=b.right+1&&a.y>=b.y-1&&a.bottom<=b.bottom+1;
+                                const e=document.querySelector('.aviso-turnos'),aviso=rect(e),titulo=document.querySelector('.header-copy h1,.header-copy h2'),nome=rect(titulo);
+                                const range=document.createRange();range.selectNodeContents(titulo);
+                                const textoNome=rect({getBoundingClientRect:()=>range.getBoundingClientRect()});
+                                const copia=document.querySelector('.header-copy'),header=rect(document.querySelector('.widget-header,.bloco-header'));
+                                const lista=document.getElementById('lista-candidatos'),foto=lista.querySelector('.foto-container');
+                                return {compacto:document.body.classList.contains('turnos-mobile-compacto'),
+                                    deslocamento:getComputedStyle(e).top,alinhamento:getComputedStyle(copia).alignItems,
+                                    mesmaLinha:aviso.x>=nome.right-1&&Math.abs(aviso.y+aviso.h/2-nome.y-nome.h/2-1)<0.6,
+                                    semCortes:dentro(aviso,header)&&dentro(nome,header)&&e.scrollWidth<=e.clientWidth+1,
+                                    semSobreposicao:[...document.querySelectorAll('.controles select')].map(rect).filter(r=>r.w>0)
+                                        .every(r=>r.x>=aviso.right||r.right<=aviso.x||r.y>=aviso.bottom||r.bottom<=aviso.y),
+                                    fotoCabe:!foto||dentro(rect(foto),rect(lista)),
+                                    foto:foto?rect(foto):null,lista:rect(lista),nome,aviso,header,
+                                    textoNome,nomeSemRecorte:textoNome.y>=nome.y-0.1&&textoNome.bottom<=nome.bottom+0.1
+                                        &&textoNome.y>=header.y-0.1&&textoNome.bottom<=header.bottom+0.1,
+                                    altura:rect(document.querySelector('.widget-container,.widget-horizontal')).h};
+                            })()`);
+                            assert(estado.semCortes && estado.semSobreposicao, `${contexto}: aviso/nome/filtros sem cortes: ${JSON.stringify(estado)}`);
+                            assert(estado.nomeSemRecorte,`${contexto}: caixa da fonte inteira, incluindo acentos e descendentes: ${JSON.stringify(estado)}`);
+                            if (estado.compacto) assert.equal(estado.deslocamento,'auto',`${contexto}: preservar mobile`);
+                            else {
+                                assert.equal(estado.deslocamento,'1px',`${contexto}: alinhamento optico`);
+                                assert.equal(estado.alinhamento,'center',contexto);
+                                if (formato==='1260x200') assert(estado.mesmaLinha,`${contexto}: aviso ao lado e centralizado com o nome`);
+                            }
+                            const fixo=['320x100','300x250','300x600'].includes(formato);
+                            const alturaMobile=['1260x200','1260x100','970x250x100'].includes(formato)?100
+                                :['index','horizontal'].includes(formato)?250:tamanho[formato][1];
+                            assert.equal(estado.altura,largura<=760&&!fixo?alturaMobile:tamanho[formato][1],`${contexto}: altura preservada`);
+                            if (aberto && ['300x250','300x600'].includes(formato)) assert(estado.fotoCabe,`${contexto}: foto inteira com resumo aberto: ${JSON.stringify(estado)}`);
+                        }
+                        if ((cliente==='correio-do-estado' && formato==='1260x200')
+                            || (esperado && ['1260x200','300x250'].includes(formato) && [tamanho[formato][0],320].includes(largura))) {
+                            const clip=await avaliar("(() => {const r=document.querySelector('.widget-horizontal,.widget-container').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()");
+                            const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip},sessionId);
+                            fs.writeFileSync(path.join(diretorioTestes,`cabecalho-${cliente}-${formato}-${largura}.png`),Buffer.from(captura.data,'base64'));
+                        }
+                        casos++;
+                    }
+                }
+            }
+            for (const cliente of clientesEmbed) {
+                for (const [largura,cenario] of [[1040,'normal'],[1400,'ancestral-estreito']]) {
+                    await navegar('testar-embed.html',largura,`?site=${cliente}&formato=1260x200&breakpoint=1050&cenario=${cenario}`);
+                    await aguardar("document.querySelector('eleicoes-widget')?.shadowRoot?.querySelector('iframe')?.contentDocument?.querySelectorAll('.card-cand').length===8");
+                    const embed=await avaliar(`(() => {const h=document.querySelector('eleicoes-widget'),d=h.shadowRoot.querySelector('iframe').contentDocument;
+                        const titulo=d.querySelector('.header-copy h2'),r=titulo.getBoundingClientRect(),range=d.createRange();
+                        range.selectNodeContents(titulo);const t=range.getBoundingClientRect(),c=d.querySelector('.bloco-header').getBoundingClientRect();
+                        return {cliente:d.body.dataset.cliente,nome:d.querySelector('.header-copy h2').textContent,
+                            logo:d.querySelector('.cliente-logo img').getAttribute('src'),altura:h.getBoundingClientRect().height,
+                            nomeSemRecorte:t.y>=r.y-0.1&&t.bottom<=r.bottom+0.1&&t.y>=c.y-0.1&&t.bottom<=c.bottom+0.1,
+                            mobile:d.body.classList.contains('cliente-mobile-compacto')};})()`);
+                    assert.deepEqual(embed,{cliente,nome:cadastroClientes[cliente].nome,logo:cadastroClientes[cliente].logo,altura:100,nomeSemRecorte:true,mobile:true},`${cliente}: embed ${cenario}`);
+                }
+            }
+            assert(chamadasApi.every(url=>new URL(url).searchParams.get('ano')==='2026'&&!new URL(url).searchParams.has('site')),
+                'Marca nao pode alterar o ano ou vazar site para a API');
+            assert.equal(erros.length,0,JSON.stringify(erros));
+            console.log(`Identidades/cabecalhos personalizados: ${casos} cenarios desktop/mobile, ${clientesTeste.length} marcas, logos/cores/percentuais, alinhamento, alturas e resumos preservados; ${clientesEmbed.length*2} embeds com breakpoint/ancestral estreito: OK.`);
+            if (apenasCabecalhos) {
+                await enviar('Browser.close');
+                return;
+            }
         }
         // O resumo alto do 1260x100 nao pode cortar a espera na area restante.
         disponivel=false;
@@ -1464,7 +1616,9 @@ async function testarNavegador(build) {
 }
 
 async function main() {
-    assert(process.argv.length===2||(process.argv.length===3&&apenasCompactos), 'Somente execucao local, opcionalmente --compactos.');
+    assert(process.argv.length===2||(process.argv.length===3&&(apenasCompactos||apenasCabecalhos))
+        ||(process.argv.length===4&&apenasCabecalhos&&Object.hasOwn(cadastroClientes,clienteCabecalhos)),
+        'Somente execucao local, opcionalmente --compactos ou --cabecalhos [cliente cadastrado].');
     const build = gerar();
     validarBuild(build);
     await testarNavegador(build);

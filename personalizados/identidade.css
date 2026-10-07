@@ -43,6 +43,23 @@ body.cliente-personalizado .header-copy :is(h1, h2) {
     white-space: nowrap;
 }
 
+/* A caixa da fonte ultrapassa o line-height compacto (acentos e descendentes).
+   Ampliar somente a area de pintura, compensando no fluxo para preservar
+   altura, alinhamento com o aviso e espaco dos candidatos em todos os formatos.
+   A especificidade tambem cobre o cabecalho mobile compartilhado. */
+body.cliente-personalizado.com-aviso-turnos[data-widget].identidade-2026
+:is(.widget-header, .bloco-header) .header-brand .header-copy :is(h1, h2) {
+    padding-block: 3px;
+    margin-block: -3px;
+}
+
+/* Alinhamento optico com o nome: o texto menor parecia um pixel acima.
+   Nos compactos o aviso fica abaixo do nome e nao recebe esse deslocamento. */
+body.cliente-personalizado.com-aviso-turnos:not(.turnos-mobile-compacto) .aviso-turnos {
+    position: relative;
+    top: 1px;
+}
+
 /* Correio do Estado: azul institucional, logo original sobre base branca.
    Nenhuma destas regras altera as identidades dos demais clientes. */
 body[data-cliente="correio-do-estado"] :is(.widget-header, .bloco-header) {
@@ -52,7 +69,7 @@ body[data-cliente="correio-do-estado"] :is(.widget-header, .bloco-header) {
 
 body[data-cliente="correio-do-estado"] .brand-mark.cliente-logo {
     padding: 4px;
-    border: 1px solid #fff;
+    border: 0px solid #fff;
     border-radius: 9px;
     background: #fff;
     box-shadow: 0 2px 8px rgba(4, 26, 59, 0.16);
@@ -88,7 +105,7 @@ body[data-cliente="primeira-pagina"][data-widget].cliente-personalizado :is(.wid
 
 body[data-cliente="primeira-pagina"] .brand-mark.cliente-logo {
     padding: 3px;
-    border: 1px solid #fff;
+    border: 0px solid #fff;
     border-radius: 9px;
     background: #fff;
     box-shadow: 0 2px 8px rgba(65, 16, 73, 0.16);
@@ -133,6 +150,143 @@ body[data-cliente="primeira-pagina"] .resumo-votos {
 body[data-cliente="primeira-pagina"] :is(.card-cand, .candidato-card) {
     border-color: #EEDAF0;
 }
+
+/* Novas marcas: acabamento isolado, preservando os arquivos originais das logos. */
+body.cliente-personalizado:is([data-cliente="acritica"], [data-cliente="agenciacidades"], [data-cliente="capitaldopantanal"], [data-cliente="jd1noticias"], [data-cliente="pixnewsms"], [data-cliente="pulsoms"], [data-cliente="diariodolitoral"], [data-cliente="gazetasp"], [data-cliente="diariodoestadoms"], [data-cliente="midiamax"]) .brand-mark.cliente-logo {
+    padding: 3px;
+    border: 0px solid #fff;
+    border-radius: 9px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 15, 61, 0.16);
+}
+
+body.cliente-personalizado:is([data-cliente="acritica"], [data-cliente="agenciacidades"], [data-cliente="capitaldopantanal"], [data-cliente="jd1noticias"], [data-cliente="pixnewsms"], [data-cliente="pulsoms"], [data-cliente="diariodolitoral"], [data-cliente="gazetasp"], [data-cliente="diariodoestadoms"], [data-cliente="midiamax"]) .header-copy :is(h1, h2) {
+    color: #fff;
+    font-weight: 750;
+}
+
+body[data-cliente="acritica"].cliente-personalizado {
+    --cliente-gradiente: linear-gradient(270deg, #004F95 0.02%, #1F7FD4 50.44%, #004F95 99.9%);
+}
+
+body[data-cliente="acritica"] :is(.widget-header, .bloco-header) {
+    --cliente-cabecalho: var(--cliente-gradiente);
+    background: var(--cliente-cabecalho);
+}
+
+body[data-cliente="acritica"].cliente-personalizado :is(.barra-total-fill, .preenchimento-total, .card-barra-fill, .barra-cand-fill) {
+    background: var(--cliente-gradiente);
+    box-shadow: none;
+}
+
+body[data-cliente="acritica"].cliente-personalizado :is(.card-pct, .percentual, .card-numero-compacto, .resumo-toggle) {
+    color: #004F95;
+}
+
+body[data-cliente="acritica"] .resumo-votos {
+    border-color: #D5E8FA;
+    background: #fff;
+}
+
+body[data-cliente="acritica"] :is(.card-cand, .candidato-card) { border-color: #D5E8FA; }
+
+body[data-cliente="agenciacidades"] :is(.widget-header, .bloco-header) {
+    --cliente-cabecalho: #000F3D;
+    background: var(--cliente-cabecalho);
+}
+
+body[data-cliente="agenciacidades"].cliente-personalizado :is(.card-pct, .percentual, .card-numero-compacto, .resumo-toggle) {
+    color: #000F3D;
+}
+
+body[data-cliente="agenciacidades"] .resumo-votos {
+    border-color: #DCE3F1;
+    background: #F5F7FC;
+}
+
+body[data-cliente="agenciacidades"] :is(.card-cand, .candidato-card) { border-color: #DCE3F1; }
+
+body[data-cliente="capitaldopantanal"].cliente-personalizado { --cliente-gradiente: linear-gradient(to right,#cb1225,#9e1a27,#740e18); }
+
+body[data-cliente="capitaldopantanal"] :is(.widget-header, .bloco-header) {
+    --cliente-cabecalho: var(--cliente-gradiente);
+    background: var(--cliente-cabecalho);
+}
+
+body[data-cliente="capitaldopantanal"].cliente-personalizado :is(.barra-total-fill, .preenchimento-total, .card-barra-fill, .barra-cand-fill) {
+    background: var(--cliente-gradiente);
+    box-shadow: none;
+}
+
+body[data-cliente="capitaldopantanal"].cliente-personalizado :is(.card-pct, .percentual, .card-numero-compacto, .resumo-toggle) {
+    color: #740E18;
+}
+
+body[data-cliente="capitaldopantanal"] .resumo-votos {
+    border-color: #F0D7DA;
+    background: #FFF6F7;
+}
+
+body[data-cliente="capitaldopantanal"] :is(.card-cand, .candidato-card) { border-color: #F0D7DA; }
+
+/* Nome mais longo: evitar que o aviso abra outra linha no 300x250 e
+   retire espaco da foto dos candidatos quando o resumo estiver aberto. */
+body:is([data-cliente="capitaldopantanal"], [data-cliente="diariodoestadoms"])[data-widget="300x250"] .header-copy { column-gap: 4px; }
+body:is([data-cliente="capitaldopantanal"], [data-cliente="diariodoestadoms"])[data-widget="300x250"] .aviso-turnos { font-size: 8px; }
+body[data-cliente="diariodoestadoms"][data-widget="300x250"] .header-copy h2 { font-size: 13.5px; }
+
+/* Identidades de fundo solido: barras de destaque e textos escuros sobre branco. */
+body.cliente-personalizado:is([data-cliente="jd1noticias"], [data-cliente="pixnewsms"], [data-cliente="pulsoms"], [data-cliente="diariodolitoral"], [data-cliente="gazetasp"], [data-cliente="diariodoestadoms"], [data-cliente="midiamax"]) :is(.widget-header, .bloco-header) {
+    background: var(--cliente-cabecalho);
+}
+
+body[data-cliente="jd1noticias"] :is(.widget-header, .bloco-header) { --cliente-cabecalho: #102539; }
+body[data-cliente="pixnewsms"] :is(.widget-header, .bloco-header) { --cliente-cabecalho: #000000; }
+body[data-cliente="pulsoms"] :is(.widget-header, .bloco-header) { --cliente-cabecalho: #1F3761; }
+body[data-cliente="diariodolitoral"] :is(.widget-header, .bloco-header) { --cliente-cabecalho: #002B8E; }
+body[data-cliente="gazetasp"] :is(.widget-header, .bloco-header) { --cliente-cabecalho: #0093E7; }
+body[data-cliente="diariodoestadoms"] :is(.widget-header, .bloco-header) { --cliente-cabecalho: #23252A; }
+body[data-cliente="midiamax"] :is(.widget-header, .bloco-header) { --cliente-cabecalho: #032C45; }
+
+body.cliente-personalizado:is([data-cliente="jd1noticias"], [data-cliente="pixnewsms"], [data-cliente="pulsoms"], [data-cliente="diariodolitoral"], [data-cliente="gazetasp"], [data-cliente="diariodoestadoms"], [data-cliente="midiamax"]) :is(.barra-total-fill, .preenchimento-total, .card-barra-fill, .barra-cand-fill) {
+    background: var(--mint-strong);
+    box-shadow: none;
+}
+
+body.cliente-personalizado:is([data-cliente="jd1noticias"], [data-cliente="pixnewsms"], [data-cliente="pulsoms"], [data-cliente="diariodolitoral"], [data-cliente="gazetasp"], [data-cliente="diariodoestadoms"], [data-cliente="midiamax"]) :is(.card-pct, .percentual, .card-numero-compacto, .resumo-toggle, .estado-icone) {
+    color: var(--ink);
+}
+
+/* As partes brancas das logos transparentes precisam da base escura. */
+body.cliente-personalizado[data-cliente="pixnewsms"] .brand-mark.cliente-logo {
+    border: 1px solid #C6FF02;
+    background: #000;
+}
+
+body.cliente-personalizado[data-cliente="pulsoms"] .brand-mark.cliente-logo {
+    border: 1px solid #84C767;
+    background: #1F3761;
+}
+
+body[data-cliente="jd1noticias"] .resumo-votos { border-color: #D7E8F7; background: #F2F8FE; }
+body[data-cliente="jd1noticias"] :is(.card-cand, .candidato-card) { border-color: #D7E8F7; }
+
+body[data-cliente="pixnewsms"] .resumo-votos { border-color: #E0E8C5; background: #FAFFE8; }
+body[data-cliente="pixnewsms"] :is(.card-cand, .candidato-card) { border-color: #E0E8C5; }
+body[data-cliente="pixnewsms"] :is(.barra-total-bg, .card-barra-bg, .barra-cand-bg) { background: #161616; }
+body[data-cliente="pixnewsms"] .status-dot { outline: 1px solid #000; }
+
+body[data-cliente="pulsoms"] .resumo-votos { border-color: #DCEAD5; background: #F5FAF2; }
+body[data-cliente="pulsoms"] :is(.card-cand, .candidato-card) { border-color: #DCEAD5; }
+
+body[data-cliente="diariodolitoral"] .resumo-votos { border-color: #D6E4F7; background: #F2F7FE; }
+body[data-cliente="diariodolitoral"] :is(.card-cand, .candidato-card) { border-color: #D6E4F7; }
+body[data-cliente="gazetasp"] .resumo-votos { border-color: #E0E5EA; background: #F5F8FA; }
+body[data-cliente="gazetasp"] :is(.card-cand, .candidato-card) { border-color: #E0E5EA; }
+body[data-cliente="diariodoestadoms"] .resumo-votos { border-color: #E2E3E6; background: #F7F7F8; }
+body[data-cliente="diariodoestadoms"] :is(.card-cand, .candidato-card) { border-color: #E2E3E6; }
+body[data-cliente="midiamax"] .resumo-votos { border-color: #DCE6EC; background: #F2F7FA; }
+body[data-cliente="midiamax"] :is(.card-cand, .candidato-card) { border-color: #DCE6EC; }
 
 /* Identidade e filtros na mesma linha: nao retirar altura dos candidatos.
    A classe segue o modo real do embed, inclusive breakpoint personalizado.

@@ -8,6 +8,7 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 const { spawn } = require('node:child_process');
 const { setTimeout: esperar } = require('node:timers/promises');
+const cadastroClientes = require('../personalizados/clientes');
 const dominio = 'https://apuracao.placardasurnas.com.br';
 const raiz = path.resolve(__dirname, '..');
 const tamanhos = { index:[1180,680,250],horizontal:[1200,100,250], '970x250':[970,250,250],
@@ -22,7 +23,7 @@ function criarPaginaPortal(embed, opcoes = {}) {
     const [largura,altura] = tamanhos[formato];
     const token = String(opcoes.token || '').replace(/[^a-zA-Z0-9]/g,'');
     const marca = token ? ` marca="${token}"` : '';
-    const site = opcoes.site === 'correio-do-estado' ? opcoes.site : '';
+    const site = Object.hasOwn(cadastroClientes, opcoes.site) ? opcoes.site : '';
     const atributoSite = site ? ` site="${site}"` : '';
     const pastaBanner = site ? 'personalizados' : '2026';
     const consultaSite = site ? `?site=${site}` : '';
@@ -170,14 +171,17 @@ async function main() {
                     : { ano: 2026, fase: 'oficial', turno: Number(url.searchParams.get('turno')),
                         cargo: Number(url.searchParams.get('cargo')), uf: url.searchParams.get('uf'),
                         percurso: '63,50', atualizacao: '04/10/2026 as 18:30:00', finalizado: false, vagas: 1,
+                        resumo: { validos:'119.300.788',pctValidos:'95,23',brancos:'2.300.798',pctBrancos:'1,84',
+                            nulos:'3.674.249',pctNulos:'2,93',abstencoes:'33.469.244',pctAbstencoes:'21,08' },
                         totalCandidatos: 8, candidatos: Array.from({ length: 8 }, (_, i) => ({
                             nome: `Fixture 2026 ${i + 1}`, numero: String(10 + i), partido: 'TESTE',
-                            votos: String(40 - i), votosNumero: 400 - i, total: String(400 - i),
+                            votos: ['45.16','0.01','100.00','10.05'][i%4], votosNumero: 53879538 - i, total: String(53879538 - i),
                             situacao: 'Nao eleito', eleito: false, foto: '',
                         })) };
                 if (modoApi === 'sem-votos' && json.candidatos) {
                     json.percurso = '0,00';
                     json.candidatos.forEach(c => { c.votos = '0,00'; c.votosNumero = 0; c.total = '0'; });
+                    Object.keys(json.resumo).forEach(campo=>{json.resumo[campo]=campo.startsWith('pct')?'0,00':'0';});
                 }
                 enviar('Fetch.fulfillRequest', { requestId, responseCode: 200,
                     responseHeaders: [{ name: 'Content-Type', value: 'application/json' },
@@ -254,6 +258,86 @@ async function main() {
         await aguardar(() => avaliar("document.getElementById('lista-candidatos').getAttribute('aria-busy')==='false' && document.querySelectorAll('.card-cand').length>0"), 'filtro UF MT');
         assert(resultados.some(r => r.url.includes('cargo=3&uf=mt') && r.status === 200));
         console.log('Dominio publico com API interceptada de 2026: 1260x200 desktop, 100px mobile e filtros cargo/UF: OK.');
+        // Conferir as novas correcoes com os arquivos reais publicados, nao o servidor local.
+        for(const site of ['', ...Object.keys(cadastroClientes)]) {
+            for(const [formato,[nativa,desktop,mobile]] of Object.entries(tamanhos)) {
+                for(const largura of [...new Set([nativa,320])]) {
+                    await enviar('Emulation.setDeviceMetricsOverride',{width:largura,height:800,deviceScaleFactor:1,mobile:false},sessionId);
+                    await esperar(250);
+                    await avaliar("if(document.body) document.body.dataset.testeAnterior='1'");
+                    const pastaBanner=site?'personalizados':'2026';
+                    await enviar('Page.navigate',{url:`${dominio}/${pastaBanner}/${formato}.html${site?`?site=${site}`:''}`},sessionId);
+                    const caminho=formato==='index'?`/${pastaBanner}/`:`/${pastaBanner}/${formato}`;
+                    await aguardar(()=>avaliar(`location.pathname===${JSON.stringify(caminho)} && !!document.body && !document.body.dataset.testeAnterior && (${candidatos})
+                        && document.body.classList.contains(${JSON.stringify(site?'cliente-personalizado':'apuracao-legivel')})
+                        && ${site?"document.querySelector('.cliente-logo img')?.complete && document.querySelector('.cliente-logo img').naturalWidth>0":'true'}`),`novos estilos ${site||'2026'}/${formato}/${largura}`);
+                    const fechado=await avaliar("document.querySelector('.resumo-votos').getBoundingClientRect().height===0");
+                    if(fechado) await avaliar("document.querySelector('.resumo-toggle').click()");
+                    await avaliar("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+                    const estado=await avaliar(`(() => {
+                        const r=e=>{const b=e.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom,w:b.width,h:b.height};};
+                        const fonte=e=>parseFloat(getComputedStyle(e).fontSize);
+                        const resumo=document.querySelector('.resumo-votos'),painel=document.querySelector('.widget-horizontal,.widget-container');
+                        const itens=[...resumo.querySelectorAll('.resumo-item')];
+                        const compacto=document.body.matches('.cliente-mobile-compacto,.turnos-mobile-compacto');
+                        const card=document.querySelector('.card-cand,.candidato-card');
+                        const pct=card.querySelector('.card-pct,.percentual');
+                        const rectPct=r(pct),rectCard=r(card),nome=r(card.querySelector('.card-nome,.nome-cand'));
+                        const titulo=document.querySelector('.header-copy h1,.header-copy h2'),nt=r(titulo),range=document.createRange();
+                        range.selectNodeContents(titulo);const rt=range.getBoundingClientRect(),header=r(document.querySelector('.widget-header,.bloco-header'));
+                        return {h:r(painel).h,compacto,widget:document.body.dataset.widget,empilhado:document.body.classList.contains('resumo-empilhado'),
+                            cliente:document.body.dataset.cliente,marca:titulo.textContent,
+                            cor:getComputedStyle(document.body).getPropertyValue('--ink').trim(),
+                            logo:document.querySelector('.cliente-logo img')?.getAttribute('src'),
+                            nomeSemRecorte:rt.y>=nt.y-0.1&&rt.bottom<=nt.bottom+0.1&&rt.y>=header.y-0.1&&rt.bottom<=header.bottom+0.1,
+                            resumoAltura:r(resumo).h,gap:document.querySelector('.resumo-toggle')?r(resumo).y-r(document.querySelector('.resumo-toggle')).bottom:null,
+                            rotulo:fonte(itens[0].firstElementChild),valor:fonte(itens[0].lastElementChild),
+                            itens:itens.map(e=>({r:r(e),texto:e.querySelector('.resumo-valor').innerText,
+                                linhas:getComputedStyle(e.querySelector('.resumo-valor')).whiteSpace,coluna:getComputedStyle(e).flexDirection})),
+                            percentual:pct.textContent,fPct:fonte(pct),
+                            pctCabe:rectPct.w>0&&rectPct.h>0&&rectPct.x>=rectCard.x&&rectPct.right<=rectCard.right&&rectPct.y>=rectCard.y&&rectPct.bottom<=rectCard.bottom,
+                            semSobreposicao:rectPct.x>=nome.right,
+                            fPartido:compacto?fonte(card.querySelector('.card-partido-compacto')):null,
+                            urnaOculta:!compacto||r(card.querySelector('.card-numero-compacto')).w===0};
+                    })()`);
+                    const contexto=`publico ${site||'2026'}/${formato}/${largura}`;
+                    if(site) {
+                        assert.equal(estado.cliente,site,contexto);
+                        assert.equal(estado.marca,cadastroClientes[site].nome,contexto);
+                        assert.equal(estado.cor,cadastroClientes[site].cores.primaria,contexto);
+                        assert.equal(estado.logo,cadastroClientes[site].logo,contexto);
+                        assert(estado.nomeSemRecorte,`${contexto}: nome com acentos/descendentes sem recorte`);
+                    }
+                    assert.equal(estado.h,largura===320&&!formatosFixos.includes(formato)?mobile:desktop,contexto);
+                    const fonteRotulo=estado.compacto?8:estado.widget==='300x250'?9.5:estado.widget==='300x600'?10:
+                        ['horizontal','970x250'].includes(estado.widget)?11:12;
+                    assert.equal(estado.rotulo,fonteRotulo,`${contexto}: rotulos maiores`);
+                    assert.equal(estado.empilhado,['300x250','300x600','1260x100'].includes(formato),contexto);
+                    if(estado.empilhado) {
+                        assert.equal(estado.itens[0].texto,'119.300.788\n(95,23%)',`${contexto}: total e percentual completos`);
+                        assert(estado.itens.every(i=>i.coluna==='column'&&i.linhas==='pre-line'),`${contexto}: tres linhas`);
+                        if(['300x250','300x600'].includes(formato)) {
+                            const [a,b,c,d]=estado.itens.map(i=>i.r);
+                            assert(Math.abs(a.y-b.y)<1&&Math.abs(c.y-d.y)<1&&c.y>a.y&&b.x>a.x,`${contexto}: grade 2x2`);
+                            assert.equal(estado.gap,formato==='300x250'?5:7,`${contexto}: distancia entre botao e resumo`);
+                        }
+                    } else assert(estado.itens.every(i=>i.coluna==='row'&&!i.texto.includes('\n')),`${contexto}: outros formatos em linha`);
+                    if(estado.compacto) {
+                        assert.equal(estado.percentual,'45,16%',`${contexto}: percentual no lugar do numero de urna`);
+                        assert.equal(estado.fPct,12,contexto);assert.equal(estado.fPartido,6.5,contexto);
+                        assert(estado.pctCabe&&estado.semSobreposicao&&estado.urnaOculta,`${contexto}: percentual visivel sem cortes`);
+                    }
+                    if(fechado) await avaliar("document.querySelector('.resumo-toggle').click()");
+                    const novaMarca=site&&!['cliente-x','correio-do-estado','primeira-pagina'].includes(site);
+                    if(novaMarca?formato==='1260x200':['300x250','1260x100','320x100'].includes(formato)) {
+                        const clip=await avaliar("(() => {const r=document.querySelector('.widget-horizontal,.widget-container').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()");
+                        const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip},sessionId);
+                        fs.writeFileSync(path.join(pasta,`publico-legibilidade-${site||'2026'}-${formato}-${largura}.png`),Buffer.from(captura.data,'base64'));
+                    }
+                }
+            }
+        }
+        console.log(`Estilos publicos: dez formatos desktop/mobile, Placar das Urnas e ${Object.keys(cadastroClientes).length} perfis; logos/paletas e nomes sem recorte, percentuais/resumos/dimensoes preservados: OK.`);
         for (const [formato, [nativa, desktop, mobile]] of Object.entries(tamanhos)) {
             for (const viewport of [...new Set([nativa, 320])]) {
                 await enviar('Emulation.setDeviceMetricsOverride', { width: viewport, height: 800, deviceScaleFactor: 1, mobile: false }, sessionId);
@@ -313,7 +397,7 @@ async function main() {
                 await enviar('Emulation.setDeviceMetricsOverride', { width: largura, height: 400, deviceScaleFactor: 1, mobile: false }, sessionId);
                 await avaliar("if(document.body) document.body.dataset.testeAnterior='1'");
                 await enviar('Page.navigate', { url: `${dominio}/2026/${formato}.html` }, sessionId);
-                await aguardar(() => avaliar(`location.pathname==='/2026/${formato}' && !document.body.dataset.testeAnterior && !!document.querySelector('.estado-aguardando .estado-descricao')`), `espera ${modo} ${formato}/${largura}`);
+                await aguardar(() => avaliar(`location.pathname==='/2026/${formato}' && !!document.body && !document.body.dataset.testeAnterior && !!document.querySelector('.estado-aguardando .estado-descricao')`), `espera ${modo} ${formato}/${largura}`);
                 const visual = await avaliar(`(() => {
                     const painel = document.querySelector('.widget-horizontal').getBoundingClientRect();
                     const estado = document.querySelector('.estado-aguardando');
@@ -419,6 +503,7 @@ async function main() {
         assert(!rede.some(url => new URL(url).hostname.endsWith('.vercel.app')));
         fs.writeFileSync(path.join(pasta, 'integracao-publica.json'), JSON.stringify({ dominio,
             verificadoEm: new Date().toISOString(), respostasSimuladas2026: resultados.length,
+            identidadesPersonalizadas: Object.keys(cadastroClientes),
             origensClientesSimuladas: portaisClientes,
             erros: erros.length, consultasProibidas: bloqueadas.length, dependenciaVercel: false,
             resultadosOficiaisReaisValidados: false }, null, 2));

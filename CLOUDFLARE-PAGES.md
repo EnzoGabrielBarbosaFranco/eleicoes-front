@@ -1,5 +1,68 @@
 # Apuração no Cloudflare Pages
 
+## Novas identidades — push e deploy autorizados em 6 de outubro de 2026
+
+Escopo da entrega: dez novas marcas (A Crítica, Agência Cidades, Capital do
+Pantanal, JD1 Notícias, Pix News MS, Pulso MS, Diário do Litoral, Gazeta SP,
+Diário do Estado MS e Midiamax), seus arquivos originais de logo, correção do
+recorte vertical dos nomes e bordas específicas do Pix/Pulso preservadas.
+Correio do Estado e Primeira Página continuam no mesmo build.
+Lista de entrega: `entrega/LINKS-PERSONALIZADOS.md`, com 108 links e sem index.
+
+Destinos autorizados: Git `eleicoes-front/main` e Pages `eleicoes-front`,
+produção/main, domínio `https://apuracao.placardasurnas.com.br`.
+Build: 130 arquivos, 0,96 MiB e 25 HTMLs. O identificador do deployment desta
+entrega deve ser conferido no painel Pages, associado ao commit desta entrega.
+Os identificadores das seções abaixo são registros históricos.
+
+As verificações locais/públicas usam APIs simuladas, sem consultar TSE/KV.
+Os relatórios são gerados em `.pages-tests/`, sem envio de perfis do navegador.
+Workers, DNS, cache e licenças não fazem parte da autorização atual e não
+devem ser alterados. Os domínios dos novos portais precisam ser informados
+para futura liberação. No Diário do Estado MS, `#0067B` é inválido (cinco
+dígitos); mantêm-se somente os cinzas confirmados.
+
+## Legibilidade 2026 e personalizados — publicação autorizada em 6 de outubro de 2026
+
+Após o usuário informar que fez o push e autorizar especificamente o deploy,
+o frontend estático foi publicado no projeto `eleicoes-front`, produção/main,
+deployment `185d5e85-117e-4117-8cef-381dce29c413`, source Git `a224e92`, sem
+alterações locais pendentes no momento do upload (`--commit-dirty=false`).
+URL do deployment: `https://185d5e85.eleicoes-front.pages.dev`.
+Domínio final: `https://apuracao.placardasurnas.com.br`.
+O build tem 120 arquivos, 0,85 MiB e 25 páginas.
+
+Inclui Primeira Página com logo WebP original/degradê, identidade compacta com
+logo/nome, aviso informativo do segundo turno e os ajustes de legibilidade nas
+dez páginas 2026 e dez personalizadas: votos/partidos/rótulos maiores,
+percentuais destacados nos compactos de 90/100 px e partido menor. Resumos
+300x250/300x600 em grade 2x2, dados em três linhas também no 1260x100,
+distância de 5 px entre botão/resumo do 300x250 e alturas externas preservadas.
+No 300x250 original, Obter widget é ocultado somente enquanto o resumo está
+aberto. A espera do 1260x100 mobile cabe na área menor com texto legível.
+Marca Placar das Urnas, capas/transições e filtros foram preservados.
+
+Teste local completo: 25 páginas, 1.570 chamadas simuladas, zero erros.
+Inventário público: todos os HTMLs/recursos iguais ao build, parâmetros,
+CSP/iframe e 404 corretos. **A validação integral de cache continua falhando:**
+URLs sem hash retornam `max-age=14400`, não os 300 segundos do build.
+Recursos versionados permanecem immutable por um ano; não se relaxou o teste,
+alterou regra da zona ou fez purge. Recarga forçada pode ser necessária.
+
+Integração pública passou com 190 respostas simuladas de 2026, zero erros e
+zero consultas proibidas. Conferiu os dez formatos desktop/mobile na marca
+original e nos três perfis, fontes/percentuais/resumos/espaçamentos, Correio
+no embed com hover/arraste/retomada, espera/relógio, 150 cenários de
+capas/apuração/embed e as 12 origens licenciadas simuladas. Corrigiram-se
+somente no teste esperas por document.body e o resumo da fixture sem votos.
+Não foi necessário outro deploy. Resultados oficiais reais e SafeFrame real
+não foram validados; nenhum portal real foi consultado ou modificado.
+
+Workers, KV, snapshots, DNS, CORS, cache e licenças não foram alterados.
+Nenhum domínio novo do Correio/Primeira Página foi autorizado. Deployment
+anterior `2955eb39` preservado; retorno exige nova autorização específica.
+O agente não fez novo commit/push: testes e este registro ficaram locais.
+
 ## Personalizados, Correio e arraste — publicação autorizada em 5 de outubro de 2026
 
 Após nova autorização específica, o frontend estático foi publicado no Pages
