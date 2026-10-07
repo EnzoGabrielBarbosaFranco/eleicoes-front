@@ -4,6 +4,22 @@
     // Cadastro publico: nunca incluir tokens, senhas ou dados privados aqui.
     // A chave identifica a mesma marca em todos os dez formatos.
     const clientes = {
+        'idest': {
+            nome: 'Idest',
+            logo: '/personalizados/logos/idest.png',
+            icone: '/personalizados/logos/idest.png',
+            cores: { primaria: '#0F3E63', destaque: '#0B7AC4', clara: '#FFFFFF' },
+            // Informar/autorizar os dominios antes de distribuir o embed.
+            dominios: []
+        },
+        'campograndenews': {
+            nome: 'Campo Grande News',
+            logo: '/personalizados/logos/campograndenews.webp',
+            icone: '/personalizados/logos/campograndenews.webp',
+            cores: { primaria: '#68B817', destaque: '#FE8503', clara: '#FFFFFF' },
+            // Informar/autorizar os dominios antes de distribuir o embed.
+            dominios: []
+        },
         'midiamax': {
             nome: 'Midiamax',
             logo: '/personalizados/logos/midiamax.png',

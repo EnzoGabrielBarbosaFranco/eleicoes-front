@@ -11,6 +11,28 @@ replicadas e testadas nas copias; nao existe sincronizacao automatica.
 
 ## Conferir a estrutura
 
+Idest e Campo Grande News: push e deploy autorizados em 6 de outubro de 2026.
+Destino: Git `eleicoes-front/main` e Cloudflare Pages `eleicoes-front`,
+em `https://apuracao.placardasurnas.com.br`. Cadastro de identidade nao libera
+dominios de clientes; backend, DNS, cache e licencas ficam fora desta entrega.
+
+- `idest`: Idest, logo PNG original e degrade
+  `linear-gradient(90deg,#0f3e63,#135b8f 42%,#0b7ac4 72%,#12a8cf)`
+  no cabecalho e nas barras, com textos de destaque em azul-escuro.
+- `campograndenews`: Campo Grande News, verde `#68B817`, laranja `#FE8503`
+  nas barras e tons escuros nos textos para contraste. Usa a nova logo WebP
+  fornecida pelo usuario, sem iniciais CGN sobrepostas. Logo quadrada de
+  34x34 px, sem zoom especial; no mobile compacto segue os mesmos 20x20 px
+  das outras marcas. Imagem original inteira e proporcao preservadas.
+
+Teste local: `/personalizados/1260x200.html?site=idest` ou
+`/personalizados/1260x200.html?site=campograndenews`, trocando o formato
+para conferir os demais tamanhos. Nenhum dominio foi autorizado por esse cadastro.
+Validacao local por cliente: `node scripts/testar-pages.js --cabecalhos idest`
+e `node scripts/testar-pages.js --cabecalhos campograndenews`.
+Inclui dez formatos, desktop/mobile, resumos abertos/fechados, logo original,
+paleta/degrade, nomes sem recorte, alturas e embeds em ancestral estreito.
+
 Identidades incluidas na entrega com push e deploy autorizados em 6 de outubro de 2026:
 
 - `midiamax`: Midiamax, logo PNG fornecida, azul-escuro `#032C45`

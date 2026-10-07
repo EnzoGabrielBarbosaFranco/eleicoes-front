@@ -1,12 +1,36 @@
 # Links dos banners personalizados
 
-12 clientes, nove formatos por cliente (108 links). O `index` foi excluído a pedido.
+14 clientes, nove formatos por cliente (126 links). O `index` foi excluído a pedido.
 
 Destino: https://apuracao.placardasurnas.com.br/personalizados/
 Publicação autorizada pelo usuário; conferir o registro atual em CLOUDFLARE-PAGES.md.
 
 Os links abrem os banners diretamente. A incorporação nos portais depende da liberação dos respectivos domínios na licença e na CSP; essa liberação não foi solicitada nesta publicação.
 No Diário do Estado MS, permanece a paleta cinza confirmada: o azul informado como `#0067B` ainda precisa de confirmação.
+
+## Idest
+
+- [1260x200](https://apuracao.placardasurnas.com.br/personalizados/1260x200.html?site=idest)
+- [1260x100](https://apuracao.placardasurnas.com.br/personalizados/1260x100.html?site=idest)
+- [970x250](https://apuracao.placardasurnas.com.br/personalizados/970x250.html?site=idest)
+- [970x250x100](https://apuracao.placardasurnas.com.br/personalizados/970x250x100.html?site=idest)
+- [970x90](https://apuracao.placardasurnas.com.br/personalizados/970x90.html?site=idest)
+- [Horizontal (1200×100; mobile 250 px)](https://apuracao.placardasurnas.com.br/personalizados/horizontal.html?site=idest)
+- [320x100](https://apuracao.placardasurnas.com.br/personalizados/320x100.html?site=idest)
+- [300x250](https://apuracao.placardasurnas.com.br/personalizados/300x250.html?site=idest)
+- [300x600](https://apuracao.placardasurnas.com.br/personalizados/300x600.html?site=idest)
+
+## Campo Grande News
+
+- [1260x200](https://apuracao.placardasurnas.com.br/personalizados/1260x200.html?site=campograndenews)
+- [1260x100](https://apuracao.placardasurnas.com.br/personalizados/1260x100.html?site=campograndenews)
+- [970x250](https://apuracao.placardasurnas.com.br/personalizados/970x250.html?site=campograndenews)
+- [970x250x100](https://apuracao.placardasurnas.com.br/personalizados/970x250x100.html?site=campograndenews)
+- [970x90](https://apuracao.placardasurnas.com.br/personalizados/970x90.html?site=campograndenews)
+- [Horizontal (1200×100; mobile 250 px)](https://apuracao.placardasurnas.com.br/personalizados/horizontal.html?site=campograndenews)
+- [320x100](https://apuracao.placardasurnas.com.br/personalizados/320x100.html?site=campograndenews)
+- [300x250](https://apuracao.placardasurnas.com.br/personalizados/300x250.html?site=campograndenews)
+- [300x600](https://apuracao.placardasurnas.com.br/personalizados/300x600.html?site=campograndenews)
 
 ## A Crítica
 

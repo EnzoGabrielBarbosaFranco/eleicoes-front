@@ -152,6 +152,87 @@ body[data-cliente="primeira-pagina"] :is(.card-cand, .candidato-card) {
 }
 
 /* Novas marcas: acabamento isolado, preservando os arquivos originais das logos. */
+body.cliente-personalizado:is([data-cliente="idest"], [data-cliente="campograndenews"]) .brand-mark.cliente-logo {
+    padding: 3px;
+    border: 0 solid #fff;
+    border-radius: 9px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 15, 61, 0.16);
+}
+
+body[data-cliente="idest"].cliente-personalizado {
+    --cliente-gradiente: linear-gradient(90deg,#0f3e63,#135b8f 42%,#0b7ac4 72%,#12a8cf);
+}
+
+body[data-cliente="idest"] :is(.widget-header, .bloco-header) {
+    --cliente-cabecalho: var(--cliente-gradiente);
+    background: var(--cliente-cabecalho);
+}
+
+body[data-cliente="idest"] .header-copy :is(h1, h2) {
+    color: #fff;
+    font-weight: 750;
+}
+
+body[data-cliente="idest"].cliente-personalizado :is(.barra-total-fill, .preenchimento-total, .card-barra-fill, .barra-cand-fill) {
+    background: var(--cliente-gradiente);
+    box-shadow: none;
+}
+
+body[data-cliente="idest"].cliente-personalizado :is(.card-pct, .percentual, .card-numero-compacto, .resumo-toggle) {
+    color: #0F3E63;
+}
+
+body[data-cliente="idest"] .resumo-votos { border-color: #D7E8F3; background: #F2F8FC; }
+body[data-cliente="idest"] :is(.card-cand, .candidato-card) { border-color: #D7E8F3; }
+
+/* Verde e laranja mantidos na marca; tons escuros nos textos sobre branco/verde.
+   Variaveis locais ao painel preservam o cadastro e as demais identidades. */
+body[data-cliente="campograndenews"].cliente-personalizado :is(.widget-container, .widget-horizontal) {
+    --ink: #24460B;
+    --ink-soft: #24460B;
+    --brand-950: #24460B;
+    --brand-900: #24460B;
+    --brand-800: #24460B;
+}
+
+body[data-cliente="campograndenews"] :is(.widget-header, .bloco-header) {
+    --cliente-cabecalho: #68B817;
+    background: var(--cliente-cabecalho);
+}
+
+body[data-cliente="campograndenews"].cliente-personalizado[data-widget].identidade-2026
+:is(.widget-header, .bloco-header) .header-brand .header-copy :is(h1, h2) {
+    color: #24460B;
+    font-weight: 750;
+}
+
+body[data-cliente="campograndenews"].cliente-personalizado .aviso-turnos {
+    color: #24460B;
+    border-color: rgba(36, 70, 11, 0.3);
+    background: rgba(255, 255, 255, 0.75);
+}
+
+body[data-cliente="campograndenews"].cliente-personalizado :is(.barra-total-fill, .preenchimento-total, .card-barra-fill, .barra-cand-fill) {
+    background: #FE8503;
+    box-shadow: none;
+}
+
+body[data-cliente="campograndenews"].cliente-personalizado :is(.card-pct, .percentual, .card-numero-compacto, .resumo-toggle, .estado-icone) {
+    color: #24460B;
+}
+
+body[data-cliente="campograndenews"] .resumo-votos { border-color: #DCEBCF; background: #F6FAF1; }
+body[data-cliente="campograndenews"] :is(.card-cand, .candidato-card) { border-color: #DCEBCF; }
+
+/* Mesmo modelo das outras marcas: logo quadrada, sem zoom nem iniciais.
+   O mobile compacto usa as dimensoes compartilhadas com todos os clientes. */
+body[data-cliente="campograndenews"].cliente-personalizado .brand-mark.cliente-logo {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+}
+
 body.cliente-personalizado:is([data-cliente="acritica"], [data-cliente="agenciacidades"], [data-cliente="capitaldopantanal"], [data-cliente="jd1noticias"], [data-cliente="pixnewsms"], [data-cliente="pulsoms"], [data-cliente="diariodolitoral"], [data-cliente="gazetasp"], [data-cliente="diariodoestadoms"], [data-cliente="midiamax"]) .brand-mark.cliente-logo {
     padding: 3px;
     border: 0px solid #fff;
@@ -231,9 +312,9 @@ body[data-cliente="capitaldopantanal"] :is(.card-cand, .candidato-card) { border
 
 /* Nome mais longo: evitar que o aviso abra outra linha no 300x250 e
    retire espaco da foto dos candidatos quando o resumo estiver aberto. */
-body:is([data-cliente="capitaldopantanal"], [data-cliente="diariodoestadoms"])[data-widget="300x250"] .header-copy { column-gap: 4px; }
-body:is([data-cliente="capitaldopantanal"], [data-cliente="diariodoestadoms"])[data-widget="300x250"] .aviso-turnos { font-size: 8px; }
-body[data-cliente="diariodoestadoms"][data-widget="300x250"] .header-copy h2 { font-size: 13.5px; }
+body:is([data-cliente="capitaldopantanal"], [data-cliente="diariodoestadoms"], [data-cliente="campograndenews"])[data-widget="300x250"] .header-copy { column-gap: 4px; }
+body:is([data-cliente="capitaldopantanal"], [data-cliente="diariodoestadoms"], [data-cliente="campograndenews"])[data-widget="300x250"] .aviso-turnos { font-size: 8px; }
+body:is([data-cliente="diariodoestadoms"], [data-cliente="campograndenews"])[data-widget="300x250"] .header-copy h2 { font-size: 13.5px; }
 
 /* Identidades de fundo solido: barras de destaque e textos escuros sobre branco. */
 body.cliente-personalizado:is([data-cliente="jd1noticias"], [data-cliente="pixnewsms"], [data-cliente="pulsoms"], [data-cliente="diariodolitoral"], [data-cliente="gazetasp"], [data-cliente="diariodoestadoms"], [data-cliente="midiamax"]) :is(.widget-header, .bloco-header) {

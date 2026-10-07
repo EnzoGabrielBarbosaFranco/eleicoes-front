@@ -1,5 +1,18 @@
 # Apuração no Cloudflare Pages
 
+## Idest e Campo Grande News — push e deploy autorizados em 6 de outubro de 2026
+
+Entrega estática no Git `eleicoes-front/main` e Pages `eleicoes-front`, produção/main,
+em `https://apuracao.placardasurnas.com.br`: duas identidades, logos originais,
+degradê azul do Idest, verde/laranja do Campo Grande News e logo quadrada de
+34×34 px sem CGN/zoom (compactos mobile: 20×20 px compartilhados).
+Build: 132 arquivos, 1,00 MiB e 25 HTMLs. Relatórios locais em `.pages-tests/`;
+testes de navegador usam APIs simuladas, sem consultas reais ao TSE/KV.
+O deployment desta entrega deve ser conferido no painel Pages pelo commit.
+Workers, DNS, cache e licenças permanecem fora do escopo da publicação.
+Lista de entrega atualizada para 14 clientes/126 links, sem index.
+Os deployments nas seções abaixo são registros históricos.
+
 ## Novas identidades — push e deploy autorizados em 6 de outubro de 2026
 
 Escopo da entrega: dez novas marcas (A Crítica, Agência Cidades, Capital do

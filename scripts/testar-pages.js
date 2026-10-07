@@ -12,6 +12,8 @@ const { gerar, paginas, paginasPersonalizadas, formatos2022, formatos2026 } = re
 const { gerarCodigos } = require('./gerar-entrega-cliente');
 const cadastroClientes = require('../personalizados/clientes');
 const novasIdentidades = {
+    idest: { gradiente: 'linear-gradient(90deg, rgb(15, 62, 99), rgb(19, 91, 143) 42%, rgb(11, 122, 196) 72%, rgb(18, 168, 207))', texto: 'rgb(15, 62, 99)' },
+    campograndenews: { fundo: 'rgb(104, 184, 23)', texto: 'rgb(36, 70, 11)', barra: 'rgb(254, 133, 3)', fundoLogo: 'rgb(255, 255, 255)' },
     midiamax: { fundo: 'rgb(3, 44, 69)', texto: 'rgb(3, 44, 69)', barra: 'rgb(3, 44, 69)', fundoLogo: 'rgb(255, 255, 255)' },
     diariodolitoral: { fundo: 'rgb(0, 43, 142)', texto: 'rgb(0, 43, 142)', barra: 'rgb(0, 147, 231)', fundoLogo: 'rgb(255, 255, 255)' },
     gazetasp: { fundo: 'rgb(0, 147, 231)', texto: 'rgb(0, 147, 231)', barra: 'rgb(0, 147, 231)', fundoLogo: 'rgb(255, 255, 255)' },
@@ -449,6 +451,13 @@ async function testarNavegador(build) {
                                 corBarra:getComputedStyle(document.getElementById('barra-percurso')).backgroundColor,
                                 barras:[...document.querySelectorAll('.card-barra-fill,.barra-cand-fill')].map(e=>getComputedStyle(e).backgroundColor),
                                 fundoLogo:getComputedStyle(logo.parentElement).backgroundColor,
+                                selo:getComputedStyle(logo.parentElement,'::after').content,
+                                ajusteLogo:getComputedStyle(logo).objectFit,
+                                tamanhoLogo:{largura:getComputedStyle(logo.parentElement).width,altura:getComputedStyle(logo.parentElement).height},
+                                logoCompacta:document.body.classList.contains('cliente-mobile-compacto'),
+                                zoomLogo:getComputedStyle(logo).transform,
+                                corNome:getComputedStyle(nome).color,
+                                corAviso:getComputedStyle(document.querySelector('.aviso-turnos')).color,
                                 bordaLogo:{largura:getComputedStyle(logo.parentElement).borderTopWidth,
                                     estilo:getComputedStyle(logo.parentElement).borderTopStyle,
                                     cor:getComputedStyle(logo.parentElement).borderTopColor},
@@ -460,6 +469,15 @@ async function testarNavegador(build) {
                         assert.equal(identidade.icone,configuracao.icone,contexto);
                         assert(identidade.imagem>0,`${contexto}: logo original carregada, sem iniciais de fallback`);
                         assert.deepEqual(identidade.cores,['primaria','destaque','clara'].map(c=>configuracao.cores[c]),contexto);
+                        if (cliente==='campograndenews') {
+                            assert.equal(identidade.selo,'none',`${contexto}: logo sem iniciais ou sobreposicoes`);
+                            assert.equal(identidade.ajusteLogo,'contain',`${contexto}: imagem sem distorcao`);
+                            const lado=identidade.logoCompacta?'20px':'34px';
+                            assert.deepEqual(identidade.tamanhoLogo,{largura:lado,altura:lado},`${contexto}: logo quadrada no padrao dos demais clientes`);
+                            assert.equal(identidade.zoomLogo,'none',`${contexto}: imagem inteira sem zoom especial`);
+                            assert.equal(identidade.corNome,'rgb(36, 70, 11)',`${contexto}: contraste do nome sobre verde`);
+                            assert.equal(identidade.corAviso,'rgb(36, 70, 11)',`${contexto}: contraste do aviso dos turnos`);
+                        }
                         if (['pixnewsms','pulsoms'].includes(cliente)) {
                             assert.deepEqual(identidade.bordaLogo,{largura:'1px',estilo:'solid',cor:esperado.barra},
                                 `${contexto}: borda colorida independente da borda geral zerada`);
@@ -511,7 +529,7 @@ async function testarNavegador(build) {
                             else {
                                 assert.equal(estado.deslocamento,'1px',`${contexto}: alinhamento optico`);
                                 assert.equal(estado.alinhamento,'center',contexto);
-                                if (formato==='1260x200') assert(estado.mesmaLinha,`${contexto}: aviso ao lado e centralizado com o nome`);
+                                if (formato==='1260x200') assert(estado.mesmaLinha,`${contexto}: aviso ao lado e centralizado com o nome: ${JSON.stringify(estado)}`);
                             }
                             const fixo=['320x100','300x250','300x600'].includes(formato);
                             const alturaMobile=['1260x200','1260x100','970x250x100'].includes(formato)?100
