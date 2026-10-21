@@ -227,11 +227,79 @@
             anoExibido: ANO_ELEICAO,
             quantidadeVisivel: loteDeputados,
             ultimaApuracao: null,
+            previaSegundoTurno: false,
+            historicoPrimeiroTurno: false,
+            filtroAtual: null,
             ultimaConsultaApuracao: 0,
             ultimaConsultaStatus: 0,
             pausado: false,
             iniciarAutoScrollEm: Date.now() + 1600
         };
+        // Contexto historico finalizado, separado da apuracao corrente e sem
+        // persistencia: no maximo uma consulta bem-sucedida por cargo/UF/visita.
+        const contextosPrimeiroTurno = new Map();
+
+        const botaoTurno = document.createElement('button');
+        // A UF abreviada deixa os tres controles legiveis tambem nos 300 px.
+        selectUf.querySelector('option[value="br"]').textContent = 'BR';
+        botaoTurno.type = 'button';
+        botaoTurno.className = 'botao-historico-turno';
+        botaoTurno.hidden = true;
+        selectCargo.parentElement.append(botaoTurno);
+        const preparacao = document.createElement('section');
+        preparacao.className = 'preparacao-segundo';
+        preparacao.setAttribute('aria-label', 'Preparação para o segundo turno');
+        preparacao.innerHTML = '<div class="conteudo-preparacao"><span class="preparacao-calendario" aria-hidden="true">25<span>OUT</span></span>'
+            + '<div class="preparacao-texto"><strong>Decisão no 2º turno · 25/10</strong>'
+            + '<span class="preparacao-disputa"></span></div>'
+            + '<span class="preparacao-prazo"></span></div>'
+            + '<div class="apuracao-segundo"><div class="apuracao-segundo-topo">'
+            + '<span class="urnas-legenda"><span class="status-label"><span class="status-dot" aria-hidden="true"></span>Urnas apuradas</span><span class="urnas-percentual">--</span></span>'
+            + '<div class="urnas-barra" role="progressbar" aria-label="Urnas apuradas no segundo turno" aria-valuemin="0" aria-valuemax="100"><span></span></div>'
+            + '<span class="fonte-segundo"></span></div>'
+            + '<div class="resumo-segundo">'
+            + [['validos','Válidos'],['brancos','Brancos'],['nulos','Nulos'],['abstencoes','Abstenções']].map(([campo, rotulo]) =>
+                `<div class="resumo-segundo-item" data-campo="${campo}"><span>${rotulo}</span><strong class="resumo-valor"><span class="resumo-segundo-total">--</span><span class="resumo-segundo-percentual">--</span></strong></div>`).join('')
+            + '</div></div>';
+        // Mesmas classes de apresentacao do 1º turno: gradientes e ajustes de
+        // cada cliente/formato passam a valer aqui sem uma segunda paleta.
+        preparacao.querySelector('.urnas-legenda').classList.add(...textoPercurso.parentElement.classList);
+        preparacao.querySelector('.urnas-barra').classList.add(...barraProgresso.classList);
+        preparacao.querySelector('.urnas-barra > span').classList.add(...barraPercurso.classList);
+        const cabecalho = raizWidget.querySelector('.bloco-header, .widget-header');
+        cabecalho.after(preparacao);
+        function ajustarFaixaSegundo() {
+            preparacao.classList.toggle('faixa-estreita', document.body.dataset.widget.startsWith('300x')
+                || window.matchMedia(consultaMobile).matches || formato320x100);
+            preparacao.classList.toggle('faixa-coluna', tipo === 'horizontal'
+                && window.matchMedia(consultaDesktop).matches && !formato320x100);
+        }
+        ajustarFaixaSegundo();
+
+        function atualizarPreparacao() {
+            if (raizWidget.classList.contains('segundo-turno-com-resultados')) {
+                preparacao.title = ultimaAtualizacao.title || 'Apuração do segundo turno';
+                return;
+            }
+            preparacao.setAttribute('aria-label', 'Preparação para o segundo turno');
+            // Contagem para a data da eleição, nunca uma simulação de apuração.
+            const faltam = Math.ceil((Date.parse('2026-10-25T00:00:00-03:00') - Date.now()) / 86400000);
+            preparacao.querySelector('.preparacao-prazo').textContent = faltam > 0
+                ? `Falta${faltam === 1 ? '' : 'm'} ${faltam} dia${faltam === 1 ? '' : 's'}` : 'Aguardando TSE';
+            const cargo = selectCargo.value === '3' ? 'Governador' : 'Presidente';
+            const local = selectUf.value === 'br' ? 'Brasil' : selectUf.value.toUpperCase();
+            preparacao.querySelector('.preparacao-texto strong').textContent = raizWidget.classList.contains('sem-disputa-segundo-turno')
+                ? '2º turno · 25/10' : 'Decisão no 2º turno · 25/10';
+            preparacao.querySelector('.preparacao-disputa').textContent = `${cargo} · ${local} · Fonte: TSE`;
+            preparacao.title = 'A votação do segundo turno acontece em 25/10. Os resultados aparecerão quando o TSE publicar.';
+        }
+
+        botaoTurno.addEventListener('click', () => {
+            estado.historicoPrimeiroTurno = !estado.historicoPrimeiroTurno;
+            sincronizarTurno();
+            salvarFiltros();
+            consultarStatusEleicao();
+        });
 
         function removerAvisoDados() {
             avisoDados.hidden = true;
@@ -273,6 +341,56 @@
             if (raizWidget) raizWidget.classList.toggle('is-loading', carregando);
         }
 
+        function limparContextoSeMudou() {
+            const chave = [selectTurno.value, selectCargo.value, selectUf.value].join(':');
+            if (estado.filtroAtual === chave) return;
+            estado.filtroAtual = chave;
+            estado.ultimaConsultaApuracao++;
+            estado.ultimaConsultaStatus++;
+            estado.ultimaApuracao = null;
+            estado.previaSegundoTurno = false;
+            raizWidget.classList.remove('previa-segundo-turno', 'disputa-segundo-turno', 'duelo-segundo-turno', 'segundo-turno-com-resultados', 'sem-disputa-segundo-turno');
+            estado.resultadosDisponiveis = false;
+            estado.quantidadeVisivel = loteDeputados;
+            lista.scrollLeft = 0;
+            limparProgresso();
+            removerAvisoDados();
+            mostrarAguardando();
+        }
+
+        function sincronizarTurno() {
+            const turnoCalendario = window.AvisoTurnos2026.turnoAtual();
+            const turno = estado.historicoPrimeiroTurno && turnoCalendario === '2' ? '1' : turnoCalendario;
+            const mudou = selectTurno.value !== turno;
+            selectTurno.value = turno;
+            raizWidget.dataset.turno = turno;
+            botaoTurno.hidden = turnoCalendario !== '2';
+            botaoTurno.parentElement.classList.toggle('controles-com-historico', !botaoTurno.hidden);
+            const historico = turno === '1';
+            botaoTurno.innerHTML = `<span class="turno-botao-amplo">${historico ? 'Voltar ao 2º turno' : 'Ver 1º turno'}</span>`
+                + `<span class="turno-botao-curto">${historico ? '2º' : '1º'}<span> turno</span></span>`;
+            botaoTurno.title = historico ? 'Voltar ao segundo turno' : 'Ver resultados do primeiro turno';
+            botaoTurno.setAttribute('aria-label', botaoTurno.title);
+            botaoTurno.setAttribute('aria-pressed', String(estado.historicoPrimeiroTurno));
+            const aviso = raizWidget.querySelector('.aviso-turnos');
+            if (aviso && turnoCalendario === '2') {
+                aviso.textContent = historico ? 'Resultados · 1º turno' : '2º turno · 25/10';
+                aviso.title = historico ? 'Resultados do primeiro turno. Use o botão para voltar ao segundo turno.'
+                        : 'Segundo turno em 25 de outubro. Resultados publicados pelo TSE.';
+                aviso.setAttribute('aria-label', aviso.title);
+            }
+            atualizarPreparacao();
+            for (const opcao of selectCargo.options) {
+                const indisponivel = turno === '2' && !['1', '3'].includes(opcao.value);
+                opcao.hidden = indisponivel;
+                opcao.disabled = indisponivel;
+            }
+            if (selectCargo.selectedOptions[0]?.disabled) selectCargo.value = '1';
+            ajustarUfAoCargo();
+            if (mudou) limparContextoSeMudou();
+            return mudou;
+        }
+
         function salvarFiltros() {
             filtrosCliente.setItem(`personalizados:${cliente.site}:filtro2026Turno`, selectTurno.value);
             filtrosCliente.setItem(`personalizados:${cliente.site}:filtro2026Cargo`, selectCargo.value);
@@ -294,8 +412,8 @@
             const cargoSalvo = filtrosCliente.getItem(`personalizados:${cliente.site}:filtro2026Cargo`);
             const ufSalva = filtrosCliente.getItem(`personalizados:${cliente.site}:filtro2026Uf`);
 
-            selectTurno.value = '1';
-            filtrosCliente.setItem(`personalizados:${cliente.site}:filtro2026Turno`, '1');
+            selectTurno.value = window.AvisoTurnos2026.turnoAtual();
+            filtrosCliente.setItem(`personalizados:${cliente.site}:filtro2026Turno`, selectTurno.value);
             if (cargoSalvo) selectCargo.value = cargoSalvo;
             if (ufSalva) selectUf.value = ufSalva;
             ajustarUfAoCargo();
@@ -303,7 +421,7 @@
 
         function atualizarResumo(resumo) {
             const resumoCompactoMobile = formato320x100
-                || (window.matchMedia(consultaMobile).matches && (formato970x90 || formatoCompacto100));
+                || (window.matchMedia(consultaMobile).matches && (formato970x90 || formatoCompacto100 || tipo === '970x250'));
             const valorResumo = (total, percentual) => document.body.classList.contains('resumo-empilhado')
                 ? `${total || '--'}\n(${percentual || '0,00'}%)`
                 : resumoCompactoMobile ? `${percentual || '0,00'}%`
@@ -319,12 +437,20 @@
                 const elemento = document.getElementById(id);
                 if (elemento) elemento.innerText = valor;
             });
+            for (const [campo, percentual] of [['validos','pctValidos'],['brancos','pctBrancos'],['nulos','pctNulos'],['abstencoes','pctAbstencoes']]) {
+                const item = preparacao.querySelector(`[data-campo="${campo}"]`);
+                item.querySelector('.resumo-segundo-total').textContent = resumo ? `${resumo[campo] || '--'} ` : '';
+                item.querySelector('.resumo-segundo-percentual').textContent = resumo ? `${resumo[percentual] || '0,00'}%` : '--';
+            }
         }
 
         function limparProgresso() {
             ultimaAtualizacao.removeAttribute('title');
             ultimaAtualizacao.removeAttribute('aria-label');
             textoPercurso.innerText = '0%';
+            preparacao.querySelector('.urnas-percentual').textContent = '--';
+            preparacao.querySelector('.urnas-barra > span').style.width = '0%';
+            preparacao.querySelector('.urnas-barra').removeAttribute('aria-valuenow');
             barraPercurso.style.width = '0%';
             if (barraProgresso) barraProgresso.setAttribute('aria-valuenow', '0');
             atualizarResumo(null);
@@ -337,8 +463,9 @@
 
             limparProgresso();
             removerAvisoDados();
-            ultimaAtualizacao.innerText = 'Aguardando resultados de 2026';
-            lista.innerHTML = criarEstadoAguardando(MENSAGEM_AGUARDANDO);
+            const segundo = selectTurno.value === '2';
+            ultimaAtualizacao.innerText = segundo ? 'Aguardando resultados do 2º turno' : 'Aguardando resultados de 2026';
+            lista.innerHTML = criarEstadoAguardando(segundo ? 'Aguardando os resultados do segundo turno' : MENSAGEM_AGUARDANDO);
         }
 
         function criarEstadoAguardando(titulo) {
@@ -381,8 +508,9 @@
             definirCarregando(false);
             atualizarAvisoDados(data || {});
             limparProgresso();
-            ultimaAtualizacao.innerText = 'Aguardando os primeiros resultados';
-            lista.innerHTML = criarEstadoAguardando(MENSAGEM_INICIO_APURACAO);
+            const segundo = selectTurno.value === '2';
+            ultimaAtualizacao.innerText = segundo ? 'Aguardando resultados do 2º turno' : 'Aguardando os primeiros resultados';
+            lista.innerHTML = criarEstadoAguardando(segundo ? 'Aguardando os resultados do segundo turno' : MENSAGEM_INICIO_APURACAO);
         }
 
         function preservarUltimaRespostaOuMostrarIndisponivel() {
@@ -405,6 +533,8 @@
         }
 
         function atualizarStatus(data) {
+            raizWidget.classList.remove('sem-disputa-segundo-turno');
+            raizWidget.classList.toggle('segundo-turno-com-resultados', selectTurno.value === '2');
             const percurso = String(data.percurso || '0,00');
             const percentualApurado = percentualNumerico(percurso);
             textoPercurso.innerText = `${percurso.endsWith(',00') ? percurso.slice(0, -3) : percurso}%`;
@@ -413,9 +543,21 @@
 
             atualizarFonteDados(data);
             atualizarResumo(data.resumo || {});
+            preparacao.querySelector('.urnas-percentual').textContent = textoPercurso.textContent;
+            preparacao.querySelector('.urnas-barra > span').style.width = `${percentualApurado}%`;
+            preparacao.querySelector('.urnas-barra').setAttribute('aria-valuenow', String(percentualApurado));
+            preparacao.setAttribute('aria-label', 'Apuração do segundo turno');
+            atualizarPreparacao();
         }
 
         function atualizarFonteDados(data) {
+            const fonte = preparacao.querySelector('.fonte-segundo');
+            if (estado.previaSegundoTurno) {
+                ultimaAtualizacao.innerText = 'Fonte: TSE · Candidatos do 2º turno';
+                ultimaAtualizacao.title = `Lista oficial do segundo turno. Atualização do TSE: ${data.atualizacao || 'não informada'}. Aguardando a apuração de 25/10/2026.`;
+                ultimaAtualizacao.setAttribute('aria-label', ultimaAtualizacao.title);
+                return;
+            }
             const diaAtual = formatadorDiaAtual.format(new Date());
             const horarioAtualizacao = extrairHorario(data.atualizacao);
             ultimaAtualizacao.innerText = `Fonte: TSE · ${diaAtual} · ${horarioAtualizacao || '--:--'}`;
@@ -424,6 +566,8 @@
                 + `Última atualização dos dados do TSE: ${data.atualizacao || 'horário não informado'}.`;
             ultimaAtualizacao.title = descricao;
             ultimaAtualizacao.setAttribute('aria-label', descricao);
+            fonte.textContent = ultimaAtualizacao.textContent;
+            fonte.title = descricao;
         }
 
         function criarBadgeSituacao(candidato) {
@@ -522,7 +666,11 @@
 
         function renderizarCandidatos(data) {
             const cargo = selectCargo.value;
-            const candidatos = Array.isArray(data.candidatos) ? data.candidatos : [];
+            const segundoTurno = selectTurno.value === '2';
+            const candidatos = Array.isArray(data.candidatos) ? [...data.candidatos] : [];
+            if (segundoTurno) candidatos.sort((a,b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+            raizWidget.classList.toggle('disputa-segundo-turno', segundoTurno && candidatos.length > 0);
+            raizWidget.classList.toggle('duelo-segundo-turno', segundoTurno && candidatos.length === 2);
             const cargoDeputado = cargo === '6' || cargo === '7';
             const candidatosVisiveis = cargoDeputado
                 ? candidatos.slice(0, estado.quantidadeVisivel)
@@ -534,7 +682,9 @@
             if (candidatosVisiveis.length === 0) {
                 conteudo += '<div class="estado-eleicao"><strong>Nenhum candidato disponível para esta consulta.</strong></div>';
             } else {
-                conteudo += candidatosVisiveis.map(criarCard).join('');
+                const separador = segundoTurno && candidatosVisiveis.length === 2
+                    ? '<span class="separador-disputa" aria-hidden="true">VS</span>' : '';
+                conteudo += candidatosVisiveis.map(criarCard).join(separador);
             }
 
             if (cargoDeputado && candidatosVisiveis.length < candidatos.length) {
@@ -543,6 +693,24 @@
             }
 
             lista.innerHTML = conteudo;
+            if (segundoTurno) {
+                [...lista.querySelectorAll('.card-cand,.candidato-card')].forEach((card, indice) => {
+                    const candidato = candidatosVisiveis[indice];
+                    if (estado.previaSegundoTurno) card.setAttribute('aria-label', `${candidato.nome}, número ${candidato.numero || 'não informado'}, ${candidato.partido || 'partido não informado'}, candidato ao segundo turno`);
+                    const detalhes = card.querySelector('.card-votos');
+                    if (detalhes) detalhes.textContent = `Nº ${candidato.numero || '--'} · ${candidato.partido || '--'}`;
+                    const selo = document.createElement('span');
+                    selo.className = 'selo-disputa';
+                    selo.textContent = estado.previaSegundoTurno ? 'Na disputa do 2º turno'
+                        : candidato.eleito ? 'Eleito no 2º turno' : data.finalizado ? 'Apuração finalizada' : 'Apuração do 2º turno';
+                    (card.querySelector('.info-cand,.info-textos') || card).append(selo);
+                    if (!estado.previaSegundoTurno) {
+                        const resultado = criarResultadoTurno(candidato, '2', data.atualizacao);
+                        if (resultado) card.append(resultado);
+                    }
+                });
+                if (estado.previaSegundoTurno) preencherContextoPrimeiroTurno();
+            }
             lista.scrollLeft = posicaoScroll;
             definirCarregando(false);
             if (layoutHorizontal) estado.iniciarAutoScrollEm = Date.now() + 1600;
@@ -556,8 +724,105 @@
             }
         }
 
+        function identidadeCandidato(candidato) {
+            const nome = String(candidato.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+            return candidato.numero && nome ? `${candidato.numero}:${nome}` : null;
+        }
+
+        function criarResultadoTurno(candidato, turno, atualizacao) {
+            const percentual = Number.parseFloat(String(candidato.votos).replace(',', '.'));
+            const total = Number(candidato.votosNumero);
+            if (!Number.isFinite(percentual) || percentual < 0 || percentual > 100 || !Number.isFinite(total) || total < 0) return null;
+            const resultado = document.createElement('div');
+            resultado.className = `resultado-turno resultado-${turno === '1' ? 'primeiro' : 'segundo'}-turno`;
+            const fonte = 'Fonte: TSE';
+            resultado.title = `${turno}º turno. ${fonte}. Atualização: ${atualizacao || 'não informada'}.`;
+            resultado.setAttribute('aria-label', `${turno === '1' ? 'Primeiro' : 'Segundo'} turno: ${formatarPercentual(candidato.votos)}% e ${total.toLocaleString('pt-BR')} votos. ${fonte}.`);
+            resultado.innerHTML = `<span class="historico-rotulo">${turno}º turno</span>`
+                + `<strong class="historico-pct">${escaparHtml(formatarPercentual(candidato.votos))}%</strong>`
+                + `<span class="historico-total">${escaparHtml(total.toLocaleString('pt-BR'))} votos</span>`
+                + '<span class="historico-medidor" aria-hidden="true"><span></span></span>';
+            resultado.querySelector('.historico-medidor > span').style.width = `${percentual}%`;
+            return resultado;
+        }
+
+        async function preencherContextoPrimeiroTurno() {
+            const previa = estado.ultimaApuracao;
+            const contexto = estado.filtroAtual;
+            const cargo = selectCargo.value;
+            const uf = selectUf.value;
+            const chave = `${cargo}:${uf}`;
+            if (!contextosPrimeiroTurno.has(chave)) {
+                const consulta = requisitarJson(`/api/apuracao?ano=${ANO_ELEICAO}&turno=1&cargo=${cargo}&uf=${uf}`)
+                    .then(({ response, data }) => {
+                        // Nunca preencher o resumo, a barra ou os votos atuais
+                        // com este retorno; aceitar apenas o historico encerrado.
+                        if (!response.ok || data.erro || Number(data.ano) !== ANO_ELEICAO
+                            || Number(data.turno) !== 1 || Number(data.cargo) !== Number(cargo)
+                            || String(data.uf).toLowerCase() !== uf || data.finalizado !== true
+                            || ['historico', 'simulado', 'aguardando_tse'].includes(String(data.fase).toLowerCase())
+                            || !Array.isArray(data.candidatos)) return null;
+                        return data;
+                    }).catch(() => null);
+                contextosPrimeiroTurno.set(chave, consulta);
+            }
+            const consulta = contextosPrimeiroTurno.get(chave);
+            const historico = await consulta;
+            if (!historico && contextosPrimeiroTurno.get(chave) === consulta) contextosPrimeiroTurno.delete(chave);
+            if (!historico || !estado.previaSegundoTurno || estado.filtroAtual !== contexto
+                || estado.ultimaApuracao !== previa) return;
+            const porIdentidade = new Map(historico.candidatos.map(c => [identidadeCandidato(c), c]));
+            [...lista.querySelectorAll('.card-cand,.candidato-card')].forEach((card, indice) => {
+                const identidade = identidadeCandidato(previa.candidatos[indice]);
+                const candidato = identidade && porIdentidade.get(identidade);
+                if (!candidato || card.querySelector('.resultado-primeiro-turno')) return;
+                const resultado = criarResultadoTurno(candidato, '1', historico.atualizacao);
+                if (!resultado) return;
+                card.append(resultado);
+                card.classList.add('com-contexto-primeiro');
+            });
+        }
+
+        function mostrarSemDisputaSegundoTurno() {
+            estado.ultimaApuracao = null;
+            estado.previaSegundoTurno = false;
+            estado.resultadosDisponiveis = false;
+            raizWidget.classList.remove('previa-segundo-turno', 'disputa-segundo-turno', 'duelo-segundo-turno', 'segundo-turno-com-resultados');
+            raizWidget.classList.add('sem-disputa-segundo-turno');
+            atualizarPreparacao();
+            limparProgresso();
+            removerAvisoDados();
+            definirCarregando(false);
+            ultimaAtualizacao.innerText = 'Fonte: TSE · Sem disputa de 2º turno nesta UF';
+            lista.innerHTML = criarEstadoAguardando(`Não há segundo turno para Governador em ${selectUf.value.toUpperCase()}`);
+            lista.querySelector('.estado-descricao').textContent = 'Selecione outra UF ou Presidente, ou consulte o 1º turno no botão acima.';
+        }
+
+        function mostrarCandidatosSegundoTurno(data) {
+            // Apuracao corrente apenas do arquivo turno=2: nunca antecipar
+            // votos antes de 25/10. O contexto do primeiro turno e separado.
+            const previa = { ...data, finalizado: false, percurso: '0,00', resumo: null,
+                candidatos: data.candidatos.map(c => ({ ...c, votos: '0,00', votosNumero: 0, total: '0', eleito: false }))
+                    .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR')) };
+            estado.previaSegundoTurno = true;
+            estado.ultimaApuracao = previa;
+            estado.resultadosDisponiveis = true;
+            raizWidget.classList.add('previa-segundo-turno');
+            raizWidget.classList.remove('segundo-turno-com-resultados', 'sem-disputa-segundo-turno');
+            atualizarPreparacao();
+            limparProgresso();
+            textoPercurso.innerText = '--';
+            barraProgresso.removeAttribute('aria-valuenow');
+            atualizarAvisoDados(previa);
+            atualizarFonteDados(previa);
+            renderizarCandidatos(previa);
+        }
+
         async function atualizarApuracao() {
+            sincronizarTurno();
             ajustarUfAoCargo();
+            limparContextoSeMudou();
             const turno = selectTurno.value;
             const cargo = selectCargo.value;
             const uf = selectUf.value;
@@ -571,9 +836,16 @@
             try {
                 const caminho = `/api/apuracao?ano=${ANO_ELEICAO}&turno=${turno}&cargo=${cargo}&uf=${uf}`;
                 const { response, data } = await requisitarJson(caminho);
+                if (sincronizarTurno()) { consultarStatusEleicao(); return; }
                 if (numeroConsulta !== estado.ultimaConsultaApuracao) return;
 
-                if ((response.status === 503 && data.codigo === CODIGO_AGUARDANDO_TSE) || data.fase === 'aguardando_tse') {
+                if (turno === '2' && data.codigo === 'SEM_DISPUTA_SEGUNDO_TURNO') {
+                    mostrarSemDisputaSegundoTurno();
+                    return;
+                }
+
+                if ((response.status === 503 && data.codigo === CODIGO_AGUARDANDO_TSE)
+                    || (turno === '2' && response.status === 404) || data.fase === 'aguardando_tse') {
                     mostrarAguardando();
                     return;
                 }
@@ -584,8 +856,16 @@
                 }
 
                 const anoResposta = Number(data.ano);
-                if (anoResposta !== ANO_ELEICAO || String(data.fase || '').toLowerCase() === 'historico') {
+                if (anoResposta !== ANO_ELEICAO || Number(data.turno) !== Number(turno)
+                    || Number(data.cargo) !== Number(cargo) || String(data.uf).toLowerCase() !== uf
+                    || String(data.fase || '').toLowerCase() === 'historico') {
                     preservarUltimaRespostaOuMostrarIndisponivel();
+                    return;
+                }
+
+                if (turno === '2' && Array.isArray(data.candidatos) && data.candidatos.length > 0
+                    && (!window.AvisoTurnos2026.resultadosLiberados() || (!data.finalizado && !possuiVotosComputados(data)))) {
+                    mostrarCandidatosSegundoTurno(data);
                     return;
                 }
 
@@ -596,17 +876,25 @@
 
                 estado.resultadosDisponiveis = true;
                 estado.ultimaApuracao = data;
+                estado.previaSegundoTurno = false;
+                raizWidget.classList.remove('previa-segundo-turno');
                 atualizarAvisoDados(data);
                 atualizarStatus(data);
                 renderizarCandidatos(data);
             } catch (error) {
                 if (numeroConsulta !== estado.ultimaConsultaApuracao) return;
+                if (sincronizarTurno()) { consultarStatusEleicao(); return; }
                 console.warn(`Não foi possível atualizar a base eleitoral de ${ANO_ELEICAO}.`, error);
                 preservarUltimaRespostaOuMostrarIndisponivel();
             }
         }
 
         async function consultarStatusEleicao() {
+            sincronizarTurno();
+            limparContextoSeMudou();
+            // O status geral pode conter so o primeiro turno. Consultar a
+            // selecao do segundo diretamente, usando seu cache independente.
+            if (selectTurno.value === '2' || estado.historicoPrimeiroTurno) return atualizarApuracao();
             const numeroConsulta = ++estado.ultimaConsultaStatus;
             const aindaSemDados = !estado.ultimaApuracao;
             if (aindaSemDados) {
@@ -616,6 +904,7 @@
 
             try {
                 const { response, data } = await requisitarJson(`/api/status-eleicao?ano=${ANO_ELEICAO}`);
+                if (sincronizarTurno()) { consultarStatusEleicao(); return; }
                 if (numeroConsulta !== estado.ultimaConsultaStatus) return;
 
                 const anoResposta = Number(data.ano);
@@ -634,22 +923,24 @@
                 await atualizarApuracao();
             } catch (error) {
                 if (numeroConsulta !== estado.ultimaConsultaStatus) return;
+                if (sincronizarTurno()) { consultarStatusEleicao(); return; }
                 console.warn('Não foi possível consultar o status da eleição de 2026.', error);
                 preservarUltimaRespostaOuMostrarIndisponivel();
             }
         }
 
         function aoAlterarFiltro() {
+            sincronizarTurno();
             ajustarUfAoCargo();
             salvarFiltros();
-            estado.quantidadeVisivel = loteDeputados;
-            if (estado.resultadosDisponiveis) atualizarApuracao();
-            else consultarStatusEleicao();
+            limparContextoSeMudou();
+            consultarStatusEleicao();
         }
 
         [selectTurno, selectCargo, selectUf].forEach((select) => select.addEventListener('change', aoAlterarFiltro));
 
         window.matchMedia(consultaMobile).addEventListener('change', () => {
+            ajustarFaixaSegundo();
             atualizarResumo(estado.ultimaApuracao?.resumo || null);
         });
 
@@ -687,10 +978,18 @@
         }
 
         carregarFiltros();
+        sincronizarTurno();
+        salvarFiltros();
         definirAnoExibido();
         consultarStatusEleicao();
+        window.AvisoTurnos2026.observar(() => {
+            sincronizarTurno();
+            salvarFiltros();
+            consultarStatusEleicao();
+        });
         window.setInterval(consultarStatusEleicao, 120000);
         const atualizarDiaExibido = () => {
+            atualizarPreparacao();
             if (estado.ultimaApuracao) atualizarFonteDados(estado.ultimaApuracao);
         };
         // A virada do dia nao precisa consultar novamente a API.

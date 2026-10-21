@@ -2,9 +2,10 @@
 
 As dez paginas e os recursos de layout foram copiados para `personalizados/`.
 Elas usam a mesma API oficial de 2026, mas possuem CSS e JavaScript proprios.
-Somente o aviso informativo dos turnos compartilha dois recursos de apresentacao
-com /2026/: css/aviso-turnos-2026.css e js/aviso-turnos-2026.js. Esse aviso nao
-altera filtros, chamadas, resultados nem o calendario das capas.
+O aviso/calendario dos turnos compartilha dois recursos com /2026/:
+css/aviso-turnos-2026.css e js/aviso-turnos-2026.js. Na preparacao local de
+20/10/2026, o calendario passa a coordenar a virada automatica para o segundo
+turno; os controladores/API/layout continuam separados das capas originais.
 Alteracoes futuras de layout/funcoes devem ser feitas nessas copias quando forem
 exclusivas dos clientes. Correcoes importantes na versao original precisam ser
 replicadas e testadas nas copias; nao existe sincronizacao automatica.
@@ -122,16 +123,66 @@ espaco para a lista. Ajuste publicado no deployment `185d5e85`.
 No 300x250, o botao fica separado do resumo aberto por 5 px; o 300x600
 mantem os 7 px anteriores. A altura externa dos banners continua igual.
 
+Ajuste incluido na publicacao autorizada em 20 de outubro de 2026: o 970x250 personalizado
+exibe o resumo de votos no desktop sem clicar, como o 970x250x100. A faixa
+de 22 px mostra Validos, Brancos, Nulos e Abstencoes com totais/percentuais,
+mantendo os cards e os 250 px externos. O mobile conserva seu botao de
+mostrar/ocultar e mostra uma grade 2x2 somente com rotulos e percentuais:
+Validos/Brancos acima, Nulos/Abstencoes abaixo. Ao abrir, status e espacamentos
+ficam compactos e os cards tem 56 px, para preservar os candidatos e a fonte
+TSE dentro dos 250 px. Ao voltar ao desktop, os totais absolutos reaparecem.
+O 970x250x100 e os originais de /2026/ nao foram alterados.
+Validacao: `node scripts/testar-pages.js --resumo-970` (todas as marcas,
+comparacao dos dois formatos, desktop/mobile e original 2026 preservado).
+Destino autorizado: Git `eleicoes-front/main` e Cloudflare Pages `eleicoes-front`.
+
 Os mesmos ajustes de legibilidade/resumos agora estao tambem nos dez banners
 originais de /2026/, em `css/legibilidade-2026.css`, preservando a marca Placar
 das Urnas. A folha e ativada apenas na apuracao; capas, relogios e transicoes
 de pre-eleicao e os historicos nao recebem essas alteracoes. O teste compara
 os estilos com os personalizados e valida as quatro identidades. Publicado.
 
-O cabecalho tambem identifica o 1º turno e informa "2º turno: 25/10" (2026),
-onde houver disputa, conforme o TSE. Nos compactos, a data fica abaixo do nome
-na mesma linha de altura dos filtros. Esse ajuste foi publicado e e informativo:
-nao habilita consultas do segundo turno automaticamente.
+O aviso publicado anteriormente identifica o 1º turno e informa "2º turno:
+25/10" (2026), onde houver disputa. Nos compactos, fica abaixo do nome.
+Essa versao anterior era somente informativa. A automacao descrita abaixo
+integra a publicacao do frontend autorizada em 20/10/2026.
+
+## Segundo turno automatico — preparacao local em 20/10/2026
+
+- Desde 20/10/2026, os dez formatos de /2026/ e os dez personalizados focam
+  exclusivamente no segundo turno, consultando `turno=2`. Exibem a lista
+  oficial ja publicada pelo TSE: nome, numero, partido e foto, em ordem
+  alfabetica e sem ranking, votos ou percentuais na apresentacao antecipada.
+- Em 25/10/2026, 00:00 no horario de Brasilia, habilitam os resultados. Os
+  votos/percentuais so aparecem quando chegarem dados validos do segundo
+  turno com apuracao; enquanto estiverem zerados, a lista continua sem votos.
+- A virada funciona em paginas ja abertas, sem reload; abas suspensas
+  sincronizam ao ganhar foco/voltar a ficar visiveis. O cabecalho muda junto.
+- Somente Presidente/Governador ficam disponiveis. Se um filtro salvo era
+  de outro cargo, o banner passa para Presidente/BR.
+- Se a lista ainda nao estiver disponivel, aparece a espera pelo segundo
+  turno. Catalogo/arquivo ausente nunca faz reaparecer numeros do primeiro.
+- A API da selecao do segundo turno e consultada diretamente a cada 120 s,
+  sem depender do status geral (que pode anunciar somente o primeiro turno).
+- Toda resposta deve corresponder a ano, turno, cargo e UF pedidos. Ao mudar
+  selecao/turno, os dados visuais antigos sao limpos e consultas pendentes
+  invalidadas. Contingencia conserva apenas dados da mesma selecao.
+- O backend ja separa cache/snapshots por turno. Ha um ajuste local adicional
+  em backend-2026/src/tse.js: catalogo com UFs explicitamente publicadas para
+  Governador pode responder SEM_DISPUTA_SEGUNDO_TURNO para uma UF ausente;
+  catalogo incompleto continua sendo espera. O frontend mostra uma mensagem
+  clara, sem candidatos do primeiro turno. Teste puro do backend:
+  `node test/testar-segundo-turno.mjs` na pasta backend-2026.
+- Nenhum Worker, binding, KV, DNS, cache de producao ou dominio foi alterado
+  externamente. O ajuste local do backend tambem exige publicacao autorizada.
+- Os personalizados continuam sem capas de pre-eleicao; os historicos 2022
+  permanecem intactos. URLs e codigos de incorporacao continuam os mesmos.
+
+Testes locais: `node scripts/testar-calendario-turnos.js`,
+`node scripts/testar-pages.js --segundo-turno` e a suite completa
+`node scripts/testar-pages.js`. APIs/datas simuladas; sem consultas reais ao TSE.
+O usuario confirmou o push/deploy do frontend em 20/10/2026. O backend permanece
+fora desta autorizacao; sua alteracao local nao e publicada junto com o Pages.
 
 Correcao incluida nesta entrega: nomes dos clientes possuem folga vertical
 para nao recortar acentos/descendentes com `overflow: hidden`. Margens negativas
@@ -223,8 +274,9 @@ Validar no Ad Manager real antes de vender como homologado nesse ambiente.
   cria novos Workers/chaves de cache. Isso nao elimina o custo das consultas existentes.
 - `cliente-x` e demonstracao. O Correio do Estado tem identidade visual publicada;
   isso nao significa liberacao do dominio do cliente para incorporar os banners.
-- O ano e o primeiro turno foram preservados. Preparar as consultas do segundo
-  turno e uma tarefa separada; nao existe calendario de capas nos personalizados.
+- O ano continua 2026. Desde 20/10, a abertura prioriza os candidatos do segundo
+  turno; os resultados desse turno sao liberados a partir de 25/10, quando o TSE
+  publicar. Nao existe calendario de capas pre-eleicao nos personalizados.
 - Links e codigos de producao acima so ficam disponiveis depois de um deploy aprovado.
 
 ## Teste local do embed
@@ -246,3 +298,55 @@ Conferir logo/nome e filtros na mesma linha nos compactos, sem alterar a altura.
 Os testes automatizados interceptam as APIs com dados ficticios, sem TSE/KV real.
 Links antigos com parametros de capa sao ignorados nos personalizados.
 Para abrir interativamente a apuracao, o backend local precisa estar na porta 8788.
+
+## Consulta dos turnos nos personalizados
+
+- A partir de 20/10, o botao **Ver 1º turno** consulta os resultados do primeiro
+  turno dentro do mesmo banner. **Voltar ao 2º turno** retorna a disputa atual.
+  Nos tamanhos estreitos, os botoes aparecem como `1º turno`/`2º turno` ou
+  `1º`/`2º`, com descricao completa acessivel e ao passar o mouse.
+- A escolha do historico permanece enquanto o banner esta aberto, inclusive na
+  virada de 25/10. Reabrir o banner prioriza novamente o segundo turno.
+- As requisicoes e respostas sao separadas por turno/cargo/UF. Nunca reutilizamos
+  votos do primeiro turno como se fossem do segundo.
+- Antes da apuracao, o aviso de 25/10 com contagem em dias substitui o resumo
+  vazio. A faixa apresenta o cargo/UF selecionados e os dias restantes, sem etapas.
+  Os candidatos oficiais aparecem sem votos ou ranking do segundo turno.
+  Cada card pode mostrar percentual e total do **1º turno**, em bloco historico
+  rotulado, somente se a resposta for finalizada e corresponder ao mesmo ano,
+  cargo, UF, numero e nome do candidato. Dados ausentes ou invalidos sao omitidos.
+  Ao receber resultados do segundo turno, a mesma faixa central passa a mostrar
+  urnas apuradas, barra, resumo de votos e fonte/atualizacao. A moldura dos cards
+  e o VS permanecem; o bloco numerico dos candidatos muda para **2º turno** e
+  recebe os votos atuais, sem reaproveitar o historico. A ordem alfabetica dos
+  dois candidatos permanece estavel durante as atualizacoes.
+  Nos mobiles/verticais, o resumo usa 2x2 com rotulos e percentuais. Nos compactos
+  de 90/100 px, as urnas tambem aparecem nessa faixa, preservando a altura total.
+- Esse contexto historico faz uma consulta adicional ao endpoint ja existente
+  por cargo/UF, reutilizada em memoria durante a visita quando valida. Nao cria
+  Workers, bindings, armazenamento ou novas chaves de cache no backend. O retorno
+  nunca alimenta o resumo ou a barra de urnas do segundo turno.
+- A faixa tem movimento decorativo sutil e respeita `prefers-reduced-motion`.
+  A rolagem/arraste dos candidatos continua funcionando quando houver overflow.
+- Alteracoes desta interface ficam restritas a `/personalizados/`. Validar com
+  `node scripts/testar-pages.js --interface-personalizada` ou, para incluir as
+  checagens dos banners originais, `node scripts/testar-pages.js --segundo-turno`
+  (API e relogio simulados).
+
+## Remocao da simulacao e publicacao autorizada em 20/10/2026
+
+A simulacao visual temporaria foi removida do JavaScript/CSS entregue. O antigo
+parametro `simulacao=apuracao` nao ativa dados ficticios nem antecipa a apuracao,
+inclusive em localhost. Os testes mantem fixtures somente no navegador de teste,
+fora do build publicado: `node scripts/testar-pages.js --apuracao-personalizada`.
+
+A tela de candidatos permanece enquanto nao houver votos do segundo turno.
+Em 25/10, os votos validos recebidos da API habilitam a faixa de urnas/resumo
+e os resultados atuais dos candidatos. A virada nao e agendada para 17h;
+depende dos dados e da proxima consulta, feita a cada 120 segundos.
+Resumo e barra reutilizam fontes, cores e gradientes do primeiro turno por marca.
+
+Push e deploy do frontend autorizados explicitamente pelo usuario: Git
+`eleicoes-front/main` e Cloudflare Pages `eleicoes-front`, dominio
+`https://apuracao.placardasurnas.com.br`. Backend, Workers, KV, DNS, cache e
+licencas preservados. Registros anteriores de alteracoes locais sao historicos.

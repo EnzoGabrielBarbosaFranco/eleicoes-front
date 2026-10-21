@@ -193,7 +193,7 @@ body.formato-compacto-100 .preview-desktop-1260 {
         background: color-mix(in srgb, var(--mint-strong) 26%, transparent);
     }
 
-    body.formato-compacto-100 .resumo-votos .resumo-item > span:first-child {
+    body.formato-compacto-100 :is(.resumo-votos,.resumo-segundo) :is(.resumo-item,.resumo-segundo-item) > span:first-child {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -206,7 +206,7 @@ body.formato-compacto-100 .preview-desktop-1260 {
         text-transform: none;
     }
 
-    body.formato-compacto-100 .resumo-votos .resumo-valor {
+    body.formato-compacto-100 :is(.resumo-votos,.resumo-segundo) .resumo-valor {
         display: inline-flex;
         align-items: center;
         justify-content: center;

@@ -142,3 +142,82 @@ body[data-widget="970x250"] .bloco-carrossel .estado-eleicao,
 body[data-widget="970x250"] .bloco-carrossel .loading-msg {
     min-width: 100%;
 }
+
+/* Mesmo resumo do 970x250x100 no desktop, sem transformar o mobile em 100px.
+   A faixa de 22px preserva a altura dos cards e os 250px contratados. */
+@media (min-width: 761px) {
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .resumo-votos.resumo-mobile-horizontal {
+        display: grid;
+        flex: 0 0 22px;
+        width: 100%;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin: 0;
+        overflow: hidden;
+        border-top: 0;
+    }
+
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .resumo-votos .resumo-item {
+        padding-inline: 8px;
+    }
+
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 :is(.resumo-votos,.resumo-segundo) .resumo-valor {
+        font-size: 11px !important;
+    }
+}
+
+/* No mobile de 250px, duas linhas/duas colunas com rotulo e percentual.
+   O compacto 970x250x100 conserva sua faixa de uma linha e altura de 100px. */
+@media (max-width: 760px) {
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .resumo-votos {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-template-rows: repeat(2, 20px) !important;
+        overflow-x: hidden !important;
+    }
+
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .resumo-votos .resumo-item {
+        gap: 4px;
+        padding: 2px 6px !important;
+    }
+
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 :is(.resumo-votos,.resumo-segundo) .resumo-valor {
+        font-size: 12px !important;
+    }
+
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .resumo-item:nth-child(even)::after {
+        display: none;
+    }
+
+    /* Somente com a grade aberta: preservar marca/filtros e reservar espaco
+       para os candidatos, sem aumentar os 250px nem esconder a fonte TSE. */
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .widget-horizontal:has(.resumo-votos:not(.oculto)) .bloco-status {
+        flex-basis: 30px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 2px 8px;
+        padding: 3px 10px;
+    }
+
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .widget-horizontal:has(.resumo-votos:not(.oculto)) .barra-total-bg {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .widget-horizontal:has(.resumo-votos:not(.oculto)) .data-hora {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .widget-horizontal:has(.resumo-votos:not(.oculto)) .resumo-toggle {
+        min-height: 20px;
+        margin-block: 2px;
+        padding-block: 1px;
+    }
+
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .widget-horizontal:has(.resumo-votos:not(.oculto)) .bloco-carrossel {
+        padding-block: 4px;
+    }
+
+    body.cliente-personalizado[data-widget="970x250"]:not(.formato-compacto-100).identidade-2026 .widget-horizontal:has(.resumo-votos:not(.oculto)) :is(.card-cand, .carregar-mais) {
+        height: 56px;
+        padding-block: 4px;
+    }
+}

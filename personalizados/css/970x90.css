@@ -307,7 +307,7 @@ body.formato-970x90[data-widget="horizontal"] .resumo-votos .resumo-item {
         line-height: 1;
     }
 
-body.formato-970x90[data-widget="horizontal"] .resumo-votos .resumo-item > span:first-child {
+body.formato-970x90[data-widget="horizontal"] :is(.resumo-votos,.resumo-segundo) :is(.resumo-item,.resumo-segundo-item) > span:first-child {
         margin: 0;
         font-size: 0.38rem;
         line-height: 1;
@@ -315,7 +315,7 @@ body.formato-970x90[data-widget="horizontal"] .resumo-votos .resumo-item > span:
         text-transform: none;
     }
 
-body.formato-970x90[data-widget="horizontal"] .resumo-votos .resumo-valor {
+body.formato-970x90[data-widget="horizontal"] :is(.resumo-votos,.resumo-segundo) .resumo-valor {
         overflow: hidden;
         font-size: 0.42rem;
         line-height: 1;

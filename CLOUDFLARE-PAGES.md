@@ -1,5 +1,31 @@
 # Apuração no Cloudflare Pages
 
+## Segundo turno — publicação autorizada em 20 de outubro de 2026
+
+Destino confirmado pelo usuário: Git `eleicoes-front/main` e Cloudflare Pages
+`eleicoes-front`, produção/main, `https://apuracao.placardasurnas.com.br`.
+O upload usa somente `dist-pages/`; o identificador deve ser conferido no painel
+Pages pelo commit desta entrega. Os registros abaixo são históricos.
+
+Inclui calendário automático de 2026/personalizados, candidatos do segundo turno
+desde 20/10 e entrada dos votos válidos recebidos da API a partir de 25/10
+(Brasília). Não há troca de tela agendada para 17h: o frontend aguarda dados e
+consulta a cada 120 segundos. Nos personalizados, inclui histórico isolado do
+primeiro turno, botão de consulta, confronto e faixa de apuração com fontes,
+cores e barra iguais às do primeiro turno por marca. O resumo do 970x250 tem
+totais no desktop e 2x2 com percentuais no mobile. Alturas e URLs preservadas.
+
+A simulação visual temporária foi retirada do JavaScript/CSS entregue; o antigo
+parâmetro não produz dados fictícios, inclusive em localhost. Os testes usam
+fixtures de API e relógio somente no navegador de teste, fora do build.
+Comandos: `node scripts/testar-calendario-turnos.js`,
+`node scripts/testar-pages.js --apuracao-personalizada` e
+`node scripts/testar-pages.js --segundo-turno`.
+
+Backend (inclusive a identificação local de UF sem disputa), Workers, KV, DNS,
+CORS, licenças e regras de cache não fazem parte desta publicação. A divergência
+histórica de TTL nas URLs sem hash não autoriza purge nem alteração da zona.
+
 ## Idest e Campo Grande News — push e deploy autorizados em 6 de outubro de 2026
 
 Entrega estática no Git `eleicoes-front/main` e Pages `eleicoes-front`, produção/main,

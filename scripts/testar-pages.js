@@ -27,6 +27,11 @@ const novasIdentidades = {
 };
 const raiz = path.resolve(__dirname, '..');
 const apenasCompactos = process.argv[2] === '--compactos';
+const apenasResumo970 = process.argv[2] === '--resumo-970';
+const apenasSegundoTurno = process.argv[2] === '--segundo-turno';
+const apenasInterfacePersonalizada = process.argv[2] === '--interface-personalizada';
+const apenasApuracaoPersonalizada = process.argv[2] === '--apuracao-personalizada';
+const apenasRegressao = process.argv[2] === '--regressao';
 const apenasCabecalhos = process.argv[2] === '--cabecalhos';
 const clienteCabecalhos = process.argv[3];
 const dominio = 'https://apuracao.placardasurnas.com.br';
@@ -87,7 +92,11 @@ function validarBuild(build) {
     const widget2026 = ler('js/widget-2026.js');
     const cssClientes = ler('personalizados/identidade.css');
     const inicioLegibilidade=cssClientes.indexOf('/* Legibilidade comum');
-    const espelho=cssClientes.slice(inicioLegibilidade,cssClientes.indexOf('body.cliente-indisponivel'))
+    const espelho=cssClientes.slice(inicioLegibilidade,cssClientes.indexOf('/* Navegação e preparação'))
+        // Os aliases novos compartilham a tipografia, sem mudar as regras
+        // anteriores que precisam continuar iguais nos banners /2026/.
+        .replaceAll(':is(.resumo-votos,.resumo-segundo)', '.resumo-votos')
+        .replaceAll(':is(.resumo-item,.resumo-segundo-item)', '.resumo-item')
         .replaceAll('body.cliente-personalizado','body.apuracao-legivel')
         .replaceAll('.cliente-mobile-compacto','.turnos-mobile-compacto');
     const css2026=ler('css/legibilidade-2026.css').split('/* Cabecalho original:')[0];
@@ -193,7 +202,7 @@ function validarBuild(build) {
     for (const pagina of paginasPersonalizadas) {
         const html = ler(pagina);
         const fonte = fs.readFileSync(path.join(raiz, pagina), 'utf8');
-        // Somente o novo aviso informativo e compartilhado; manter layouts,
+        // Somente o aviso/calendario dos turnos e compartilhado; manter layouts,
         // API, filtros e calendario de capas isolados nos personalizados.
         const compartilhados=[...fonte.matchAll(/(?:src|href)="(\/(?:css|js)\/[^\"]+)"/g)].map(m=>m[1]);
         assert.deepEqual(compartilhados,['/css/aviso-turnos-2026.css','/js/aviso-turnos-2026.js'], `${pagina}: recurso nao isolado`);
@@ -293,6 +302,7 @@ async function testarNavegador(build) {
     fs.mkdirSync(diretorioTestes, { recursive: true });
     const perfil = fs.mkdtempSync(path.join(diretorioTestes, 'chrome-'));
     const processo = spawn(navegador, ['--headless=new', '--no-first-run', '--no-default-browser-check',
+        '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows',
         '--disable-background-networking', '--remote-debugging-port=0', `--user-data-dir=${perfil}`, 'about:blank'],
         { windowsHide: true, stdio: 'ignore' });
     let socket;
@@ -322,10 +332,13 @@ async function testarNavegador(build) {
         let disponivel = true;
         let cenario2026 = 'normal';
         let quantidadeCandidatos = 8;
+        let cenarioSegundoTurno = 'normal';
+        let cenarioHistorico = 'normal';
+        const consultasPrimeiroTurnoRetidas = [];
         function enviar(method, params = {}, sessionId) {
             return new Promise((resolve, reject) => {
                 const id = ++contador;
-                const timer = setTimeout(() => { pendentes.delete(id); reject(new Error(`Timeout ${method}`)); }, 10000);
+                const timer = setTimeout(() => { pendentes.delete(id); reject(new Error(`Timeout ${method}`)); }, method === 'Page.captureScreenshot' ? 30000 : 10000);
                 pendentes.set(id, { resolve, reject, timer });
                 socket.send(JSON.stringify({ id, method, params, sessionId }));
             });
@@ -379,7 +392,57 @@ async function testarNavegador(build) {
                         json.candidatos.forEach((c) => { c.nome = 'Candidato Historico Indevido'; });
                     }
                 }
-                enviar('Fetch.fulfillRequest', { requestId, responseCode: ano === 2026 && cenario2026 === 'erro-http' ? 503 : 200,
+                let responseCode = ano === 2026 && cenario2026 === 'erro-http' ? 503 : 200;
+                // Fixtures apenas no navegador de testes: nenhuma simulacao no widget publicado.
+                if (apenasApuracaoPersonalizada && url.pathname === '/api/apuracao') {
+                    json.totalCandidatos=2;
+                    json.atualizacao='25/10/2026 às 17:40:00';
+                    json.resumo={validos:'40.000.000',pctValidos:'95,24',brancos:'1.000.000',pctBrancos:'2,38',nulos:'1.000.000',pctNulos:'2,38',abstencoes:'10.000.000',pctAbstencoes:'19,23'};
+                    json.candidatos=json.candidatos.slice(0,2).map((c,i)=>({...c,nome:`CANDIDATO EXEMPLO ${i===0?'A':'B'}`,votos:['52,00','48,00'][i],votosNumero:[20800000,19200000][i],total:[20800000,19200000][i].toLocaleString('pt-BR')}));
+                }
+                if ((apenasSegundoTurno || apenasInterfacePersonalizada) && url.pathname === '/api/apuracao') {
+                    if (json.turno === 1) {
+                        json.finalizado=true;
+                        json.candidatos.slice(0,2).forEach((c,i)=>{
+                            c.nome=`Candidato Segundo Turno ${i+1}`;
+                            c.votos=['47,03','45,16'][i];c.votosNumero=[56104503,53879538][i];c.total=c.votosNumero.toLocaleString('pt-BR');
+                        });
+                        if(cenarioHistorico==='ano-errado') json.ano=2022;
+                        if(cenarioHistorico==='turno-errado') json.turno=2;
+                        if(cenarioHistorico==='cargo-errado') json.cargo=6;
+                        if(cenarioHistorico==='uf-errada') json.uf='ac';
+                        if(cenarioHistorico==='parcial') json.finalizado=false;
+                        if(cenarioHistorico==='simulado') json.fase='simulado';
+                        if(cenarioHistorico==='outro-nome') json.candidatos.forEach(c=>c.nome='Outro candidato');
+                        if(cenarioHistorico==='valor-invalido') json.candidatos.forEach(c=>c.votos='101,00');
+                        if(cenarioHistorico==='erro-http') responseCode=503;
+                        if(cenarioHistorico==='retido') {
+                            consultasPrimeiroTurnoRetidas.push({requestId,json,sessionId:mensagem.sessionId});return;
+                        }
+                    }
+                    if (json.turno === 1 && cenarioSegundoTurno === 'primeiro-atrasado') {
+                        consultasPrimeiroTurnoRetidas.push({ requestId, json, sessionId:mensagem.sessionId });
+                        return;
+                    }
+                    if (json.turno === 2) {
+                        json.totalCandidatos=2;
+                        json.atualizacao='25/10/2026 às 17:01:00';
+                        json.candidatos=json.candidatos.slice(0,2).map((c,i)=>({...c,nome:`Candidato Segundo Turno ${i+1}`}));
+                        if (['espera','primeiro-atrasado'].includes(cenarioSegundoTurno)) {
+                            responseCode=503;Object.assign(json,{codigo:'ELEICAO_AGUARDANDO_TSE',fase:'aguardando_tse'});
+                        }
+                        if (cenarioSegundoTurno==='arquivo-ausente') responseCode=404;
+                        if (cenarioSegundoTurno==='sem-disputa'&&json.cargo===3) {responseCode=404;json.codigo='SEM_DISPUTA_SEGUNDO_TURNO';}
+                        if (cenarioSegundoTurno==='turno-errado') json.turno=1;
+                        if (cenarioSegundoTurno==='uf-errada') json.uf='ac';
+                        if (cenarioSegundoTurno==='cargo-errado') json.cargo=3;
+                        if (cenarioSegundoTurno==='zerado') {
+                            json.percurso='0,00';Object.keys(json.resumo).forEach(k=>json.resumo[k]=k.startsWith('pct')?'0,00':'0');
+                            json.candidatos.forEach(c=>Object.assign(c,{votos:'0,00',votosNumero:0,total:'0'}));
+                        }
+                    }
+                }
+                enviar('Fetch.fulfillRequest', { requestId, responseCode,
                     responseHeaders: [{ name: 'Content-Type', value: 'application/json' },
                         { name: 'Access-Control-Allow-Origin', value: '*' }, { name: 'Cache-Control', value: 'no-store' }],
                     body: Buffer.from(JSON.stringify(json)).toString('base64') }, mensagem.sessionId)
@@ -391,6 +454,7 @@ async function testarNavegador(build) {
         await enviar('Runtime.enable', {}, sessionId);
         await enviar('Network.enable', {}, sessionId);
         await enviar('Page.enable', {}, sessionId);
+        await enviar('Page.bringToFront', {}, sessionId);
         // Interceptar inclusive origens de producao para impedir acessos reais acidentais.
         await enviar('Fetch.enable', { patterns: [
             { urlPattern: 'http://127.0.0.1:8787/*' }, { urlPattern: 'http://127.0.0.1:8788/*' },
@@ -427,7 +491,475 @@ async function testarNavegador(build) {
             if (esperado.searchParams.get('pre-eleicao') === 'teste') esperado.searchParams.delete('reiniciar');
             await aguardar(`location.href === ${JSON.stringify(esperado.href)} && document.body && !document.body.dataset.testeAnterior && (!!document.getElementById('select-cargo') || !!document.querySelector('.pre26-painel,.cliente-aviso,eleicoes-widget'))`);
         }
-        if (!apenasCompactos) {
+        if (apenasApuracaoPersonalizada) {
+            let casos=0;
+            await enviar('Page.addScriptToEvaluateOnNewDocument',{source:"window.__testeRelogio.agora=Date.parse('2026-10-25T17:40:00-03:00');"},sessionId);
+            const compararEstilosPrimeiro=async contexto=>{
+                const estilos=await avaliar(`(() => {
+                    const fonte=e=>{const s=getComputedStyle(e);return Object.fromEntries(['fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','color','textTransform'].map(k=>[k,s[k]]));};
+                    const fundo=e=>{const s=getComputedStyle(e);return {cor:s.backgroundColor,imagem:s.backgroundImage,sombra:s.boxShadow};};
+                    const original=document.getElementById('votos-validos');
+                    const statusOriginal=document.getElementById('txt-percurso').closest('.bloco-status,.status-geral');
+                    return {rotulo1:fonte(original.previousElementSibling),rotulo2:fonte(document.querySelector('.resumo-segundo-item > span')),
+                        valor1:fonte(original),valor2:fonte(document.querySelector('.resumo-segundo-item > strong')),
+                        barra1:fundo(document.getElementById('barra-percurso')),barra2:fundo(document.querySelector('.urnas-barra > span')),
+                        trilho1:fundo(document.getElementById('barra-percurso').parentElement),trilho2:fundo(document.querySelector('.urnas-barra')),
+                        ponto1:getComputedStyle(statusOriginal.querySelector('.status-dot')).backgroundColor,ponto2:getComputedStyle(document.querySelector('.urnas-legenda .status-dot')).backgroundColor};})()`);
+                assert.deepEqual(estilos.rotulo2,estilos.rotulo1,`${contexto}: mesmo rotulo do primeiro turno`);
+                assert.deepEqual(estilos.valor2,estilos.valor1,`${contexto}: mesma fonte/cor dos votos do primeiro turno`);
+                assert.deepEqual(estilos.barra2,estilos.barra1,`${contexto}: mesma paleta/gradiente de progresso do primeiro turno`);
+                assert.deepEqual(estilos.trilho2,estilos.trilho1,`${contexto}: mesmo fundo do trilho`);
+                assert.equal(estilos.ponto2,estilos.ponto1,`${contexto}: mesma cor do indicador`);
+            };
+            for(const formato of formatos2026) {
+                for(const largura of [...new Set([tamanho[formato][0],320])]) {
+                    const antes=chamadasApi.length;
+                    await navegar(`personalizados/${formato}.html`,largura,'?site=idest');
+                    await aguardar("document.querySelector('.segundo-turno-com-resultados') && document.querySelectorAll('.card-cand,.candidato-card').length===2");
+                    // O CSS de movimento reduzido usa transicoes de 0,01ms.
+                    // Forcar a resolucao e aguardar o estado final antes de medir.
+                    await aguardar("getComputedStyle(document.querySelector('.preparacao-segundo')).backgroundColor==='rgb(255, 255, 255)'");
+                    await avaliar('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+                    assert(chamadasApi.length>antes,'Apuracao deve consultar a API interceptada pelo teste');
+                    const e=await avaliar(`(() => {
+                        const root=document.querySelector('.widget-container,.widget-horizontal').getBoundingClientRect();
+                        const selo=document.querySelector('.aviso-turnos').getBoundingClientRect();
+                        const card=document.querySelector('.card-cand,.candidato-card').getBoundingClientRect();
+                        const nome=document.querySelector('.card-nome,.nome-cand').getBoundingClientRect();
+                        return {h:root.height,turno:document.getElementById('select-turno').value,percurso:document.getElementById('txt-percurso').textContent,
+                            selo:document.querySelector('.aviso-turnos').textContent,seloVisivel:selo.height>0&&selo.bottom<=root.bottom,
+                            fonte:document.getElementById('ultima-atualizacao').textContent,
+                            nomes:[...document.querySelectorAll('.card-nome,.nome-cand')].map(e=>e.textContent),
+                            preparacao:document.querySelector('.conteudo-preparacao').getBoundingClientRect().height,
+                            novoLayout:!!document.querySelector('.duelo-segundo-turno.disputa-segundo-turno'),
+                            fundoResumo:getComputedStyle(document.querySelector('.resumo-segundo')).backgroundColor,
+                            fundoUrnas:getComputedStyle(document.querySelector('.preparacao-segundo')).backgroundColor,
+                            imagemFundoUrnas:getComputedStyle(document.querySelector('.preparacao-segundo')).backgroundImage,
+                            efeitoFundoUrnas:getComputedStyle(document.querySelector('.preparacao-segundo'),'::before').display,
+                            fonteVotos:parseFloat(getComputedStyle(document.querySelector('.resumo-segundo-item > strong')).fontSize),
+                            textosVotosCabem:[...document.querySelectorAll('.resumo-segundo-item')].every(e=>{const b=e.getBoundingClientRect();return [...e.children].every(f=>{const a=f.getBoundingClientRect();return a.x>=b.x-1&&a.right<=b.right+1;});}),
+                            compacto:document.body.classList.contains('cliente-mobile-compacto'),
+                            coluna:document.querySelector('.preparacao-segundo').classList.contains('faixa-coluna'),
+                            estreito:document.querySelector('.preparacao-segundo').classList.contains('faixa-estreita'),
+                            espacoDepoisResumo:(()=>{const faixa=document.querySelector('.preparacao-segundo'),resumo=document.querySelector('.resumo-segundo');return faixa.getBoundingClientRect().bottom-parseFloat(getComputedStyle(faixa).borderBottomWidth)-resumo.getBoundingClientRect().bottom;})(),
+                            percentuais:[...document.querySelectorAll('.resultado-segundo-turno .historico-pct')].map(e=>e.textContent),
+                            urnasVisiveis:document.querySelector('.urnas-percentual').getBoundingClientRect().height>0,
+                            urnas:document.querySelector('.urnas-percentual').textContent,
+                            resumoCabe:[...document.querySelectorAll('.resumo-segundo-item')].every(e=>{const a=e.getBoundingClientRect(),b=e.closest('.preparacao-segundo').getBoundingClientRect();return a.height>0&&a.x>=b.x-1&&a.right<=b.right+1&&a.y>=b.y-1&&a.bottom<=b.bottom+1;}),
+                            medidasResumo:[...document.querySelectorAll('.resumo-segundo-item')].map(e=>{const a=e.getBoundingClientRect(),b=e.closest('.preparacao-segundo').getBoundingClientRect();return {y:a.y,bottom:a.bottom,h:a.height,faixaY:b.y,faixaFim:b.bottom};}),
+                            primeiroCard:card.x>=root.x-1&&card.right<=root.right+1&&card.y>=root.y-1&&card.bottom<=root.bottom+1,
+                            medidasCard:{x:card.x,right:card.right,y:card.y,bottom:card.bottom},
+                            nomeVisivel:nome.y>=root.y-1&&nome.bottom<=root.bottom+1,
+                            listaRolavel:document.getElementById('lista-candidatos').scrollHeight>document.getElementById('lista-candidatos').clientHeight,
+                            calendarioReal:window.AvisoTurnos2026.turnoAtual(),clip:{x:root.x,y:root.y,width:root.width,height:root.height,scale:1}};})()`);
+                    assert(!e.selo.includes('SIMULAÇÃO')&&e.seloVisivel&&e.fonte.includes('Fonte: TSE'),`${formato}/${largura}: fonte real sem modo de simulacao`);
+                    assert(e.nomes.every(n=>n.includes('EXEMPLO')));
+                    assert.equal(e.turno,'2');assert.equal(e.calendarioReal,'2');
+                    assert.equal(e.percurso,'63,50%');assert.equal(e.preparacao,0);
+                    assert(e.novoLayout&&e.urnasVisiveis&&e.urnas==='63,50%'&&e.resumoCabe,`${formato}/${largura}: mesma tela com apuracao na faixa ${JSON.stringify(e)}`);
+                    assert.deepEqual(e.percentuais,['52,00%','48,00%']);
+                    assert.equal(e.fundoResumo,'rgb(242, 248, 252)','Resumo com o fundo claro da identidade do Idest');
+                    assert.equal(e.fundoUrnas,'rgb(255, 255, 255)',`${formato}/${largura}: area das urnas branca como no primeiro turno`);
+                    assert.equal(e.imagemFundoUrnas,'none');assert.equal(e.efeitoFundoUrnas,'none','Sem degrade ou brilho sobre as urnas');
+                    await compararEstilosPrimeiro(`${formato}/${largura}`);
+                    if(!e.textosVotosCabem) throw new Error(`${formato}/${largura}: textos sem espaco: `+await avaliar(`JSON.stringify([...document.querySelectorAll('.resumo-segundo-item')].map(e=>({texto:e.textContent,w:e.clientWidth,filhos:[...e.children].map(f=>({texto:f.textContent,w:f.getBoundingClientRect().width,font:getComputedStyle(f).fontSize}))})))`));
+                    assert(Math.abs(e.espacoDepoisResumo)<1,`${formato}/${largura}: sem espaco abaixo do resumo ${e.espacoDepoisResumo}`);
+                    const verticalCurto=formato==='300x250'||(formato==='index'&&largura<=760);
+                    assert(e.primeiroCard||(verticalCurto&&e.nomeVisivel&&e.listaRolavel),`${formato}/${largura}: candidato acessivel ${JSON.stringify(e)}`);
+                    const fixo=['320x100','300x250','300x600'].includes(formato);
+                    const mobile=['970x90','970x250x100','1260x100','1260x200'].includes(formato)?(formato==='970x90'?90:100):250;
+                    assert.equal(e.h,largura<=760&&!fixo?mobile:tamanho[formato][1]);
+                    const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:false,clip:e.clip},sessionId);
+                    fs.writeFileSync(path.join(diretorioTestes,`apuracao-personalizada-${formato}-${largura}.png`),Buffer.from(captura.data,'base64'));
+                    casos++;
+                }
+            }
+            for(const site of Object.keys(cadastroClientes)) {
+                for(const largura of [970,320]) {
+                    await navegar('personalizados/970x250.html',largura,`?site=${site}`);
+                    await aguardar("document.querySelectorAll('.resultado-segundo-turno').length===2");
+                    await aguardar("getComputedStyle(document.querySelector('.preparacao-segundo')).backgroundColor==='rgb(255, 255, 255)'");
+                    await avaliar('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+                    await compararEstilosPrimeiro(`${site}/${largura}`);
+                    casos++;
+                }
+            }
+            // O parametro antigo nao pode mais ativar dados ficticios ou burlar a data.
+            await navegar('personalizados/970x250.html',970,'?site=idest&simulacao=apuracao');
+            await aguardar("document.querySelectorAll('.resultado-segundo-turno').length===2");
+            assert.equal(await avaliar("!!document.querySelector('.simulacao-local')"),false);
+            assert((await avaliar("document.querySelector('.fonte-segundo').textContent")).includes('Fonte: TSE'));
+            await enviar('Page.addScriptToEvaluateOnNewDocument',{source:"window.__testeRelogio.agora=Date.parse('2026-10-20T12:00:00-03:00');"},sessionId);
+            const antes=chamadasApi.length;
+            await navegar('personalizados/970x250.html',970,'?site=idest&simulacao=apuracao');
+            await aguardar("document.querySelector('.previa-segundo-turno') && document.querySelectorAll('.card-cand').length===2");
+            assert.equal(await avaliar("document.querySelectorAll('.resultado-segundo-turno').length"),0);
+            assert(chamadasApi.length>antes);assert.equal(await avaliar("!!document.querySelector('.simulacao-local')"),false);
+            assert.equal(erros.length,0,JSON.stringify(erros));
+            fs.writeFileSync(path.join(diretorioTestes,'apuracao-personalizada.json'),JSON.stringify({casos:casos+2,erros:0},null,2));
+            console.log(`Apuracao personalizada: ${casos+2} cenarios, todos os formatos e marcas, estilos iguais ao primeiro turno, simulacao removida e parametro antigo inativo: OK.`);
+            await enviar('Browser.close');return;
+        }
+        if (apenasSegundoTurno || apenasInterfacePersonalizada) {
+            let casos=0;
+            const instalarRelogio=async instante=>enviar('Page.addScriptToEvaluateOnNewDocument',{source:`
+                window.__testeRelogio.agora=Date.parse(${JSON.stringify(instante)});
+                window.__documentoVirada=String(Math.random());
+                const intervaloOriginal=window.setInterval;
+                window.setInterval=function(fn,ms,...args){if(ms===120000)window.__atualizarResultados=fn;return intervaloOriginal(fn,ms,...args);};
+            `},sessionId);
+            const verificarSemPrimeiro=async()=>{
+                const e=await avaliar(`({cards:document.querySelectorAll('.card-cand,.candidato-card').length,
+                    turno:document.getElementById('select-turno').value,resumo:document.getElementById('votos-validos').textContent,
+                    perc:document.getElementById('txt-percurso').textContent,
+                    cargos:[...document.getElementById('select-cargo').options].filter(o=>!o.hidden&&!o.disabled).map(o=>o.value)})`);
+                assert.deepEqual(e,{cards:0,turno:'2',resumo:'--',perc:'0%',cargos:['1','3']});
+            };
+            const verificarPrevia=async()=>{
+                const e=await avaliar(`({previa:!!document.querySelector('.previa-segundo-turno'),
+                    cards:document.querySelectorAll('.card-cand,.candidato-card').length,
+                    resumo:document.getElementById('votos-validos').textContent,
+                    perc:document.getElementById('txt-percurso').textContent,
+                    votosVisiveis:[...document.querySelectorAll('.card-pct,.percentual,.ranking-cand,.votos-absolutos,.card-barra-bg,.barra-cand-bg,.eleito-badge')].some(e=>e.getBoundingClientRect().height>0),
+                    votosNoAria:[...document.querySelectorAll('.card-cand,.candidato-card')].some(e=>e.getAttribute('aria-label').includes('%'))})`);
+                if(e.votosVisiveis) throw new Error(await avaliar("JSON.stringify({url:location.href,visiveis:[...document.querySelectorAll('.card-pct,.percentual,.ranking-cand,.votos-absolutos,.card-barra-bg,.barra-cand-bg,.eleito-badge')].filter(e=>e.getBoundingClientRect().height>0).map(e=>({classe:e.className,display:getComputedStyle(e).display}))})"));
+                assert.deepEqual(e,{previa:true,cards:2,resumo:'--',perc:'--',votosVisiveis:false,votosNoAria:false});
+            };
+            let relogio;
+            if (!apenasInterfacePersonalizada) {
+            relogio=await instalarRelogio('2026-10-25T00:00:00-03:00');
+            for (const pasta of ['2026','personalizados']) {
+                for (const formato of formatos2026) {
+                    for (const largura of [...new Set([tamanho[formato][0],320])]) {
+                        cenarioSegundoTurno='espera';
+                        const contexto=`${pasta}/${formato}/${largura}`;
+                        await navegar(`${pasta}/${formato}.html`,largura,pasta==='personalizados'?'?site=correio-do-estado':'');
+                        await aguardar("document.querySelector('.estado-aguardando strong')?.textContent.includes('segundo turno') && document.getElementById('lista-candidatos').getAttribute('aria-busy')==='false'");
+                        await verificarSemPrimeiro();
+                        const espera=await avaliar(`(() => {const e=document.querySelector('.estado-aguardando strong'),a=e.getBoundingClientRect(),b=e.closest('.widget-horizontal,.widget-container').getBoundingClientRect();
+                            return {aviso:document.querySelector('.aviso-turnos').textContent,tituloCabe:a.top>=b.top-1&&a.bottom<=b.bottom+1,h:b.height};})()`);
+                        assert(espera.aviso.startsWith('2º turno')&&espera.tituloCabe,`${contexto}: espera/cabecalho sem cortes`);
+                        const fixo=['320x100','300x250','300x600'].includes(formato);
+                        const mobile=['970x90','970x250x100','1260x100','1260x200'].includes(formato)?(formato==='970x90'?90:100):250;
+                        assert.equal(espera.h,largura<=760&&!fixo?mobile:tamanho[formato][1],contexto);
+                        cenarioSegundoTurno='normal';
+                        await avaliar('window.__atualizarResultados()');
+                        await aguardar("document.querySelectorAll('.card-cand,.candidato-card').length===2");
+                        assert((await avaliar("document.getElementById('lista-candidatos').textContent")).includes('SEGUNDO TURNO')
+                            ||(await avaliar("document.getElementById('lista-candidatos').textContent")).includes('Segundo Turno'),contexto);
+                        casos++;
+                    }
+                }
+            }
+            await enviar('Page.removeScriptToEvaluateOnNewDocument',{identifier:relogio.identifier},sessionId);
+            relogio=await instalarRelogio('2026-10-20T12:00:00-03:00');
+            for(const pasta of ['2026','personalizados']) {
+                for(const formato of formatos2026) {
+                    for(const largura of [...new Set([tamanho[formato][0],320])]) {
+                        cenarioSegundoTurno='normal';
+                        await navegar(`${pasta}/${formato}.html`,largura,pasta==='personalizados'?'?site=correio-do-estado':'');
+                        await aguardar("document.querySelectorAll('.card-cand,.candidato-card').length===2");
+                        await verificarPrevia();
+                        if(['1260x200','320x100','300x250'].includes(formato)) {
+                            const clip=await avaliar("(()=>{const r=document.querySelector('.widget-horizontal,.widget-container').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()");
+                            const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip},sessionId);
+                            fs.writeFileSync(path.join(diretorioTestes,`previa-segundo-${pasta}-${formato}-${largura}.png`),Buffer.from(captura.data,'base64'));
+                        }
+                        const documento=await avaliar('window.__documentoVirada');
+                        await avaliar("window.__testeRelogio.agora=Date.parse('2026-10-25T00:00:00-03:00');window.dispatchEvent(new Event('focus'));");
+                        await aguardar("!document.querySelector('.previa-segundo-turno') && document.querySelectorAll('.card-cand,.candidato-card').length===2");
+                        assert.equal(await avaliar('window.__documentoVirada'),documento,'Liberar resultados sem reload');
+                        casos++;
+                    }
+                }
+            }
+            await enviar('Page.removeScriptToEvaluateOnNewDocument',{identifier:relogio.identifier},sessionId);
+            relogio=await instalarRelogio('2026-10-25T12:00:00-03:00');
+            for (const pasta of ['2026','personalizados']) {
+                const consulta=pasta==='personalizados'?'?site=correio-do-estado':'';
+                for (const modo of ['arquivo-ausente','zerado','turno-errado','cargo-errado','uf-errada']) {
+                    cenarioSegundoTurno=modo;
+                    await navegar(`${pasta}/1260x200.html`,1260,consulta);
+                    await aguardar("document.getElementById('lista-candidatos').getAttribute('aria-busy')==='false'");
+                    if(modo==='zerado') await verificarPrevia();
+                    else await verificarSemPrimeiro();
+                    cenarioSegundoTurno='normal';
+                    await avaliar('window.__atualizarResultados()');
+                    await aguardar("document.querySelectorAll('.card-cand').length===2");
+                    casos++;
+                }
+            }
+            await enviar('Page.removeScriptToEvaluateOnNewDocument',{identifier:relogio.identifier},sessionId);
+            relogio=await instalarRelogio('2026-10-19T23:58:00-03:00');
+            for (const pasta of ['2026','personalizados']) {
+                cenarioSegundoTurno='primeiro-atrasado';
+                await navegar(`${pasta}/1260x200.html`,1260,pasta==='personalizados'?'?site=correio-do-estado':'');
+                for(let i=0;i<150&&!consultasPrimeiroTurnoRetidas.length;i++)await esperar(20);
+                assert(consultasPrimeiroTurnoRetidas.length,'Consulta do primeiro turno deve estar em voo');
+                const documento=await avaliar('window.__documentoVirada');
+                await avaliar("window.__testeRelogio.agora=Date.parse('2026-10-20T00:00:00-03:00');window.dispatchEvent(new Event('focus'));");
+                await aguardar("document.getElementById('select-turno').value==='2' && document.getElementById('lista-candidatos').getAttribute('aria-busy')==='false'");
+                await verificarSemPrimeiro();
+                for(const r of consultasPrimeiroTurnoRetidas.splice(0)) {
+                    await enviar('Fetch.fulfillRequest',{requestId:r.requestId,responseCode:200,responseHeaders:[{name:'Content-Type',value:'application/json'},{name:'Access-Control-Allow-Origin',value:'*'}],body:Buffer.from(JSON.stringify(r.json)).toString('base64')},r.sessionId);
+                }
+                await esperar(150);
+                await verificarSemPrimeiro();
+                assert.equal(await avaliar('window.__documentoVirada'),documento,'Virada sem recarregar o iframe');
+                cenarioSegundoTurno='normal';await avaliar('window.__atualizarResultados()');
+                await aguardar("document.querySelectorAll('.card-cand').length===2");
+                // Uma falha posterior preserva somente a ultima resposta do turno atual.
+                cenarioSegundoTurno='arquivo-ausente';await avaliar('window.__atualizarResultados()');
+                assert.equal(await avaliar("document.querySelectorAll('.card-cand').length"),2);
+                casos++;
+            }
+            await enviar('Page.removeScriptToEvaluateOnNewDocument',{identifier:relogio.identifier},sessionId);
+            relogio=await instalarRelogio('2026-10-20T12:00:00-03:00');
+            for(const pasta of ['2026','personalizados']) {
+                cenarioSegundoTurno='normal';
+                await navegar(`${pasta}/1260x200.html`,1260,pasta==='personalizados'?'?site=correio-do-estado':'');
+                await aguardar("document.querySelectorAll('.card-cand').length===2");
+                cenarioSegundoTurno='sem-disputa';
+                await avaliar("document.getElementById('select-cargo').value='3';document.getElementById('select-uf').value='ms';document.getElementById('select-cargo').dispatchEvent(new Event('change'));");
+                await aguardar("document.getElementById('lista-candidatos').textContent.includes('Não há segundo turno')");
+                await verificarSemPrimeiro();
+                cenarioSegundoTurno='normal';
+                await avaliar("document.getElementById('select-uf').value='am';document.getElementById('select-uf').dispatchEvent(new Event('change'));");
+                await aguardar("document.querySelectorAll('.card-cand').length===2");
+                await verificarPrevia();casos++;
+            }
+            const storageBloqueado=await enviar('Page.addScriptToEvaluateOnNewDocument',{source:"Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Storage bloqueado','SecurityError')}});"},sessionId);
+            for(const pasta of ['2026','personalizados']) {
+                await navegar(`${pasta}/1260x200.html`,320,pasta==='personalizados'?'?site=correio-do-estado':'');
+                await aguardar("document.querySelectorAll('.card-cand').length===2");
+                await verificarPrevia();casos++;
+            }
+            await enviar('Page.removeScriptToEvaluateOnNewDocument',{identifier:storageBloqueado.identifier},sessionId);
+            } else {
+                relogio=await instalarRelogio('2026-10-20T12:00:00-03:00');
+            }
+            // O historico e uma escolha explicita somente nos personalizados:
+            // round 1 nunca pode preencher a apuracao corrente do round 2.
+            cenarioSegundoTurno='normal';
+            for (const formato of formatos2026) {
+                for (const largura of [...new Set([tamanho[formato][0],320])]) {
+                    await navegar(`personalizados/${formato}.html`,largura,'?site=campograndenews');
+                    await aguardar("document.querySelector('.previa-segundo-turno') && document.querySelectorAll('.card-cand,.candidato-card').length===2");
+                    await aguardar("document.querySelectorAll('.resultado-primeiro-turno').length===2");
+                    assert.equal(await avaliar("document.getElementById('votos-validos').textContent"),'--','Historico nao preenche resumo do segundo turno');
+                    assert.equal(await avaliar("document.getElementById('txt-percurso').textContent"),'--','Historico nao preenche urnas do segundo turno');
+                    await esperar(150);
+                    const geometria=await avaliar(`(() => {
+                        const r=e=>{const x=e.getBoundingClientRect();return {x:x.x,y:x.y,right:x.right,bottom:x.bottom,w:x.width,h:x.height};};
+                        const root=r(document.querySelector('.widget-container,.widget-horizontal'));
+                        const dentro=e=>{const a=r(e);return a.w>0&&a.h>0&&a.x>=root.x-1&&a.right<=root.right+1&&a.y>=root.y-1&&a.bottom<=root.bottom+1;};
+                        return {preparacao:dentro(document.querySelector('.preparacao-segundo')),botao:dentro(document.querySelector('.botao-historico-turno')),
+                            cargo:dentro(document.getElementById('select-cargo')),uf:dentro(document.getElementById('select-uf')),
+                            primeiroCard:dentro(document.querySelector('.card-cand,.candidato-card')),raiz:root,
+                            cardRect:r(document.querySelector('.card-cand,.candidato-card')),
+                            carrosselRect:r(document.getElementById('lista-candidatos')),scroll:document.getElementById('lista-candidatos').scrollLeft,
+                            texto:document.querySelector('.preparacao-segundo').innerText,
+                            resumoVisivel:document.querySelector('.resumo-votos').getBoundingClientRect().height>0};})()`);
+                    assert(geometria.preparacao&&geometria.botao&&geometria.cargo&&geometria.uf&&geometria.primeiroCard,
+                        `${formato}/${largura}: elementos sem cortes ${JSON.stringify(geometria)}`);
+                    assert(geometria.texto.includes('25/10')&&geometria.texto.includes('5 dias'));
+                    assert.equal(await avaliar("document.querySelectorAll('.preparacao-etapas').length"),0,'Sem etapas; preservar apenas a contagem ao lado da apresentacao');
+                    assert.equal(geometria.resumoVisivel,false,'Nao exibir um resumo vazio antes da apuracao');
+                    if(largura>760&&['970x250','970x250x100','1260x200'].includes(formato)) {
+                        const confronto=await avaliar(`(() => {
+                            const cards=[...document.querySelectorAll('.card-cand')].map(e=>e.getBoundingClientRect());
+                            const vs=document.querySelector('.separador-disputa'),r=vs.getBoundingClientRect();
+                            const centro=e=>({x:e.x+e.width/2,y:e.y+e.height/2});
+                            const v=centro(r),a=centro(cards[0]),b=centro(cards[1]);
+                            return {texto:vs.textContent,centroX:Math.abs(v.x-(cards[0].right+cards[1].left)/2),centroY:Math.max(Math.abs(v.y-a.y),Math.abs(v.y-b.y)),
+                                nome:parseFloat(getComputedStyle(document.querySelector('.card-nome')).fontSize),
+                                apoio:parseFloat(getComputedStyle(document.querySelector('.selo-disputa')).fontSize),
+                                total:parseFloat(getComputedStyle(document.querySelector('.historico-total')).fontSize),
+                                totalCabe:[...document.querySelectorAll('.historico-total')].every(e=>e.scrollWidth<=e.clientWidth+1)};})()`);
+                        assert(confronto.texto==='VS'&&confronto.centroX<1&&confronto.centroY<1,`${formato}: VS centralizado ${JSON.stringify(confronto)}`);
+                        assert(confronto.nome>=15&&confronto.apoio>=11&&confronto.total>=11&&confronto.totalCabe,`${formato}: textos maiores e totais sem cortes ${JSON.stringify(confronto)}`);
+                    }
+                    console.log(`Interface: ${formato}/${largura}, geometria OK; capturando previa local.`);
+                    const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:false,clip:{x:geometria.raiz.x,y:geometria.raiz.y,width:geometria.raiz.w,height:geometria.raiz.h,scale:1}},sessionId);
+                    fs.writeFileSync(path.join(diretorioTestes,`preparacao-personalizados-${formato}-${largura}.png`),Buffer.from(captura.data,'base64'));
+                    await avaliar("document.querySelector('.botao-historico-turno').click()");
+                    await aguardar("document.getElementById('select-turno').value==='1' && document.querySelectorAll('.card-cand,.candidato-card').length===8");
+                    assert.equal(await avaliar("document.querySelector('.preparacao-segundo').getBoundingClientRect().height"),0);
+                    assert((await avaliar("document.querySelector('.aviso-turnos').textContent")).includes('1º turno'));
+                    assert((await avaliar("document.querySelector('.aviso-turnos').getAttribute('aria-label')")).includes('primeiro turno'));
+                    assert.equal(await avaliar("document.getElementById('select-cargo').querySelector('option[value=\"6\"]').disabled"),false);
+                    await avaliar("window.__testeRelogio.agora=Date.parse('2026-10-25T12:00:00-03:00');window.dispatchEvent(new Event('focus'));");
+                    await esperar(100);
+                    assert.equal(await avaliar("document.getElementById('select-turno').value"),'1','Virada automatica preserva a escolha de consultar o primeiro turno');
+                    await avaliar("document.querySelector('.botao-historico-turno').click()");
+                    await aguardar("document.getElementById('select-turno').value==='2' && document.querySelector('.segundo-turno-com-resultados') && document.querySelectorAll('.card-cand,.candidato-card').length===2");
+                    assert.equal(await avaliar("document.querySelectorAll('.resultado-primeiro-turno').length"),0,'Apuracao real nao herda o bloco historico');
+                    assert.equal(await avaliar("document.querySelector('.conteudo-preparacao').getBoundingClientRect().height"),0,'Apuracao substitui somente o conteudo da faixa');
+                    assert.equal(await avaliar("document.querySelectorAll('.resultado-segundo-turno').length"),2,'Preservar cards com dados do segundo turno');
+                    casos++;
+                }
+            }
+            for (const site of Object.keys(cadastroClientes)) {
+                for (const largura of [970,320]) {
+                    await navegar('personalizados/970x250.html',largura,`?site=${site}`);
+                    await aguardar("document.querySelector('.previa-segundo-turno')");
+                    const g=await avaliar(`(() => {
+                        const botao=document.querySelector('.botao-historico-turno').getBoundingClientRect();
+                        const cargo=document.getElementById('select-cargo').getBoundingClientRect();
+                        const uf=document.getElementById('select-uf').getBoundingClientRect();
+                        const cab=document.querySelector('.bloco-header').getBoundingClientRect();
+                        return {botaoCabe:botao.right<=cab.right&&botao.bottom<=cab.bottom,
+                            semSobrepor:cargo.right<=uf.left&&uf.right<=botao.left,larguraCargo:cargo.width};})()`);
+                    assert(g.botaoCabe&&g.semSobrepor,`${site}/${largura}: filtros e historico sem sobreposicao`);
+                    if(largura===970) assert(g.larguraCargo<=191,`${site}: seletor compacto`);
+                    casos++;
+                }
+            }
+            for(const modo of ['ano-errado','turno-errado','cargo-errado','uf-errada','parcial','simulado','outro-nome','valor-invalido','erro-http']) {
+                cenarioHistorico=modo;
+                await navegar('personalizados/970x250.html',970,'?site=cliente-x');
+                await aguardar("document.querySelector('.previa-segundo-turno') && document.getElementById('lista-candidatos').getAttribute('aria-busy')==='false'");
+                await esperar(100);
+                assert.equal(await avaliar("document.querySelectorAll('.resultado-primeiro-turno').length"),0,`Historico ${modo} rejeitado`);
+                await verificarPrevia();casos++;
+            }
+            // Respostas historicas em voo tambem precisam respeitar cargo/UF.
+            cenarioHistorico='retido';
+            await navegar('personalizados/970x250.html',970,'?site=cliente-x');
+            await aguardar("document.querySelector('.previa-segundo-turno')");
+            for(let i=0;i<150&&!consultasPrimeiroTurnoRetidas.length;i++)await esperar(20);
+            assert(consultasPrimeiroTurnoRetidas.length,'Contexto historico inicial em voo');
+            await avaliar("document.getElementById('select-cargo').value='3';document.getElementById('select-uf').value='ms';document.getElementById('select-cargo').dispatchEvent(new Event('change'))");
+            await aguardar("document.querySelector('.previa-segundo-turno') && document.getElementById('select-uf').value==='ms'");
+            for(let i=0;i<150&&consultasPrimeiroTurnoRetidas.length<2;i++)await esperar(20);
+            const retidas=consultasPrimeiroTurnoRetidas.splice(0);
+            assert.equal(retidas.length,2);
+            const liberarHistorico=r=>enviar('Fetch.fulfillRequest',{requestId:r.requestId,responseCode:200,responseHeaders:[{name:'Content-Type',value:'application/json'},{name:'Access-Control-Allow-Origin',value:'*'}],body:Buffer.from(JSON.stringify(r.json)).toString('base64')},r.sessionId);
+            await liberarHistorico(retidas.find(r=>r.json.uf==='br'));
+            await esperar(100);
+            assert.equal(await avaliar("document.querySelectorAll('.resultado-primeiro-turno').length"),0,'Historico de outra UF nao vaza');
+            await liberarHistorico(retidas.find(r=>r.json.uf==='ms'));
+            await aguardar("document.querySelectorAll('.resultado-primeiro-turno').length===2");
+            cenarioHistorico='normal';casos++;
+            // UF sem segundo turno tambem permite consultar seu primeiro turno.
+            cenarioSegundoTurno='sem-disputa';
+            await navegar('personalizados/970x250.html',970,'?site=campograndenews');
+            await avaliar("document.getElementById('select-cargo').value='3';document.getElementById('select-cargo').dispatchEvent(new Event('change'))");
+            await aguardar("document.querySelector('.estado-aguardando strong')?.textContent.includes('Não há segundo turno')");
+            await avaliar("document.querySelector('.botao-historico-turno').click()");
+            await aguardar("document.getElementById('select-turno').value==='1'&&document.querySelectorAll('.card-cand').length===8");
+            await avaliar("document.querySelector('.botao-historico-turno').click()");
+            await aguardar("document.querySelector('.estado-aguardando strong')?.textContent.includes('Não há segundo turno')");
+            casos++;
+            // Uma resposta atrasada do historico nao pode substituir a previa atual.
+            cenarioSegundoTurno='normal';
+            await navegar('personalizados/970x250.html',970,'?site=correio-do-estado');
+            await aguardar("document.querySelector('.previa-segundo-turno')");
+            cenarioSegundoTurno='primeiro-atrasado';
+            await avaliar("document.querySelector('.botao-historico-turno').click()");
+            for(let i=0;i<150&&!consultasPrimeiroTurnoRetidas.length;i++)await esperar(20);
+            assert(consultasPrimeiroTurnoRetidas.length,'Historico em voo');
+            cenarioSegundoTurno='normal';
+            await avaliar("document.querySelector('.botao-historico-turno').click()");
+            await aguardar("document.querySelector('.previa-segundo-turno')");
+            for(const r of consultasPrimeiroTurnoRetidas.splice(0)) {
+                await enviar('Fetch.fulfillRequest',{requestId:r.requestId,responseCode:200,responseHeaders:[{name:'Content-Type',value:'application/json'},{name:'Access-Control-Allow-Origin',value:'*'}],body:Buffer.from(JSON.stringify(r.json)).toString('base64')},r.sessionId);
+            }
+            await esperar(100);
+            await verificarPrevia();casos++;
+            await enviar('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]},sessionId);
+            await navegar('personalizados/970x250.html',970,'?site=correio-do-estado');
+            await aguardar("document.querySelector('.previa-segundo-turno')");
+            assert.equal(await avaliar("getComputedStyle(document.querySelector('.preparacao-calendario')).animationName"),'none');
+            await enviar('Emulation.setEmulatedMedia',{features:[]},sessionId);
+            casos++;
+            assert(chamadasApi.every(u=>new URL(u).hostname==='127.0.0.1'),'Nenhuma consulta real ao TSE/Worker');
+            assert.equal(erros.length,0,JSON.stringify(erros));
+            fs.writeFileSync(path.join(diretorioTestes,apenasInterfacePersonalizada?'interface-personalizada.json':'segundo-turno.json'),JSON.stringify({casos,erros:0,chamadasSimuladas:chamadasApi.length},null,2));
+            console.log(`${apenasInterfacePersonalizada?'Interface personalizada':'Segundo turno'}: ${casos} cenarios; formatos desktop/mobile, filtros compactos, preparacao, historico isolado, virada sem reload, resposta antiga descartada e movimento reduzido: OK.`);
+            await enviar('Browser.close');return;
+        }
+        if (apenasResumo970) {
+            let casos=0;
+            const medirResumo=()=>avaliar(`(() => {
+                const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,w:r.width,h:r.height};};
+                const dentro=(a,b)=>a.x>=b.x-1&&a.right<=b.right+1&&a.y>=b.y-1&&a.bottom<=b.bottom+1;
+                const resumo=document.getElementById('bloco-resumo'),painel=rect(document.querySelector('.widget-horizontal'));
+                const lista=rect(document.getElementById('lista-candidatos')),card=rect(document.querySelector('.card-cand'));
+                const itens=[...resumo.querySelectorAll('.resumo-item')];
+                return {resumo:rect(resumo),painel,card,lista,
+                    dimensoes:{status:rect(document.querySelector('.bloco-status')).h,basis:getComputedStyle(document.querySelector('.bloco-status')).flexBasis,
+                        cardHeight:getComputedStyle(document.querySelector('.card-cand')).height,
+                        resumoAberto:document.querySelector('.widget-horizontal').matches(':has(.resumo-votos:not(.oculto))')},
+                    botao:rect(document.querySelector('.resumo-toggle')).h,
+                    textos:itens.map(e=>e.textContent.trim()),
+                    valores:itens.map(e=>e.querySelector('.resumo-valor').textContent.trim()),
+                    posicoes:itens.map(rect),
+                    completos:itens.every(e=>[...e.children].every(f=>dentro(rect(f),rect(e))&&f.scrollWidth<=f.clientWidth+1)),
+                    dentroPainel:dentro(rect(resumo),painel)&&dentro(card,lista),
+                    overflow:document.documentElement.scrollWidth>innerWidth};
+            })()`);
+            for (const cliente of Object.keys(cadastroClientes)) {
+                let referencia;
+                for (const formato of ['970x250x100','970x250']) {
+                    for (const largura of [970,320,390]) {
+                        const contexto=`${cliente}/${formato}/${largura}`;
+                        await navegar(`personalizados/${formato}.html`,largura,`?site=${cliente}`);
+                        await aguardar("document.querySelectorAll('.card-cand').length===8 && document.getElementById('votos-validos').textContent.includes('95,23')");
+                        let estado=await medirResumo();
+                        assert.equal(estado.painel.h,largura===970||formato==='970x250'?250:100,contexto);
+                        if (largura===970) {
+                            assert(estado.resumo.h>0,`${contexto}: resumo deve aparecer sem clicar`);
+                            assert.equal(estado.botao,0,`${contexto}: resumo desktop sem botao`);
+                            assert(estado.completos&&estado.dentroPainel&&!estado.overflow,`${contexto}: resumo e candidatos sem cortes: ${JSON.stringify(estado)}`);
+                            assert(estado.textos.every(t=>t.includes('%')),contexto);
+                            if (referencia) assert.deepEqual(estado.textos,referencia,`${contexto}: mesmos votos do 970x250x100`);
+                            else referencia=estado.textos;
+                        } else if (formato==='970x250') {
+                            assert.equal(estado.resumo.h,0,`${contexto}: preservar mobile recolhido`);
+                            assert(estado.botao>0,`${contexto}: botao mobile preservado`);
+                            await avaliar('window.toggleResumo()');
+                            await avaliar('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+                            estado=await medirResumo();
+                            assert(estado.resumo.h>0&&estado.painel.h===250,`${contexto}: abrir resumo mobile sem mudar altura`);
+                            assert.deepEqual(estado.valores,['95,23%','1,84%','2,93%','21,08%'],`${contexto}: somente percentuais, sem totais`);
+                            const [a,b,c,d]=estado.posicoes;
+                            assert(a.y===b.y&&c.y===d.y&&c.y>a.y&&a.x===c.x&&b.x===d.x&&b.x>a.x,`${contexto}: grade 2x2`);
+                            assert(estado.completos&&estado.dentroPainel&&!estado.overflow,`${contexto}: grade e candidatos sem cortes: ${JSON.stringify(estado)}`);
+                        } else assert(estado.resumo.h>0&&estado.painel.h===100,`${contexto}: preservar compacto mobile`);
+                        if (['correio-do-estado','campograndenews'].includes(cliente)) {
+                            const p=estado.painel;
+                            const captura=await enviar('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:p.x,y:p.y,width:p.w,height:p.h,scale:1}},sessionId);
+                            fs.writeFileSync(path.join(diretorioTestes,`resumo-${formato}-${cliente}-${largura}.png`),Buffer.from(captura.data,'base64'));
+                        }
+                        casos++;
+                    }
+                }
+            }
+            for (const consulta of ['?site=correio-do-estado','?site=correio-do-estado&breakpoint=1050&embed-modo=mobile']) {
+                await navegar('personalizados/970x250.html',970,consulta);
+                await aguardar("document.querySelectorAll('.card-cand').length===8");
+                for (const largura of [320,970]) {
+                    await enviar('Emulation.setDeviceMetricsOverride',{width:largura,height:800,deviceScaleFactor:1,mobile:false},sessionId);
+                    const mobile=largura===320||consulta.includes('embed-modo=mobile');
+                    await aguardar(`document.getElementById('votos-validos').textContent.trim()===${JSON.stringify(mobile?'95,23%':'119.300.788 (95,23%)')}`);
+                    if (mobile) await avaliar("if(document.getElementById('bloco-resumo').classList.contains('oculto')) window.toggleResumo()");
+                    await avaliar('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+                    const estado=await medirResumo();
+                    assert(estado.resumo.h>0&&estado.painel.h===250&&estado.completos&&estado.dentroPainel&&!estado.overflow,
+                        `Resize/breakpoint real ${largura}/${consulta}: ${JSON.stringify(estado)}`);
+                }
+            }
+            await navegar('2026/970x250.html',970);
+            await aguardar("document.querySelectorAll('.card-cand').length===8");
+            assert.equal(await avaliar("document.getElementById('bloco-resumo').getBoundingClientRect().height"),0,'Nao alterar 970x250 original de 2026');
+            assert(chamadasApi.every(url=>new URL(url).hostname==='127.0.0.1'),'Nao consultar APIs reais');
+            assert.equal(erros.length,0,JSON.stringify(erros));
+            console.log(`Resumo 970x250 personalizado: ${casos} cenarios e resize/breakpoint; todas as marcas, desktop completo, mobile 2x2 somente percentuais, candidatos/alturas preservados e original 2026 intacto: OK.`);
+            await enviar('Browser.close');
+            return;
+        }
+        if (!apenasCompactos && !apenasRegressao) {
             let casos = 0;
             const clientesTeste = clienteCabecalhos ? [clienteCabecalhos] : Object.keys(cadastroClientes);
             const clientesEmbed = Object.keys(novasIdentidades).filter(site=>!clienteCabecalhos||site===clienteCabecalhos);
@@ -1340,8 +1872,9 @@ async function testarNavegador(build) {
         await mudar('select-uf', 'mt');
         await mudar('select-turno', '2');
         await aguardar("document.getElementById('lista-candidatos').getAttribute('aria-busy') === 'false'");
-        assert(chamadasApi.some((url) => url.includes('turno=2&cargo=3&uf=mt')));
-        console.log('320x100 fixo em desktop de 1400px; filtros cargo, UF e turno: OK.');
+        assert.equal(await avaliar("document.getElementById('select-turno').value"),'1','Em 04/10 o calendario nao permite antecipar o segundo turno');
+        assert(chamadasApi.some((url) => url.includes('turno=1&cargo=3&uf=mt')));
+        console.log('320x100 fixo em desktop de 1400px; filtros cargo/UF preservados e turno segue o calendario: OK.');
 
         for (const cenario of ['finalizado', 'sem-horario']) {
             cenario2026 = cenario;
@@ -1634,9 +2167,9 @@ async function testarNavegador(build) {
 }
 
 async function main() {
-    assert(process.argv.length===2||(process.argv.length===3&&(apenasCompactos||apenasCabecalhos))
+    assert(process.argv.length===2||(process.argv.length===3&&(apenasCompactos||apenasCabecalhos||apenasResumo970||apenasSegundoTurno||apenasRegressao||apenasInterfacePersonalizada||apenasApuracaoPersonalizada))
         ||(process.argv.length===4&&apenasCabecalhos&&Object.hasOwn(cadastroClientes,clienteCabecalhos)),
-        'Somente execucao local, opcionalmente --compactos ou --cabecalhos [cliente cadastrado].');
+        'Somente execucao local, opcionalmente --compactos, --resumo-970, --segundo-turno, --interface-personalizada, --apuracao-personalizada, --regressao ou --cabecalhos [cliente cadastrado].');
     const build = gerar();
     validarBuild(build);
     await testarNavegador(build);

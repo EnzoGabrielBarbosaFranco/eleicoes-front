@@ -1,4 +1,13 @@
 /* Compartilhado apenas por /2026/ e /personalizados/. Sem faixas adicionais. */
+/* Antes da apuracao, apresentar candidatos sem votos, percentuais ou ranking. */
+body.com-aviso-turnos[data-widget].identidade-2026 :is(.widget-horizontal, .widget-container).previa-segundo-turno :is(.card-pct, .percentual, .ranking-cand, .votos-absolutos, .card-barra-bg, .barra-cand-bg, .eleito-badge) {
+    display: none !important;
+}
+
+body:is(.turnos-mobile-compacto, .cliente-mobile-compacto) .previa-segundo-turno .card-cand {
+    padding-right: 6px !important;
+}
+
 body.com-aviso-turnos .header-copy {
     display: flex;
     flex: 1 1 auto;
